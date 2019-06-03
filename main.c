@@ -10,6 +10,9 @@ char *src, *oldsrc;  // pointer to source code in string(s)
 int poolsize;        // default size of  text/data/stack
 int line;            // (current?) line number
 
+int *text, *oldtext, *stack; // Text segment, Stack segment
+
+char *data; // data segment
 
 void next()
 {
@@ -60,6 +63,25 @@ int main(int argc, char **argv)
   if((i = read(fd, src, poolsize-1)) <= 0)
   {
     printf("read() returned %d\n", i);
+    return -1;
+  }
+
+  if(!(text = oldtext = malloc(poolsize)))
+  {
+    printf("couldnt malloc(%d) for text area\n", poolsize);
+    return -1;
+  }
+
+  if(!(data = malloc(poolsize)))
+  {
+    printf("Couldnt malloc(%d) for data area\n", poolsize);
+    return -1;
+  }
+
+  if(!(stack = malloc(poolsize)))
+  {
+    printf("Could not malloc(%d) for stack area\n", poolsize);
+
     return -1;
   }
 
