@@ -61,6 +61,19 @@ void program()
 
 int eval() // do nothing yet
 {
+  int op, *tmp;
+  while(1)
+  {
+    if(op == IMM) { ax = *pc++;}  // load immediate <num> into AX
+    else if(op == LC) { ax = *(char *) ax;} // load character into AX, address is ax
+    else if(op == LI) { ax = *(int *) ax;} // load integer into AX, address is ax
+    else if(op == SC) { ax = *(char *) *sp++ = ax;} // Save character to address, value in ax, address on stack
+    else if(op == SI) { ax = *(int *) *sp++ = ax;} // Save integer to address, value in ax, address on stack
+    else if(op == PUSH) { *--sp = ax;} // push the value of ax onto the stack
+    else if(op == JMP) { pc = (int *)*pc;} // jmp to address
+    else if(op == JZ) { pc = ax ? pc + 1: (int *)*pc} // jump if ax is zero
+    else if(op == JNZ){ pc = ax ? (int *)*pc: pc +1;} // jump if ax is nonzero
+  }
   return 0;
 }
 
