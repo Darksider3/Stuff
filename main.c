@@ -14,6 +14,30 @@ int *text, *oldtext, *stack; // Text segment, Stack segment
 
 char *data; // data segment
 
+//instructions
+
+/**
+ * MOV: Moves data into registers or memory.
+ * IMM <num>: to put immediate <num> into register AX
+ * LC: to load a character into AX from a memory address which is stored in AX before executeion
+ * LI: is just like LC but dealing with integers instead of characters
+ * SC: store the character in AX into memory whose address is stored on the top of the stack
+ * SI: just like SC but dealing with integer instead of character
+ */
+enum { LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,
+  OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,
+  OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT };
+
+/**
+ * All of this registers are just a place to store values
+ * PC: Programmcounter, stores an memory address in which stores the next instruction to be run
+ * SP: Stackpointer, which always points to the TOP of the stack. Notice the stack grows from high addresses to low
+ * address so that when we push a new element to the stack, SP decreases.
+ * BP: basepointer, points to some elements on the stack, it is used in function calls.
+ * AX: a general register we used to store the result of an instruction.
+ */
+int *pc, *bp, *sp, ax, cycle; // Virtual machine registers
+
 void next()
 {
   token = *src++;
@@ -84,6 +108,14 @@ int main(int argc, char **argv)
 
     return -1;
   }
+
+  memset(text, 0, poolsize);
+  memset(data, 0, poolsize);
+  memset(stack, 0, poolsize);
+
+  bp = sp = (int *)((int) stack +poolsize);
+  ax = 0;
+
 
   src[i] = 0; // add EOF
   close(fd);
