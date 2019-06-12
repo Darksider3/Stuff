@@ -2,11 +2,29 @@
 #include <cstdio>
 #include <cstring>
 #include <ctype.h>
-
+#include <iostream>
 enum {
   nullsym, intsym, tablesym, timesym, strsym, lparen, rparen, eofsym
 };
 
+enum
+{
+  INT, FLOAT, STR, DATE 
+};
+
+template <typename T>
+struct item
+{
+  std::string name;
+  int type;
+  T value;
+};
+
+struct table
+{
+  std::string name;
+  void* list;
+};
 class Scanner
 {
 public:
