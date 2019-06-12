@@ -21,7 +21,7 @@ public:
     }
     ch = ' ';
     readch();
-
+    return true;
   }
 
   void readch()
