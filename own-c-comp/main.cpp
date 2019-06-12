@@ -3,13 +3,13 @@
 #include <cstring>
 #include <ctype.h>
 #include <iostream>
-#include <stack>
+#include <vector>
 enum {
   nullsym, intsym, tablesym, timesym, strsym, lparen, rparen, eofsym
 };
 
-std::stack<int> table;
-std::stack<std::string> strings;
+std::vector<int> table;
+std::vector<std::string> strings;
 class Scanner
 {
 public:
