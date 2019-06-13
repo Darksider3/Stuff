@@ -1,6 +1,17 @@
 #include <iostream>
 #include <memory>
 
+void tre()
+{
+  char *bla = new char[5];
+  bla[0] = 'H';
+  bla[1] = 'a';
+  bla[2] = 'l';
+  bla[3] = 'l';
+  bla[4] = 'o';
+  std::cout << bla;
+}
+
 class Config
 {
   public:
@@ -34,6 +45,8 @@ int main()
 {
   Config bla;
   bla.test();
-  std::cout << "Hi! \n"; 
+  tre();
+
+  std::cout << "Hi! \n";
   return 0;
 }
