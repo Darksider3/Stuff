@@ -1,52 +1,40 @@
 #include <iostream>
 #include <memory>
+#include <fstream>
+#include <vector>
 
-void tre()
+class Configparse
 {
-  char *bla = new char[5];
-  bla[0] = 'H';
-  bla[1] = 'a';
-  bla[2] = 'l';
-  bla[3] = 'l';
-  bla[4] = 'o';
-  std::cout << bla;
-}
-
-class Config
-{
-  public:
-  std::unique_ptr<std::unique_ptr<int[]>[]> table;
+private:
+  std::ofstream f;
+  std::vector<std::vector<std::string>> Map;
+public:
   void test()
   {
-    table = std::make_unique<std::unique_ptr<int[]>[]>(3);
-    for(int i = 0; i < 3; i++)
+    std::vector<std::vector<std::string>>::iterator row;
+    std::vector<std::string>::iterator col;
+    for(int i=0; i < 5; i++)
     {
-      std::unique_ptr<int[]> tmp = std::make_unique<int[]>(5);
-      tmp[0]=0;
-      tmp[1]=1;
-      tmp[2]=2;
-      tmp[3]=3;
-      tmp[4]=4;
-      table[i]=std::move(tmp);
+      std::vector<std::string> temp;
+      temp.push_back("hi" + std::to_string(i));
+      Map.push_back(temp);
     }
-
-    for(int i=0; i < 3; i++)
+    for(row = Map.begin(); row != Map.end(); row++)
     {
-      for(int j=0; j < 5; j++)
+      for (col = row->begin(); col != row->end(); col++)
       {
-        std::cout << table[i][j] << " ";
+        std::cout << *col << "\n";
       }
-      std::cout << '\n';
     }
   }
 };
 
 int main()
 {
-  Config bla;
-  bla.test();
-  tre();
 
   std::cout << "Hi! \n";
+  Configparse b;
+  b.test();
+  std::cout << std::endl;
   return 0;
 }
