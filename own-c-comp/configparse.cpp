@@ -8,22 +8,40 @@ class Configparse
 private:
   std::ifstream f;
   std::vector<std::vector<std::string>> Map;
-  std::string curLine;
+  std::string strLine;
+  unsigned int CharInLine;
+  unsigned int ProccessedLines;
 public:
 
   Configparse(std::string Fname="../test")
   {
+    CharInLine=0;
+    ProccessedLines=0;
     f.open(Fname, std::ifstream::out);
   }
   bool getLine()
   {
-    return std::getline(f, curLine) && f.good();
+    CharInLine = 0;
+    return std::getline(f, strLine) && f.good();
   }
 
-  std::string getCurLine()
+  std::string getstrLine()
   {
-    return curLine;
+    return strLine;
   }
+
+  char getch()
+  {
+    if(strLine.length() > CharInLine)
+    {
+      CharInLine=0;
+      getLine();
+      return strLine[CharInLine++];
+    }
+    else
+      return strLine[CharInLine++];
+  }
+
   void test()
   {
     std::vector<std::vector<std::string>>::iterator row;
@@ -51,11 +69,11 @@ int main()
   Configparse b("../test");
   b.test();
   if(b.getLine())
-    std::cout << b.getCurLine() << std::endl;
+    std::cout << b.getstrLine() << std::endl;
   if(b.getLine())
-    std::cout << b.getCurLine() << std::endl;
+    std::cout << b.getstrLine() << std::endl;
   if(b.getLine())
-    std::cout << b.getCurLine() << std::endl;
+    std::cout << b.getstrLine() << std::endl;
   else
     std::cout << "End!";
   return 0;
