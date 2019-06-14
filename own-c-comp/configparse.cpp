@@ -6,9 +6,24 @@
 class Configparse
 {
 private:
-  std::ofstream f;
+  std::ifstream f;
   std::vector<std::vector<std::string>> Map;
+  std::string curLine;
 public:
+
+  Configparse(std::string Fname="../test")
+  {
+    f.open(Fname, std::ifstream::out);
+  }
+  bool getLine()
+  {
+    return std::getline(f, curLine) && f.good();
+  }
+
+  std::string getCurLine()
+  {
+    return curLine;
+  }
   void test()
   {
     std::vector<std::vector<std::string>>::iterator row;
@@ -33,8 +48,15 @@ int main()
 {
 
   std::cout << "Hi! \n";
-  Configparse b;
+  Configparse b("../test");
   b.test();
-  std::cout << std::endl;
+  if(b.getLine())
+    std::cout << b.getCurLine() << std::endl;
+  if(b.getLine())
+    std::cout << b.getCurLine() << std::endl;
+  if(b.getLine())
+    std::cout << b.getCurLine() << std::endl;
+  else
+    std::cout << "End!";
   return 0;
 }
