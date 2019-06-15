@@ -6,47 +6,48 @@
 class Configparse
 {
 private:
-  std::ifstream f;
+  std::ifstream fHandler;
   std::vector<std::vector<std::string>> Map;
-  std::string strLine;
-  unsigned int CharInLine;
+  std::string curLine;
+  unsigned int curCharInLine;
   unsigned int ProccessedLines;
-  std::string filename;
+  std::string Filename;
 public:
 
-  Configparse(std::string Fname="../test") : filename{Fname}
+  Configparse(std::string Fname="../test") : Filename{Fname}
   {
-    CharInLine=0;
+    curCharInLine=0;
     ProccessedLines=0;
-    f.open(filename, std::ifstream::out);
+    fHandler.open(Filename, std::ifstream::out);
   }
   bool getLine()
   {
-    CharInLine = 0;
-    return std::getline(f, strLine) && f.good();
+    ProccessedLines++;
+    curCharInLine = 0;
+    return std::getline(fHandler, curLine) && fHandler.good();
   }
 
   std::string getstrLine()
   {
-    return strLine;
+    return curLine;
   }
 
   char getch()
   {
-    if(strLine.length() > CharInLine)
+    if(curLine.length() > curCharInLine || curLine.empty())
     {
-      CharInLine=0;
+      curCharInLine=0;
       getLine();
-      return strLine[CharInLine++];
+      return curLine[curCharInLine++];
     }
     else
-      return strLine[CharInLine++];
+      return curLine[curCharInLine++];
   }
 
   unsigned long int filesize()
   {
     std::streampos fsize=0;
-    std::ifstream file(filename, std::ios::binary);
+    std::ifstream file(Filename, std::ios::binary);
     fsize=file.tellg();
     file.seekg(0, std::ios::end);
     fsize = file.tellg() - fsize;
@@ -57,8 +58,14 @@ public:
   {
     int fsize = filesize();
     getLine();
-
-
+    for(int i=0; i < curLine.length(); ++i)
+    {
+      if(curLine[i] == '{')
+        std::cout << "opening bracket!!!\n";
+      if(curLine[i] == '}')
+        std::cout << "closing bracket!!!\n";
+    }
+    fHandler.seekg(0);
   }
 
   void test()
@@ -87,6 +94,9 @@ int main()
   std::cout << "Hi! \n";
   Configparse b("../test");
   b.test();
+  b.parse();
+  if(b.getLine())
+    std::cout << b.getstrLine() << std::endl;
   if(b.getLine())
     std::cout << b.getstrLine() << std::endl;
   if(b.getLine())
