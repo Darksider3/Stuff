@@ -20,6 +20,7 @@ public:
     ProccessedLines=0;
     fHandler.open(Filename, std::ifstream::out);
   }
+  
   bool getLine()
   {
     ProccessedLines++;
@@ -54,6 +55,8 @@ public:
     file.close();
     return fsize;
   }
+
+
   void parse()
   {
     int fsize = filesize();
