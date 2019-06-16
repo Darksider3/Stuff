@@ -2,7 +2,47 @@
 #include <memory>
 #include <fstream>
 #include <vector>
+#include <cstring>
 
+#define TABLENAME_MAXLEN 128
+
+
+struct Values
+{
+  char *Name;
+  char *Typename;
+  void *value;
+  struct Values *next;
+};
+
+struct Table
+{
+  char Name[TABLENAME_MAXLEN];
+  struct Values *valueStart;
+};
+
+/*
+ * https://www.daniweb.com/programming/software-development/threads/307115/sort-a-stl-list-of-structs
+ */
+bool CompareValues(const Values& first, const Values& second)
+{
+  if(strcmp(first.Typename, second.Typename) == 0)
+  {
+    if(strcmp(first.Typename, "string") == 0)
+    {
+      return strcmp((char *) first.value, (char *) second.value) == 0;
+    }
+    else if(strcmp(first.Typename, "int") == 0)
+    {
+      return (first.value == second.value);
+    }
+    //@TODO: Dates
+  }
+  else
+  {
+    std::cout << "Not the same types bro \n";
+  }
+}
 class Configparse
 {
 private:
@@ -20,7 +60,7 @@ public:
     ProccessedLines=0;
     fHandler.open(Filename, std::ifstream::out);
   }
-  
+
   bool getLine()
   {
     ProccessedLines++;
