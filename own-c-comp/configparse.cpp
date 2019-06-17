@@ -24,6 +24,11 @@ struct Table
 /*
  * https://www.daniweb.com/programming/software-development/threads/307115/sort-a-stl-list-of-structs
  */
+
+bool Compare(const Values &first, const Values& second)
+{
+  return true;
+}
 bool CompareValues(const Values& first, const Values& second)
 {
   if(strcmp(first.Typename, second.Typename) == 0)
