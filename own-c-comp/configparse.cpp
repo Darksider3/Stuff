@@ -48,6 +48,26 @@ bool CompareValuesSizes(const Values& first, const Values& second)
     std::cout << "Not the same types bro \n";
   }
 }
+
+class Tokenizer
+{
+  std::ifstream fHandler;
+  std::string Text;
+  int mIndex = 0;
+  Tokenizer(char &filename)
+  {
+    try
+    {
+      fHandler.open((char *)filename, std::ios::out);
+    }
+    /* @TODO
+    catch
+    {}
+     */
+
+  }
+  std::string get();
+};
 class Configparse
 {
 private:
