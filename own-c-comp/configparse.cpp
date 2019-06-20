@@ -76,6 +76,7 @@ class Tokenizer
           //@TODO: Raise Exception opened/In Naming of a table
         }
         inToken = true;
+        //@TODO: handle table name
       }
       else if(cur == '}')
       {
@@ -91,6 +92,8 @@ class Tokenizer
       }
     }
   }
+
+
 };
 class Configparse
 {
