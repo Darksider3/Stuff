@@ -25,17 +25,21 @@ struct Table
  * https://www.daniweb.com/programming/software-development/threads/307115/sort-a-stl-list-of-structs
  */
 
-bool CompareValues(const Values& first, const Values& second)
+bool CompareValuesSizes(const Values& first, const Values& second)
 {
   if(strcmp(first.Typename, second.Typename) == 0)
   {
     if(strcmp(first.Typename, "string") == 0)
     {
-      return strcmp((char *) first.value, (char *) second.value) == 0;
+      //@TODO String-compare
     }
     else if(strcmp(first.Typename, "int") == 0)
     {
-      return (first.value == second.value);
+      return (first.value > second.value);
+    }
+    else if(strcmp(first.Typename, "float") == 0)
+    {
+      return ((float*)first.value > (float*)second.value);
     }
     //@TODO: Dates
   }
