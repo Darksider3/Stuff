@@ -56,17 +56,41 @@ class Tokenizer
   int mIndex = 0;
   Tokenizer(char &filename)
   {
-    try
-    {
-      fHandler.open((char *)filename, std::ios::out);
-    }
-    /* @TODO
-    catch
-    {}
-     */
-
+    fHandler.open((char *)filename, std::ios::out);
   }
-  std::string get();
+
+
+  std::string next()
+  {
+    std::string line, ret;
+    std::getline(fHandler, line);
+    bool inName=false;
+    bool inToken=false;
+    for(std::string::iterator i=line.begin(); i != line.end(); i++)
+    {
+      char cur=line[*i];
+      if(cur == '{')
+      {
+        if(inToken)
+        {
+          //@TODO: Raise Exception opened/In Naming of a table
+        }
+        inToken = true;
+      }
+      else if(cur == '}')
+      {
+        if(inToken)
+        {
+          //@TODO: Handle closing
+          inToken = false;
+        }
+        else
+        {
+          //@TODO: Raise Exception(wasnt looking for })
+        }
+      }
+    }
+  }
 };
 class Configparse
 {
