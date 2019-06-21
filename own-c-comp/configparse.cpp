@@ -53,47 +53,34 @@ class Tokenizer
 {
   std::ifstream fHandler;
   std::string Text;
-  int mIndex = 0;
-  Tokenizer(char &filename)
+  int lineLength;
+  int curIndex;
+  int InternEof;
+public:
+
+  Tokenizer(std::string filename)
   {
-    fHandler.open((char *)filename, std::ios::out);
+    fHandler.open(filename, std::ios::out);
+    curIndex = 0;
+    std::getline(fHandler, Text);
+    lineLength = Text.length();
+    InternEof = false;
+
   }
 
-
-  std::string next()
+  char next()
   {
-    std::string line, ret;
-    std::getline(fHandler, line);
-    bool inName=false;
-    bool inToken=false;
-    for(std::string::iterator i=line.begin(); i != line.end(); i++)
+    char ret;
+    fHandler >> std::noskipws >> ret;
+    if(fHandler.eof())
     {
-      char cur=line[*i];
-      if(cur == '{')
-      {
-        if(inToken)
-        {
-          //@TODO: Raise Exception opened/In Naming of a table
-        }
-        inToken = true;
-        //@TODO: handle table name
-      }
-      else if(cur == '}')
-      {
-        if(inToken)
-        {
-          //@TODO: Handle closing
-          inToken = false;
-        }
-        else
-        {
-          //@TODO: Raise Exception(wasnt looking for })
-        }
-      }
+      InternEof = true;
+      return 0;
     }
+    return ret;
   }
 
-
+  bool Eof(){return InternEof;}
 };
 class Configparse
 {
@@ -187,7 +174,7 @@ int main()
 {
 
   std::cout << "Hi! \n";
-  Configparse b("../test");
+  /*Configparse b("../test");
   b.test();
   b.parse();
   if(b.getLine())
@@ -199,6 +186,15 @@ int main()
   if(b.getLine())
     std::cout << b.getstrLine() << std::endl;
   else
-    std::cout << "End!";
+    std::cout << "End!";*/
+
+  Tokenizer b("../test");
+  std::cout << "Here!";
+  while(!b.Eof())
+  {
+    std::cout << b.next();
+  }
+
+  std::cout << "Here!";
   return 0;
 }
