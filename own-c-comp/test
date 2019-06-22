@@ -1,3 +1,4 @@
 {Head}
-Testline1
-TestLiNe2
+Testvar=123
+TestVaR2="Hallo"
+TestvAr3=456
