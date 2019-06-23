@@ -47,6 +47,8 @@ bool CompareValuesSizes(const Values& first, const Values& second)
   {
     std::cout << "Not the same types bro \n";
   }
+
+  return true;
 }
 
 class Tokenizer
@@ -62,7 +64,6 @@ public:
   {
     fHandler.open(filename, std::ios::out);
     curIndex = 0;
-    std::getline(fHandler, Text);
     lineLength = Text.length();
     InternEof = false;
 
@@ -71,12 +72,13 @@ public:
   char next()
   {
     char ret;
-    fHandler >> std::noskipws >> ret;
     if(fHandler.eof())
     {
       InternEof = true;
       return 0;
     }
+
+    fHandler >> std::noskipws >> ret;
     return ret;
   }
 
@@ -88,8 +90,8 @@ private:
   std::ifstream fHandler;
   std::vector<std::vector<std::string>> Map;
   std::string curLine;
-  unsigned int curCharInLine;
-  unsigned int ProccessedLines;
+  size_t curCharInLine;
+  size_t ProccessedLines;
   std::string Filename;
 public:
 
@@ -140,7 +142,7 @@ public:
   {
     int fsize = filesize();
     getLine();
-    for(int i=0; i < curLine.length(); ++i)
+    for(size_t i=0; i < curLine.length(); ++i)
     {
       if(curLine[i] == '{')
         std::cout << "opening bracket!!!\n";
@@ -192,7 +194,13 @@ int main()
   std::cout << "Here!";
   while(!b.Eof())
   {
-    std::cout << b.next();
+    char cur=b.next();
+    if(cur == '}')
+      std::cout << "Curly close!\n";
+    else if (cur == '{')
+      std::cout << "Curly open!\n";
+    else
+      std::cout << cur;
   }
 
   std::cout << "Here!";
