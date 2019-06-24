@@ -3,7 +3,12 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
-
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    fprintf(stderr, fmt, ## args)
+int DeallocateCounter=1;
+#else
+#define DEBUG_PRINT(fmt, args...)    /* Dont do anything at all pls*/
+#endif
 #define TABLENAME_MAXLEN 128
 
 
@@ -55,16 +60,13 @@ class Tokenizer
 {
   std::ifstream fHandler;
   std::string Text;
-  int lineLength;
-  int curIndex;
+  bool InDeclareStr=false;
   int InternEof;
 public:
 
   Tokenizer(std::string filename)
   {
     fHandler.open(filename, std::ios::out);
-    curIndex = 0;
-    lineLength = Text.length();
     InternEof = false;
 
   }
@@ -79,6 +81,24 @@ public:
     }
 
     fHandler >> std::noskipws >> ret;
+    if(!InDeclareStr && ret == '"')
+    {
+      DEBUG_PRINT("in declare STR! \n");
+      InDeclareStr = true;
+    }
+    else if(InDeclareStr && ret == '"')
+    {
+      DEBUG_PRINT("declaration of STR done\n");
+      InDeclareStr = false;
+    }
+    if(!InDeclareStr)
+    {
+      if(ret == ' ')
+      {
+        DEBUG_PRINT("\nuseless space! \n");
+        return next();
+      }
+    }
     return ret;
   }
 
@@ -175,7 +195,6 @@ public:
 int main()
 {
 
-  std::cout << "Hi! \n";
   /*Configparse b("../test");
   b.test();
   b.parse();
@@ -191,7 +210,7 @@ int main()
     std::cout << "End!";*/
 
   Tokenizer b("../test");
-  std::cout << "Here!";
+
   while(!b.Eof())
   {
     char cur=b.next();
