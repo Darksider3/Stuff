@@ -67,8 +67,11 @@ public:
   Tokenizer(std::string filename)
   {
     fHandler.open(filename, std::ios::out);
-    InternEof = false;
-
+    InternEof= fHandler.fail();
+#ifdef DEBUG
+    if(InternEof)
+      DEBUG_PRINT("COULDNT OPEN\n");
+#endif
   }
 
   char next()
@@ -165,9 +168,9 @@ public:
     for(size_t i=0; i < curLine.length(); ++i)
     {
       if(curLine[i] == '{')
-        std::cout << "opening bracket!!!\n";
+        DEBUG_PRINT( "opening bracket!!!\n");
       if(curLine[i] == '}')
-        std::cout << "closing bracket!!!\n";
+        DEBUG_PRINT("closing bracket!!!\n");
     }
     fHandler.seekg(0);
   }
@@ -222,6 +225,6 @@ int main()
       std::cout << cur;
   }
 
-  std::cout << "Here!";
+  std::cout << "Here!\n";
   return 0;
 }
