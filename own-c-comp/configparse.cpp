@@ -55,7 +55,49 @@ bool CompareValuesSizes(const Values& first, const Values& second)
 
   return true;
 }
+class AlternativeTokenizer
+{
+  std::ifstream fHandler;
+  std::string line;
+  size_t curStrIndex;
+  size_t curStrSize;
+  bool InternEof=false;
+public:
+  AlternativeTokenizer(std::string filename)
+  {
+    fHandler.open(filename, std::ios::out);
+    InternEof = fHandler.fail();
+    if(InternEof)
+      return;
+    curStrIndex = 0;
+    std::getline(fHandler, line);
+    curStrSize = line.length();
+    curStrIndex = 0;
+  }
 
+  char next()
+  {
+    if(InternEof)
+      return 0; // @TODO Exception?
+    if(fHandler.eof())
+    {
+      InternEof=true;
+      return 0;
+    }
+    char ret;
+    if(curStrIndex > curStrSize - 1)
+    {
+      std::getline(fHandler, line);
+      curStrIndex=0;
+      curStrSize=line.length();
+    }
+
+    return line[curStrIndex++];
+
+  }
+
+  bool eof(){return InternEof;}
+};
 class Tokenizer
 {
   std::ifstream fHandler;
@@ -214,6 +256,7 @@ int main()
   else
     std::cout << "End!";*/
 
+/*
   Tokenizer b("../test");
 
   while(!b.Eof())
@@ -227,6 +270,16 @@ int main()
       std::cout << cur;
   }
 
+ */
   std::cout << "Here!\n";
+  AlternativeTokenizer c("../test");
+  while(!c.eof())
+  {
+    char cur=c.next();
+    if(cur == 0)
+      continue;
+    else
+      std::cout << cur;
+  }
   return 0;
 }
