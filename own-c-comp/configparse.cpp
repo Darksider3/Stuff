@@ -84,6 +84,7 @@ public:
     }
 
     fHandler >> std::noskipws >> ret;
+/*
     if(!InDeclareStr && ret == '"')
     {
       DEBUG_PRINT("in declare STR! \n");
@@ -102,6 +103,7 @@ public:
         return next();
       }
     }
+ */
     return ret;
   }
 
