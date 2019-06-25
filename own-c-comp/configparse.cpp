@@ -11,123 +11,105 @@ int DeallocateCounter=1;
 #endif
 #define TABLENAME_MAXLEN 128
 
+namespace {
+  struct Values {
+    char *Name;
+    char *Typename;
+    void *value;
+    struct Values *next;
+  };
 
-struct Values
-{
-  char *Name;
-  char *Typename;
-  void *value;
-  struct Values *next;
-};
-
-struct Table
-{
-  char Name[TABLENAME_MAXLEN];
-  struct Values *valueStart;
-};
+  struct Table {
+    char Name[TABLENAME_MAXLEN];
+    struct Values *valueStart;
+  };
 
 /*
  * https://www.daniweb.com/programming/software-development/threads/307115/sort-a-stl-list-of-structs
  */
 
-bool CompareValuesSizes(const Values& first, const Values& second)
-{
-  if(strcmp(first.Typename, second.Typename) == 0)
-  {
-    if(strcmp(first.Typename, "string") == 0)
-    {
-      //@TODO String-compare
+  bool CompareValuesSizes(const Values &first, const Values &second) {
+    if (strcmp(first.Typename, second.Typename) == 0) {
+      if (strcmp(first.Typename, "string") == 0) {
+        //@TODO String-compare
+      } else if (strcmp(first.Typename, "int") == 0) {
+        return (first.value > second.value);
+      } else if (strcmp(first.Typename, "float") == 0) {
+        return ((float *) first.value > (float *) second.value);
+      }
+      //@TODO: Dates
+    } else {
+      std::cout << "Not the same types bro \n";
     }
-    else if(strcmp(first.Typename, "int") == 0)
-    {
-      return (first.value > second.value);
-    }
-    else if(strcmp(first.Typename, "float") == 0)
-    {
-      return ((float*)first.value > (float*)second.value);
-    }
-    //@TODO: Dates
-  }
-  else
-  {
-    std::cout << "Not the same types bro \n";
+
+    return true;
   }
 
-  return true;
-}
-class AlternativeTokenizer
-{
-  std::ifstream fHandler;
-  std::string line;
-  size_t curStrIndex;
-  size_t curStrSize;
-  bool InternEof=false;
-public:
-  AlternativeTokenizer(std::string filename)
-  {
-    fHandler.open(filename, std::ios::out);
-    InternEof = fHandler.fail();
-    if(InternEof)
-      return;
-    curStrIndex = 0;
-    std::getline(fHandler, line);
-    curStrSize = line.length();
-    curStrIndex = 0;
-  }
-
-  char next()
-  {
-    if(InternEof)
-      return -1; // @TODO Exception?
-    if(fHandler.eof())
-    {
-      InternEof=true;
-      return -1;
+  class AlternativeTokenizer {
+    std::ifstream fHandler;
+    std::string line;
+    size_t curStrIndex;
+    size_t curStrSize;
+    bool InternEof = false;
+  public:
+    AlternativeTokenizer(std::string filename) {
+      fHandler.open(filename, std::ios::out);
+      InternEof = fHandler.fail();
+      if (InternEof)
+        return;
+      curStrIndex = 0;
+      std::getline(fHandler, line);
+      curStrSize = line.length();
+      curStrIndex = 0;
     }
-    char ret;
-    if(curStrIndex > curStrSize - 1)
-    {
-      if(!std::getline(fHandler, line))
+
+    char next() {
+      if (InternEof)
+        return -1; // @TODO Exception?
+      if (fHandler.eof()) {
+        InternEof = true;
         return -1;
-      curStrIndex=0;
-      curStrSize=line.length();
-      return '\n'; // @TODO: Eval if needed. Actually not, but could be useful when multi-line is necessary.
+      }
+      char ret;
+      if (curStrIndex > curStrSize - 1) {
+        if (!std::getline(fHandler, line))
+          return -1;
+        curStrIndex = 0;
+        curStrSize = line.length();
+        return '\n'; // @TODO: Eval if needed. Actually not, but could be useful when multi-line is necessary.
+      }
+
+      return line[curStrIndex++];
+
     }
 
-    return line[curStrIndex++];
+    bool eof() { return InternEof; }
+  };
 
-  }
+  class Tokenizer {
+    std::ifstream fHandler;
+    std::string Text;
+    bool InDeclareStr = false;
+    int InternEof;
+  public:
 
-  bool eof(){return InternEof;}
-};
-class Tokenizer
-{
-  std::ifstream fHandler;
-  std::string Text;
-  bool InDeclareStr=false;
-  int InternEof;
-public:
-
-  Tokenizer(std::string filename)
-  {
-    fHandler.open(filename, std::ios::out);
-    InternEof= fHandler.fail();
+    Tokenizer(std::string filename) {
+      fHandler.open(filename, std::ios::out);
+      InternEof = fHandler.fail();
 #ifdef DEBUG
-    if(InternEof)
-      DEBUG_PRINT("COULDNT OPEN\n");
+      if (InternEof)
+        DEBUG_PRINT("COULDNT OPEN\n");
 #endif
-  }
-
-  char next()
-  {
-    char ret;
-    if(fHandler.eof())
-    {
-      InternEof = true;
-      return 0;
     }
 
-    fHandler >> std::noskipws >> ret;
+    char next() {
+      char ret;
+      if (fHandler.eof()) {
+        InternEof = true;
+        return 0;
+      }
+
+      fHandler >> std::noskipws >> ret;
 /*
     if(!InDeclareStr && ret == '"')
     {
@@ -148,98 +130,87 @@ public:
       }
     }
  */
-    return ret;
-  }
+      return ret;
+    }
 
-  bool eof(){return InternEof;}
-};
-class Configparse
-{
-private:
-  std::ifstream fHandler;
-  std::vector<std::vector<std::string>> Map;
-  std::string curLine;
-  size_t curCharInLine;
-  size_t ProccessedLines;
-  std::string Filename;
-public:
+    bool eof() { return InternEof; }
+  };
 
-  Configparse(std::string Fname="../test") : Filename{Fname}
-  {
-    curCharInLine=0;
-    ProccessedLines=0;
-    fHandler.open(Filename, std::ifstream::out);
-  }
+  class Configparse {
+  private:
+    std::ifstream fHandler;
+    std::vector<std::vector<std::string>> Map;
+    std::string curLine;
+    size_t curCharInLine;
+    size_t ProccessedLines;
+    std::string Filename;
+  public:
 
-  bool getLine()
-  {
-    ProccessedLines++;
-    curCharInLine = 0;
-    return std::getline(fHandler, curLine) && fHandler.good();
-  }
+    Configparse(std::string Fname = "../test") : Filename{Fname} {
+      curCharInLine = 0;
+      ProccessedLines = 0;
+      fHandler.open(Filename, std::ifstream::out);
+    }
 
-  std::string getstrLine()
-  {
-    return curLine;
-  }
+    bool getLine() {
+      ProccessedLines++;
+      curCharInLine = 0;
+      return std::getline(fHandler, curLine) && fHandler.good();
+    }
 
-  char getch()
-  {
-    if(curLine.length() > curCharInLine || curLine.empty())
-    {
-      curCharInLine=0;
+    std::string getstrLine() {
+      return curLine;
+    }
+
+    char getch() {
+      if (curLine.length() > curCharInLine || curLine.empty()) {
+        curCharInLine = 0;
+        getLine();
+        return curLine[curCharInLine++];
+      } else
+        return curLine[curCharInLine++];
+    }
+
+    unsigned long int filesize() {
+      std::streampos fsize = 0;
+      std::ifstream file(Filename, std::ios::binary);
+      fsize = file.tellg();
+      file.seekg(0, std::ios::end);
+      fsize = file.tellg() - fsize;
+      file.close();
+      return fsize;
+    }
+
+
+    void parse() {
+      int fsize = filesize();
       getLine();
-      return curLine[curCharInLine++];
+      for (size_t i = 0; i < curLine.length(); ++i) {
+        if (curLine[i] == '{')
+          DEBUG_PRINT("opening bracket!!!\n");
+        if (curLine[i] == '}')
+          DEBUG_PRINT("closing bracket!!!\n");
+      }
+      fHandler.seekg(0);
     }
-    else
-      return curLine[curCharInLine++];
-  }
 
-  unsigned long int filesize()
-  {
-    std::streampos fsize=0;
-    std::ifstream file(Filename, std::ios::binary);
-    fsize=file.tellg();
-    file.seekg(0, std::ios::end);
-    fsize = file.tellg() - fsize;
-    file.close();
-    return fsize;
-  }
-
-
-  void parse()
-  {
-    int fsize = filesize();
-    getLine();
-    for(size_t i=0; i < curLine.length(); ++i)
-    {
-      if(curLine[i] == '{')
-        DEBUG_PRINT( "opening bracket!!!\n");
-      if(curLine[i] == '}')
-        DEBUG_PRINT("closing bracket!!!\n");
-    }
-    fHandler.seekg(0);
-  }
-
-  void test()
-  {
-    std::vector<std::vector<std::string>>::iterator row;
-    std::vector<std::string>::iterator col;
-    for(int i=0; i < 5; i++)
-    {
-      std::vector<std::string> temp;
-      temp.push_back("hi" + std::to_string(i));
-      Map.push_back(temp);
-    }
-    for(row = Map.begin(); row != Map.end(); row++)
-    {
-      for (col = row->begin(); col != row->end(); col++)
-      {
-        std::cout << *col << "\n";
+    void test() {
+      std::vector<std::vector<std::string>>::iterator row;
+      std::vector<std::string>::iterator col;
+      for (int i = 0; i < 5; i++) {
+        std::vector<std::string> temp;
+        temp.push_back("hi" + std::to_string(i));
+        Map.push_back(temp);
+      }
+      for (row = Map.begin(); row != Map.end(); row++) {
+        for (col = row->begin(); col != row->end(); col++) {
+          std::cout << *col << "\n";
+        }
       }
     }
-  }
-};
+  };
+}
+
 
 int main()
 {
