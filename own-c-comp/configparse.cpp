@@ -78,16 +78,17 @@ public:
   char next()
   {
     if(InternEof)
-      return 0; // @TODO Exception?
+      return -1; // @TODO Exception?
     if(fHandler.eof())
     {
       InternEof=true;
-      return 0;
+      return -1;
     }
     char ret;
     if(curStrIndex > curStrSize - 1)
     {
-      std::getline(fHandler, line);
+      if(!std::getline(fHandler, line))
+        return -1;
       curStrIndex=0;
       curStrSize=line.length();
     }
@@ -149,7 +150,7 @@ public:
     return ret;
   }
 
-  bool Eof(){return InternEof;}
+  bool eof(){return InternEof;}
 };
 class Configparse
 {
@@ -259,7 +260,7 @@ int main()
 /*
   Tokenizer b("../test");
 
-  while(!b.Eof())
+  while(!b.eof())
   {
     char cur=b.next();
     if(cur == '}')
@@ -276,7 +277,7 @@ int main()
   while(!c.eof())
   {
     char cur=c.next();
-    if(cur == 0)
+    if(cur == -1)
       continue;
     else
       std::cout << cur;
