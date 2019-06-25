@@ -91,6 +91,7 @@ public:
         return -1;
       curStrIndex=0;
       curStrSize=line.length();
+      return '\n'; // @TODO: Eval if needed. Actually not, but could be useful when multi-line is necessary.
     }
 
     return line[curStrIndex++];
