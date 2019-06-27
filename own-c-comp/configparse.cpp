@@ -3,6 +3,8 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <sstream>
+
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    fprintf(stderr, fmt, ## args)
 int DeallocateCounter=1;
@@ -86,6 +88,26 @@ namespace {
     bool eof() { return InternEof; }
   };
 
+  class WholeFileTokenizer
+  {
+    std::ifstream fHandler;
+    std::string Lines;
+  public:
+    WholeFileTokenizer(std::string Filename)
+    {
+      fHandler.open(Filename, std::ios::out);
+      if(!fHandler)
+      {
+        DEBUG_PRINT("Couldnt open file");
+        return;
+      }
+      std::basic_ostringstream<char> ss;
+      ss = std::ostringstream();
+      ss << fHandler.rdbuf();
+      Lines = ss.str();
+      DEBUG_PRINT("%s", Lines.c_str());
+    }
+  };
   class Tokenizer {
     std::ifstream fHandler;
     std::string Text;
@@ -254,5 +276,7 @@ int main()
     else
       std::cout << cur;
   }
+
+  WholeFileTokenizer d("../test");
   return 0;
 }
