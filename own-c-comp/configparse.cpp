@@ -7,7 +7,6 @@
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    fprintf(stderr, fmt, ## args)
-int DeallocateCounter=1;
 #else
 #define DEBUG_PRINT(fmt, args...)    /* Dont do anything at all pls*/
 #endif
