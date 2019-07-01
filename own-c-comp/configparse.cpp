@@ -10,7 +10,7 @@
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    fprintf(stderr, fmt, ## args)
 #else
-#define DEBUG_PRINT(fmt, args...)    /* Dont do anything at all pls*/
+#define DEBUG_PRINT(fmt, args...)    /* Dont do anything at all please*/
 #endif
 #define TABLENAME_MAXLEN 128
 
