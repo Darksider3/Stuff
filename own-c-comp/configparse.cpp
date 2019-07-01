@@ -5,6 +5,8 @@
 #include <cstring>
 #include <sstream>
 
+#include <variant>
+
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...)    fprintf(stderr, fmt, ## args)
 #else
@@ -25,6 +27,18 @@ namespace {
     struct Values *valueStart;
   };
 
+  class Stack
+  {
+    typedef std::variant<int, double, char> Variant;
+    std::vector<Variant> Vec;
+    bool insert(void *element)
+    {
+      Vec.push_back((Variant) 123);
+      std::cout << Vec.data();
+      return true;
+    }
+
+  };
 /*
  * https://www.daniweb.com/programming/software-development/threads/307115/sort-a-stl-list-of-structs
  */
@@ -275,7 +289,25 @@ int main()
     else
       std::cout << cur;
   }
-
   WholeFileTokenizer d("../test");
+
+  std::cout << std::endl;
+  typedef std::variant<int, double, char, std::string> Variant;
+
+  std::vector<Variant> Vec;
+  Vec.push_back((Variant) 123);
+  Vec.push_back((Variant) 'a');
+  Vec.push_back((Variant) 1.1);
+  Vec.push_back((Variant) "Hallo Welt");
+  for(auto &v: Vec)
+  {
+    std::visit([](auto&& arg){std::cout << arg << " ";}, v);
+  }
+  std::cout << std::endl;
+  // display each type
+  for (auto& v: Vec){
+    std::visit([](auto&& arg){std::cout << typeid(arg).name() << " ";}, v); // 3
+  }
+  std::cout << std::endl;
   return 0;
 }
