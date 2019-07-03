@@ -39,6 +39,41 @@ namespace {
     }
 
   };
+
+  /*
+   *********************************************
+   * Type Classes
+   *********************************************
+   */
+  class Types
+  {
+  public:
+    Types(){};
+    virtual char getType(){return '0';}
+  };
+
+  class IntType : Types
+  {
+    char getType(){return 'i';}
+  };
+
+  class CharType : Types
+  {
+    char getType(){return 'c';}
+  };
+
+  class DoubleType : Types
+  {
+    char getType(){return 'd';}
+  };
+
+  class DateType : Types
+  {
+    char getType(){return 'D';}
+  };
+
+
+
 /*
  * https://www.daniweb.com/programming/software-development/threads/307115/sort-a-stl-list-of-structs
  */
