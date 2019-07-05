@@ -55,7 +55,7 @@ namespace {
   class IntType : public Types
   {
     char getType(){return 'i';}
-    bool cmp(int a, int b)
+    static  bool cmp(int a, int b)
     {
       return (a > b);
     }
@@ -64,7 +64,7 @@ namespace {
   class CharType : public Types
   {
     char getType(){return 'c';}
-    bool cmp(char a, char b)
+    static bool cmp(char a, char b)
     {
       return (a > b);
     }
@@ -73,11 +73,16 @@ namespace {
   class DoubleType : public Types
   {
     char getType(){return 'd';}
+    static bool cmp(double a, double b)
+    {
+      return(a > b);
+    }
   };
 
   class DateType : public Types
   {
     char getType(){return 'D';}
+
   };
 
 
