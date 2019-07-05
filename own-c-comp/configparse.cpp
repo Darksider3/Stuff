@@ -38,7 +38,6 @@ namespace {
   protected:
     int value;
   public:
-    Types();
     virtual char getType(){return '0';}
     virtual bool cmp(bool a, bool b){return (a&&b);}
   };
@@ -55,6 +54,7 @@ namespace {
     {
       return (a > b);
     }
+    int get(){return value;}
   };
 
   class CharType : public Types
@@ -69,6 +69,8 @@ namespace {
     {
       return (a > b);
     }
+
+    char get(){return value;}
   };
 
   class DoubleType : public Types
@@ -83,12 +85,20 @@ namespace {
     {
       return(a > b);
     }
+    double get(){return value;}
   };
 
+  struct Date
+  {
+    int ms,s,m,h,d,w,mo,y;
+  };
   class DateType : public Types
   {
+  protected:
+    Date value;
+  public:
     char getType(){return 'D';}
-
+    Date get(){return value;}
   };
 
 
@@ -349,7 +359,7 @@ int main()
 
 
   Types *t;
-  IntType b;
+  IntType b(2);
   t=&b;
   std::cout << t->getType();
   return 0;
