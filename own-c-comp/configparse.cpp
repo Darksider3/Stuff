@@ -15,18 +15,6 @@
 #define TABLENAME_MAXLEN 128
 
 namespace {
-  struct Values {
-    char *Name;
-    char *Typename;
-    void *value;
-    struct Values *next;
-  };
-
-  struct Table {
-    char Name[TABLENAME_MAXLEN];
-    struct Values *valueStart;
-  };
-
   class Stack
   {
     typedef std::variant<int, double, char> Variant;
