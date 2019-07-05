@@ -49,16 +49,25 @@ namespace {
   {
   public:
     virtual char getType(){return '0';}
+    virtual bool cmp(bool a, bool b){return (a&&b);}
   };
 
   class IntType : public Types
   {
     char getType(){return 'i';}
+    bool cmp(int a, int b)
+    {
+      return (a > b);
+    }
   };
 
   class CharType : public Types
   {
     char getType(){return 'c';}
+    bool cmp(char a, char b)
+    {
+      return (a > b);
+    }
   };
 
   class DoubleType : public Types
