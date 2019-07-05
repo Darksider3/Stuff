@@ -35,13 +35,21 @@ namespace {
    */
   class Types
   {
+  protected:
+    int value;
   public:
+    Types();
     virtual char getType(){return '0';}
     virtual bool cmp(bool a, bool b){return (a&&b);}
   };
 
   class IntType : public Types
   {
+  protected:
+    int value;
+  public:
+    explicit IntType(int x) : value{x}
+    {}
     char getType(){return 'i';}
     static  bool cmp(int a, int b)
     {
@@ -51,6 +59,11 @@ namespace {
 
   class CharType : public Types
   {
+  protected:
+    char value;
+  public:
+    explicit CharType(char x) : value{x}
+    {}
     char getType(){return 'c';}
     static bool cmp(char a, char b)
     {
@@ -60,6 +73,11 @@ namespace {
 
   class DoubleType : public Types
   {
+  protected:
+    double value;
+  public:
+    explicit DoubleType(double x) : value{x}
+    {}
     char getType(){return 'd';}
     static bool cmp(double a, double b)
     {
