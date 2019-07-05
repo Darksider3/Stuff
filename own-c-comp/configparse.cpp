@@ -79,23 +79,6 @@ namespace {
  * https://www.daniweb.com/programming/software-development/threads/307115/sort-a-stl-list-of-structs
  */
 
-  bool CompareValuesSizes(const Values &first, const Values &second) {
-    if (strcmp(first.Typename, second.Typename) == 0) {
-      if (strcmp(first.Typename, "string") == 0) {
-        //@TODO String-compare
-      } else if (strcmp(first.Typename, "int") == 0) {
-        return (first.value > second.value);
-      } else if (strcmp(first.Typename, "float") == 0) {
-        return ((float *) first.value > (float *) second.value);
-      }
-      //@TODO: Dates
-    } else {
-      std::cout << "Not the same types bro \n";
-    }
-
-    return true;
-  }
-
   class AlternativeTokenizer {
     std::ifstream fHandler;
     std::string line;
