@@ -48,26 +48,25 @@ namespace {
   class Types
   {
   public:
-    Types(){};
     virtual char getType(){return '0';}
   };
 
-  class IntType : Types
+  class IntType : public Types
   {
     char getType(){return 'i';}
   };
 
-  class CharType : Types
+  class CharType : public Types
   {
     char getType(){return 'c';}
   };
 
-  class DoubleType : Types
+  class DoubleType : public Types
   {
     char getType(){return 'd';}
   };
 
-  class DateType : Types
+  class DateType : public Types
   {
     char getType(){return 'D';}
   };
@@ -344,5 +343,11 @@ int main()
     std::visit([](auto&& arg){std::cout << typeid(arg).name() << " ";}, v); // 3
   }
   std::cout << std::endl;
+
+
+  Types *t;
+  IntType b;
+  t=&b;
+  std::cout << t->getType();
   return 0;
 }
