@@ -13,4 +13,5 @@ Given is a set of elements, some are connected, some not:
 
 1 is connected to 2, 3 is connected to 5 and 4 to 3. 
 Now we want a function that can tell us, if the given two objects
-are somehow connected.
+are somehow connected. The function to call here is, to connect, connect(x, y).
+To check it's (bool) union(x,y)
