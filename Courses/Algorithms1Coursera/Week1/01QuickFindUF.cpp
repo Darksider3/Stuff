@@ -1,5 +1,6 @@
 #include <iostream>
 
+//gogo
 class QuickFindUF
 {
 private:
