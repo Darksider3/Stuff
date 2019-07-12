@@ -27,7 +27,9 @@ public:
   std::string pop()
   {
     std::string item = first->item;
-    first = first->next;
+    Node *next = first->next;
+    delete first;
+    first = next;
     return item;
   }
   
@@ -40,6 +42,7 @@ public:
       tmp = cur->next;
       delete (cur);
       cur = tmp;
+      std::cout << "deallocate!" << std::endl;
     }
   }
 };
@@ -49,5 +52,6 @@ int main()
   LinkedStackOfStrings stack;
   std::string s = "hallo welt";
   stack.push(s);
+  stack.push("Nein!");
   std::cout << stack.pop() << std::endl;
 }
