@@ -40,9 +40,9 @@ namespace {
   public:
     virtual char getType(){return '0';}
     virtual bool cmp(bool a, bool b){return (a&&b);}
-    virtual int getInt() = 0;
-    virtual double getDouble() =0;
-    virtual char getChar()=0;
+    virtual int getInt(){return value;}
+    virtual double getDouble() {return value;};
+    virtual char getChar(){return value;};
   };
 
   class IntType : public Types
@@ -57,9 +57,7 @@ namespace {
     {
       return (a > b);
     }
-    int getInt() override {
-      return value;
-    }
+    int getInt() override {return value;}
   };
 
   class CharType : public Types
@@ -74,6 +72,8 @@ namespace {
     {
       return (a > b);
     }
+    double getDouble() override {return value;}
+    int getInt() override {return value;}
     char getChar() override {return value;}
   };
 
@@ -90,9 +90,7 @@ namespace {
       return(a > b);
     }
     double getDouble() override {return value;}
-    int getInt() override {
-      return value;
-    }
+    int getInt() override {return value;}
     char getChar() override {return value;}
   };
 
@@ -367,7 +365,7 @@ int main()
 
 
   Types *t;
-  t=new DoubleType(1.1);
+  t=new DoubleType(13.1);
   switch(t->getType())
   {
     case 'i':
