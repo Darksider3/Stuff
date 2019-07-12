@@ -40,6 +40,9 @@ namespace {
   public:
     virtual char getType(){return '0';}
     virtual bool cmp(bool a, bool b){return (a&&b);}
+    virtual int getInt() = 0;
+    virtual double getDouble() =0;
+    virtual char getChar()=0;
   };
 
   class IntType : public Types
@@ -54,7 +57,9 @@ namespace {
     {
       return (a > b);
     }
-    int get(){return value;}
+    int getInt() override {
+      return value;
+    }
   };
 
   class CharType : public Types
@@ -69,8 +74,7 @@ namespace {
     {
       return (a > b);
     }
-
-    char get(){return value;}
+    char getChar() override {return value;}
   };
 
   class DoubleType : public Types
@@ -85,7 +89,11 @@ namespace {
     {
       return(a > b);
     }
-    double get(){return value;}
+    double getDouble() override {return value;}
+    int getInt() override {
+      return value;
+    }
+    char getChar() override {return value;}
   };
 
   struct Date
@@ -98,7 +106,7 @@ namespace {
     Date value;
   public:
     char getType(){return 'D';}
-    Date get(){return value;}
+    Date getDate(){return value;}
   };
 
 
@@ -359,8 +367,17 @@ int main()
 
 
   Types *t;
-  IntType b(2);
-  t=&b;
-  std::cout << t->getType();
+  t=new DoubleType(1.1);
+  switch(t->getType())
+  {
+    case 'i':
+      std::cout << t->getInt();
+      break;
+    case 'd':
+      std::cout << t->getDouble();
+      break;
+    default:
+      std::cout << "couldnt find correct type x.x " << std::endl;
+  }
   return 0;
 }
