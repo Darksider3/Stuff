@@ -72,8 +72,6 @@ namespace {
     {
       return (a > b);
     }
-    double getDouble() override {return value;}
-    int getInt() override {return value;}
     char getChar() override {return value;}
   };
 
@@ -90,8 +88,6 @@ namespace {
       return(a > b);
     }
     double getDouble() override {return value;}
-    int getInt() override {return value;}
-    char getChar() override {return value;}
   };
 
   struct Date
