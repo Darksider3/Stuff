@@ -5,7 +5,7 @@ template <typename Item>
 class RandomizedQueue
 {
 private:
-
+//Somehow the first entry never gets filled
   Item *queue;
   size_t size;
   size_t index;
