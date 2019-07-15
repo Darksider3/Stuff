@@ -40,10 +40,10 @@ public:
   
   Item get()
   {
-    int ran = arc4random() % index;
+    int ran = arc4random_uniform(index);
     Item ret = queue[ran];
     queue[ran] = queue[--index];
-    queue[index] = NULL;
+    queue[index] = 0;
     if(index < size / 4)
       removeSize();
     return ret;
