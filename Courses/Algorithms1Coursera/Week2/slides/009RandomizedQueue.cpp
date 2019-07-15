@@ -1,6 +1,8 @@
 #include <iostream>
 #include <exception>
+#include <bsd/stdlib.h>
 
+ //g++ -Wall -g 009RandomizedQueue.cpp -o 009RandomizedQueue -lbsd
 template <typename Item>
 class RandomizedQueue
 {
@@ -38,7 +40,7 @@ public:
   
   Item get()
   {
-    return queue[index--];
+    return queue[(arc4random() % index--)];
   }
   
   void addSize()
@@ -50,6 +52,7 @@ public:
       newQueue[i] = queue[i];
     }
     size = newsize;
+    delete queue;
     queue = newQueue;
   }
   ~RandomizedQueue()
@@ -62,10 +65,11 @@ int main()
 {
   RandomizedQueue<int> Test(5);
   Test.enqueue(1);
-  Test.enqueue(2);  Test.enqueue(1);
-  Test.enqueue(2);  Test.enqueue(1);
-  Test.enqueue(2);
-  std::cout <<  std::endl;
+  Test.enqueue(2);  
+  Test.enqueue(3);
+  Test.enqueue(4);  
+  Test.enqueue(6);
+  Test.enqueue(7);
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;  
