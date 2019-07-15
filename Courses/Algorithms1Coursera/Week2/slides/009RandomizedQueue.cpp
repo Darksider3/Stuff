@@ -40,9 +40,24 @@ public:
   
   Item get()
   {
-    return queue[(arc4random() % index--)];
+    int ran = arc4random() % index;
+    Item ret = queue[ran];
+    queue[ran] = queue[--index];
+    queue[index] = NULL;
+    if(index < size / 4)
+      removeSize();
+    return ret;
   }
-  
+
+  void removeSize()
+  {
+    size /= 2;
+    Item *newQueue = new Item[size];
+    for(size_t i = 0; i < index; i++)
+      newQueue[i] = queue[i];
+    delete queue;
+    queue = newQueue;
+  }
   void addSize()
   {
     size_t newsize = size * 2;
@@ -70,6 +85,10 @@ int main()
   Test.enqueue(4);  
   Test.enqueue(6);
   Test.enqueue(7);
+  Test.enqueue(8);
+  Test.enqueue(9);
+  Test.enqueue(10);
+  Test.enqueue(11);
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;  
