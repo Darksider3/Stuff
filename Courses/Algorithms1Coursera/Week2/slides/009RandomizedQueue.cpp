@@ -33,9 +33,10 @@ public:
   
   void enqueue(Item item)
   {
-    if(index > size)
+    if(index >= size)
       addSize();
-    queue[index++] = item;
+    queue[index] = item;
+    index++;
   }
   
   Item get()
@@ -55,7 +56,7 @@ public:
     Item *newQueue = new Item[size];
     for(size_t i = 0; i < index; i++)
       newQueue[i] = queue[i];
-    delete queue;
+    delete[] queue;
     queue = newQueue;
   }
   void addSize()
@@ -67,7 +68,7 @@ public:
       newQueue[i] = queue[i];
     }
     size = newsize;
-    delete queue;
+    delete[] queue;
     queue = newQueue;
   }
   ~RandomizedQueue()
