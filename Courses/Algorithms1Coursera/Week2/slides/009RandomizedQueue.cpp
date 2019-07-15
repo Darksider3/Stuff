@@ -33,7 +33,7 @@ public:
   {
     if(index > size)
       addSize();
-    queue[++index] = item;
+    queue[index++] = item;
   }
   
   Item get()
@@ -60,10 +60,15 @@ public:
 
 int main()
 {
-  RandomizedQueue<int> Test(0);
+  RandomizedQueue<int> Test(5);
   Test.enqueue(1);
+  Test.enqueue(2);  Test.enqueue(1);
+  Test.enqueue(2);  Test.enqueue(1);
   Test.enqueue(2);
   std::cout <<  std::endl;
+  std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;  
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
