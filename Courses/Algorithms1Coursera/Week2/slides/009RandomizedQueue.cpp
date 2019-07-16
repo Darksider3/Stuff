@@ -2,6 +2,10 @@
 #include <exception>
 #include <bsd/stdlib.h>
 
+#ifdef DEBUG
+size_t allocCounter = 0;
+size_t deallocCounter = 0;
+#endif
  //g++ -Wall -g 009RandomizedQueue.cpp -o 009RandomizedQueue -lbsd
 template <typename Item>
 class RandomizedQueue
@@ -18,6 +22,9 @@ public:
     size = 1;
     index = 0;
     queue = new Item[1];
+#ifdef DEBUG
+    allocCounter++;
+#endif
     enqueue(f);
   }
   
@@ -57,23 +64,35 @@ public:
     for(size_t i = 0; i < index; i++)
       newQueue[i] = queue[i];
     delete[] queue;
+#ifdef DEBUG
+    deallocCounter++;
+#endif
     queue = newQueue;
   }
   void addSize()
   {
     size_t newsize = size * 2;
     Item *newQueue = new Item[newsize];
+#ifdef DEBUG
+    allocCounter++;
+#endif
     for(size_t i = 0; i < index; i++)
     {
       newQueue[i] = queue[i];
     }
     size = newsize;
     delete[] queue;
+#ifdef DEBUG
+    deallocCounter++;
+#endif
     queue = newQueue;
   }
   ~RandomizedQueue()
   {
     delete[] queue;
+#ifdef DEBUG
+    deallocCounter++;
+#endif
   }
 };
 
@@ -97,4 +116,7 @@ int main()
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << "hi." << std::endl;
+#ifdef DEBUG
+  std::cout << "Deallocations: " << deallocCounter++ << "; Allocations:  "<< allocCounter << std::endl;
+#endif
 }
