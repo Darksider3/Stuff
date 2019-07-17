@@ -25,7 +25,7 @@ public:
     index = 0;
     queue = new Item[1];
 #ifdef DEBUG
-    allocCounter++;
+    allocCounter+=1;
 #endif
     enqueue(f);
   }
@@ -69,7 +69,7 @@ public:
     }
     delete[] queue;
 #ifdef DEBUG
-    deallocCounter++;
+    deallocCounter+=size;
 #endif
     queue = newQueue;
   }
@@ -78,7 +78,7 @@ public:
     size_t newsize = size * 2;
     Item *newQueue = new Item[newsize];
 #ifdef DEBUG
-    allocCounter++;
+    allocCounter+=size;
 #endif
     for(size_t i = 0; i < index; i++)
     {
@@ -87,7 +87,7 @@ public:
     size = newsize;
     delete[] queue;
 #ifdef DEBUG
-    deallocCounter++;
+    deallocCounter+=size;
 #endif
     queue = newQueue;
   }
@@ -95,7 +95,7 @@ public:
   {
     delete[] queue;
 #ifdef DEBUG
-    deallocCounter++;
+    deallocCounter+=index;
 #endif
   }
 };
