@@ -1,6 +1,8 @@
 #include <iostream>
 #include <exception>
 #include <bsd/stdlib.h>
+#include <type_traits>
+
 
 #ifdef DEBUG
 size_t allocCounter = 0;
@@ -51,7 +53,7 @@ public:
     int ran = arc4random_uniform(index);
     Item ret = queue[ran];
     queue[ran] = queue[--index];
-    queue[index] = 0;
+    // DO NOT CLEAR THE MEMORY - due to type constraints we cannot set values to 0 or nullptr, cuz' the type could be for example std::string or int, and int cant be set to nullptr and std::string to 0....
     if(index < size / 4)
       removeSize();
     return ret;
@@ -62,7 +64,9 @@ public:
     size /= 2;
     Item *newQueue = new Item[size];
     for(size_t i = 0; i < index; i++)
+    {
       newQueue[i] = queue[i];
+    }
     delete[] queue;
 #ifdef DEBUG
     deallocCounter++;
@@ -116,6 +120,12 @@ int main()
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << "hi." << std::endl;
+  
+  RandomizedQueue<std::__cxx11::basic_string<char>> Tra("ra");
+  std::string bla("Hiallo");
+  Tra.enqueue(bla);
+  std::cout << Tra.get() << std::endl;
+  std::cout << Tra.get() << std::endl;
 #ifdef DEBUG
   std::cout << "Deallocations: " << deallocCounter++ << "; Allocations:  "<< allocCounter << std::endl;
 #endif
