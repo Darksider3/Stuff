@@ -1,7 +1,8 @@
 #include <iostream>
 #include <exception>
 #include <bsd/stdlib.h>
-#include <type_traits>
+#include <iterator>
+
 
 
 #ifdef DEBUG
@@ -98,6 +99,20 @@ public:
     deallocCounter+=index;
 #endif
   }
+  
+
+  /*
+   class iterator
+   {
+    size_t current = 0;
+    Flow: Distance
+    
+    size_t begin()
+    size_t end()
+    bool operator==(rhs)
+    
+   }
+   */
 };
 
 int main()
