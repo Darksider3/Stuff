@@ -53,6 +53,8 @@ public:
   {
     size_t ran = arc4random_uniform(index);
     Item ret = queue[ran];
+    //Set value of queueu[ran] to last(valid) queue[index] value and decrement by 1 before. So we manage to shrink the array effectivly every time we return an result by 1. 
+    //Given queue[1]=123 and queue[index]=59, return queue[1] and set it to 59, invalidate it in your head and deallocate when needed.
     queue[ran] = queue[--index];
     // DO NOT CLEAR THE MEMORY - due to type constraints we cannot set values to 0 or nullptr, cuz' the type could be for example std::string or int, and int cant be set to nullptr and std::string to 0....
     if(index < size / 4)
@@ -137,6 +139,16 @@ int main()
   std::cout << Test.get() << std::endl;  
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;  
+  std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;  
+  std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;
+    std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;  
   std::cout << Test.get() << std::endl;
   std::cout << "hi." << std::endl;
   
