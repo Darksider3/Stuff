@@ -36,7 +36,7 @@ public:
     return size == 0;
   }
   
-  size_t getsize()
+  size_t Size()
   {
     return size;
   }
@@ -51,7 +51,7 @@ public:
   
   Item get()
   {
-    int ran = arc4random_uniform(index);
+    size_t ran = arc4random_uniform(index);
     Item ret = queue[ran];
     queue[ran] = queue[--index];
     // DO NOT CLEAR THE MEMORY - due to type constraints we cannot set values to 0 or nullptr, cuz' the type could be for example std::string or int, and int cant be set to nullptr and std::string to 0....
@@ -70,7 +70,7 @@ public:
     }
     delete[] queue;
 #ifdef DEBUG
-    deallocCounter+=size;
+    deallocCounter++;
 #endif
     queue = newQueue;
   }
@@ -79,7 +79,7 @@ public:
     size_t newsize = size * 2;
     Item *newQueue = new Item[newsize];
 #ifdef DEBUG
-    allocCounter+=size;
+    allocCounter++;
 #endif
     for(size_t i = 0; i < index; i++)
     {
@@ -88,7 +88,7 @@ public:
     size = newsize;
     delete[] queue;
 #ifdef DEBUG
-    deallocCounter+=size;
+    deallocCounter++;
 #endif
     queue = newQueue;
   }
@@ -96,7 +96,7 @@ public:
   {
     delete[] queue;
 #ifdef DEBUG
-    deallocCounter+=index;
+    deallocCounter++;
 #endif
   }
   
@@ -114,7 +114,6 @@ public:
    }
    */
 };
-
 int main()
 {
   RandomizedQueue<int> Test(5);
@@ -128,6 +127,11 @@ int main()
   Test.enqueue(9);
   Test.enqueue(10);
   Test.enqueue(11);
+  Test.enqueue(12);
+  Test.enqueue(13);
+  Test.enqueue(14);
+  Test.enqueue(15);
+  Test.enqueue(16);
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;  
@@ -138,7 +142,16 @@ int main()
   
   RandomizedQueue<std::__cxx11::basic_string<char>> Tra("ra");
   std::string bla("Hiallo");
+  std::string bla2("Hi2");
+  std::string bla3("Hi3");
+  std::string bla4("Hi4");
+        
   Tra.enqueue(bla);
+  Tra.enqueue(bla2);
+  Tra.enqueue(bla3);
+  Tra.enqueue(bla4);
+  std::cout << Tra.get() << std::endl;
+  std::cout << Tra.get() << std::endl;
   std::cout << Tra.get() << std::endl;
   std::cout << Tra.get() << std::endl;
 #ifdef DEBUG
