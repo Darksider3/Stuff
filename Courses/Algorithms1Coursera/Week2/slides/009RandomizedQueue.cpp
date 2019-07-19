@@ -2,7 +2,7 @@
 #include <exception>
 #include <bsd/stdlib.h>
 #include <iterator>
-
+#include <cassert>
 
 
 #ifdef DEBUG
@@ -38,7 +38,7 @@ public:
   
   size_t Size()
   {
-    return size;
+    return index;
   }
   
   void enqueue(Item item)
@@ -62,6 +62,13 @@ public:
     return ret;
   }
 
+  Item get(size_t pos)
+  {
+    if(pos <= index)
+      return queue[pos];
+    else
+      return Item();
+  }
   void removeSize()
   {
     size /= 2;
@@ -118,11 +125,12 @@ public:
 };
 int main()
 {
-  RandomizedQueue<int> Test(5);
+  RandomizedQueue<int> Test(0);
   Test.enqueue(1);
   Test.enqueue(2);  
   Test.enqueue(3);
   Test.enqueue(4);  
+  Test.enqueue(5);
   Test.enqueue(6);
   Test.enqueue(7);
   Test.enqueue(8);
@@ -133,7 +141,10 @@ int main()
   Test.enqueue(13);
   Test.enqueue(14);
   Test.enqueue(15);
-  Test.enqueue(16);
+  std::cout << "Start iterate Test: Test.get(x) \n";
+  for(int i = Test.Size()-1; i >= 0; i--)
+  {assert(Test.get(i) == i);}
+  std::cout << "assert(Test.get(i)==i); passed\nStart get() Test\n";
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;  
@@ -146,7 +157,7 @@ int main()
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
-    std::cout << Test.get() << std::endl;
+  std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;  
   std::cout << Test.get() << std::endl;
