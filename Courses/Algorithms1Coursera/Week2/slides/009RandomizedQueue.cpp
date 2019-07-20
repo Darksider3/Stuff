@@ -9,7 +9,7 @@
 size_t allocCounter = 0;
 size_t deallocCounter = 0;
 #endif
- //g++ -Wall -g 009RandomizedQueue.cpp -o 009RandomizedQueue -lbsd
+//g++ -Wall -g 009RandomizedQueue.cpp -o 009RandomizedQueue -lbsd
 template <typename Item>
 class RandomizedQueue
 {
