@@ -16,13 +16,13 @@ class RandomizedQueue
 private:
 //Somehow the first entry never gets filled
   Item *queue;
-  size_t size;
+  size_t allocSize;
   size_t index;
   
 public:
   RandomizedQueue(Item f)
   {
-    size = 1;
+    allocSize = 1;
     index = 0;
     queue = new Item[1];
 #ifdef DEBUG
@@ -33,17 +33,17 @@ public:
   
   bool isEmpty()
   {
-    return size == 0;
+    return allocSize == 0;
   }
   
-  size_t Size()
+  size_t size()
   {
     return index;
   }
   
   void enqueue(Item item)
   {
-    if(index >= size)
+    if(index >= allocSize)
       addSize();
     queue[index] = item;
     index++;
@@ -57,7 +57,7 @@ public:
     //Given queue[1]=123 and queue[index]=59, return queue[1] and set it to 59, invalidate it in your head and deallocate when needed.
     queue[ran] = queue[--index];
     // DO NOT CLEAR THE MEMORY - due to type constraints we cannot set values to 0 or nullptr, cuz' the type could be for example std::string or int, and int cant be set to nullptr and std::string to 0....
-    if(index < size / 4)
+    if(index < allocSize / 4)
       removeSize();
     return ret;
   }
@@ -71,8 +71,8 @@ public:
   }
   void removeSize()
   {
-    size /= 2;
-    Item *newQueue = new Item[size];
+    allocSize /= 2;
+    Item *newQueue = new Item[allocSize];
     for(size_t i = 0; i < index; i++)
     {
       newQueue[i] = queue[i];
@@ -85,7 +85,7 @@ public:
   }
   void addSize()
   {
-    size_t newsize = size * 2;
+    size_t newsize = allocSize * 2;
     Item *newQueue = new Item[newsize];
 #ifdef DEBUG
     allocCounter++;
@@ -94,7 +94,7 @@ public:
     {
       newQueue[i] = queue[i];
     }
-    size = newsize;
+    allocSize = newsize;
     delete[] queue;
 #ifdef DEBUG
     deallocCounter++;
@@ -142,7 +142,7 @@ int main()
   Test.enqueue(14);
   Test.enqueue(15);
   std::cout << "Start iterate Test: Test.get(x) \n";
-  for(int i = Test.Size()-1; i >= 0; i--)
+  for(int i = Test.size()-1; i >= 0; i--)
   {assert(Test.get(i) == i);}
   std::cout << "assert(Test.get(i)==i); passed\nStart get() Test\n";
   std::cout << Test.get() << std::endl;
