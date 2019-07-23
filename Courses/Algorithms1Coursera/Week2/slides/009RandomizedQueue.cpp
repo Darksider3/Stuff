@@ -113,13 +113,17 @@ public:
   /*
    class iterator
    {
-    size_t current = 0;
     Flow: Distance
     using iterator_category = std::forward_iterator_tag;
     using value_type = T;
     using pointer = T*;
     using reference = T&;
     using difference_type = ptrdiff_t;
+
+
+    size_t current = 0;
+    size_t size = 0;
+    
     size_t begin()
     size_t end()
     bool operator==(rhs)
