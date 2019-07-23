@@ -115,11 +115,31 @@ public:
    {
     size_t current = 0;
     Flow: Distance
-    
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = T;
+    using pointer = T*;
+    using reference = T&;
+    using difference_type = ptrdiff_t;
     size_t begin()
     size_t end()
     bool operator==(rhs)
-    
+    Iterator(RandomizedQueue* init = nullptr) : curElement{init}
+    {}
+    T& operator*() const // dereference
+    {
+      return curElement;
+    }
+
+    const &T operator*() const // dereference as well
+    {
+      return curElement;
+    }
+
+    Iterator& operator++() //prefix
+    {
+      if(curElement)
+        curElement =
+    }
    }
    */
 };
