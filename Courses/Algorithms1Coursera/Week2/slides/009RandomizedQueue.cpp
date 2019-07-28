@@ -123,12 +123,14 @@ public:
 
     size_t current = 0;
     size_t size = 0;
-    
+
     size_t begin()
     size_t end()
     bool operator==(rhs)
     Iterator(RandomizedQueue* init = nullptr) : curElement{init}
-    {}
+    {
+      size = curElement->Size();
+    }
     T& operator*() const // dereference
     {
       return curElement;
