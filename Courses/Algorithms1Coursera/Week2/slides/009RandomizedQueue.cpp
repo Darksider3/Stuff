@@ -125,7 +125,15 @@ public:
     size_t size = 0;
 
     size_t begin()
+    {
+        return 0;
+    }
+
     size_t end()
+    {
+        return size-1;
+    }
+
     bool operator==(rhs)
     Iterator(RandomizedQueue* init = nullptr) : curElement{init}
     {
