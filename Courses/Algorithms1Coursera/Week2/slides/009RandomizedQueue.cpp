@@ -134,25 +134,25 @@ public:
         return size-1;
     }
 
-    bool operator==(rhs)
+    bool operator==(rhs)  {};
     Iterator(RandomizedQueue* init = nullptr) : curElement{init}
     {
-      size = curElement->Size();
+      size = curElement->size();
     }
+
     T& operator*() const // dereference
     {
-      return curElement;
+      return curElement.get(current);
     }
 
     const &T operator*() const // dereference as well
     {
-      return curElement;
+      return curElement.get(current);
     }
 
     Iterator& operator++() //prefix
     {
-      if(curElement)
-        curElement =
+      current++;
     }
    }
    */
