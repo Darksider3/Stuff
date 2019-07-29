@@ -111,7 +111,7 @@ public:
   
 
   /*
-   class iterator
+   class iterator // class RemovingIterator?
    {
     Flow: Distance
     using iterator_category = std::forward_iterator_tag;
