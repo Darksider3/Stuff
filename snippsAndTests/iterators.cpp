@@ -12,7 +12,7 @@ public:
 
 	num_iterator& operator++()
 	{
-		++i;
+    i+=10;
 		return *this;
 	}
 	bool operator!=(const num_iterator &other){return i != other.i;}
@@ -31,7 +31,7 @@ public:
 
 int main()
 {
-	num_range r {100, 110};
+	num_range r {100,300};
 	for(int i : r)
 	{
 		std::cout << i << ", ";
