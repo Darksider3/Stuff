@@ -156,7 +156,7 @@ public:
     }
    }
    */
-  class KeepingIterator
+  struct iterator
   {
     using iterator_category = std::forward_iterator_tag;
     using value_type = Item;
@@ -167,8 +167,8 @@ public:
     size_t current = 0;
     size_t size = 0;
     RandomizedQueue* List;
-  public:
-    KeepingIterator(RandomizedQueue* init = nullptr) : List{init}
+
+    iterator(RandomizedQueue* init = nullptr) : List{init}
     {
       size = List->size();
     }
@@ -187,7 +187,7 @@ public:
       return List->get(current);
     }
 
-    KeepingIterator& operator++() //prefix
+    iterator& operator++() //prefix
     {
       current++;
     }
@@ -214,11 +214,7 @@ int main()
   std::cout << "Start iterate Test: Test.get(x) \n";
   for(int i = Test.size()-1; i >= 0; i--)
   {assert(Test.get(i) == i);}
-  RandomizedQueue<int>::KeepingIterator T(&Test);
-  for(int Tr: &T)
-  {
 
-  }
   std::cout << "assert(Test.get(i)==i); passed\nStart get() Test\n";
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
