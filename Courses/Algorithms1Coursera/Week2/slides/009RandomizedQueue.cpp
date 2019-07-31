@@ -156,42 +156,6 @@ public:
     }
    }
    */
-  struct iterator
-  {
-    using iterator_category = std::forward_iterator_tag;
-    using value_type = Item;
-    using pointer = Item*;
-    using reference = Item&;
-    using difference_type = ptrdiff_t;
-
-    size_t current = 0;
-    size_t size = 0;
-    RandomizedQueue* List;
-
-    iterator(RandomizedQueue* init = nullptr) : List{init}
-    {
-      size = List->size();
-    }
-
-    size_t begin()
-    {
-      return 0;
-    }
-
-    size_t end()
-    {
-      return size;
-    }
-    Item& operator*() const // dereference
-    {
-      return List->get(current);
-    }
-
-    iterator& operator++() //prefix
-    {
-      current++;
-    }
-  };
 };
 int main()
 {
