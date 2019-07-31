@@ -156,6 +156,42 @@ public:
     }
    }
    */
+  class KeepingIterator
+  {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Item;
+    using pointer = Item*;
+    using reference = Item&;
+    using difference_type = ptrdiff_t;
+
+    size_t current = 0;
+    size_t size = 0;
+    RandomizedQueue* List;
+  public:
+    KeepingIterator(RandomizedQueue* init = nullptr) : List{init}
+    {
+      size = List->size();
+    }
+
+    size_t begin()
+    {
+      return 0;
+    }
+
+    size_t end()
+    {
+      return size;
+    }
+    Item& operator*() const // dereference
+    {
+      return List->get(current);
+    }
+
+    KeepingIterator& operator++() //prefix
+    {
+      current++;
+    }
+  };
 };
 int main()
 {
@@ -178,6 +214,11 @@ int main()
   std::cout << "Start iterate Test: Test.get(x) \n";
   for(int i = Test.size()-1; i >= 0; i--)
   {assert(Test.get(i) == i);}
+  RandomizedQueue<int>::KeepingIterator T(&Test);
+  for(int Tr: &T)
+  {
+
+  }
   std::cout << "assert(Test.get(i)==i); passed\nStart get() Test\n";
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
