@@ -157,6 +157,7 @@ public:
    }
    */
 };
+
 int main()
 {
   RandomizedQueue<int> Test(0);
@@ -178,7 +179,6 @@ int main()
   std::cout << "Start iterate Test: Test.get(x) \n";
   for(int i = Test.size()-1; i >= 0; i--)
   {assert(Test.get(i) == i);}
-
   std::cout << "assert(Test.get(i)==i); passed\nStart get() Test\n";
   std::cout << Test.get() << std::endl;
   std::cout << Test.get() << std::endl;
