@@ -1,3 +1,6 @@
+/*
+ * @TODO: GUI with 1 box to enter the question, 4 buttons: Ask, clear(the box), play again, quit
+ */
 #include <iostream>
 #include <bsd/stdlib.h> //arc4random
 #include <vector> 
