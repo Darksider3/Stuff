@@ -46,7 +46,7 @@ int main()
     inputbuf = "";
     
     guessesTaken++;
-    if(guess > 10)
+    if(guess > 10 || guess < 0)
     {
       std::cout << "Sorry, just between 1-10! \n";
     }
