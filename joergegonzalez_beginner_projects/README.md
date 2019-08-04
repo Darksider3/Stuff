@@ -7,7 +7,7 @@ Done:
  - [x] Magic 8 Ball (@TODO GUI)
  - [x] Pythagorean Triples Checker
  - [x] Rock, Paper, Scissors Game
- - [ ] Coin Estimator By Weight
+ - [x] Coin Estimator By Weight
  - [ ] Mad Libs Story Maker
  - [ ] Change calculator
  - [ ] Mean, Median and Mode
