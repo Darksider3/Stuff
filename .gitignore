@@ -3,7 +3,7 @@
 
 # Unignore all with extensions
 !*.*
-
+a.out # a.out ignore
 # Unignore all dirs
 !*/
 
