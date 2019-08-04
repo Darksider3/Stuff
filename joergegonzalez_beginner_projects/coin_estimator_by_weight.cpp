@@ -4,6 +4,7 @@
 struct Coin
 {
   std::string name;
+  size_t value = 1; // Value in cents
   float weight = 2;
   size_t wrapperSize = 50;
 };
@@ -32,6 +33,13 @@ int main()
     std::cin.clear();
     inputbuf = "";
     
+    std::cout << "Which value does it have: ";
+
+    std::cin >> inputbuf;
+    CoinType.value = std::stoi(inputbuf);
+    std::cin.clear();
+    inputbuf = "";
+
     std::cout << "Weight of a single Coin: ";
     
     std::cin >> inputbuf;
@@ -47,7 +55,8 @@ int main()
     inputbuf = "";
 
     std::cout << "\n\nYou could fill " << estimateWrappers(CoinType, fullWeight) << " wrappers with your " << CoinType.name << 
-      ", and got a total of " << round(fullWeight/CoinType.weight) << " Coins.\n\n";
+      ", and got a total of " << round(fullWeight/CoinType.weight) << " Coins, which have a total value of " << 
+      (float)( (fullWeight/CoinType.weight) / 100) <<" $Currency.\n\n";
     
     std::fflush(stdout);
   }
