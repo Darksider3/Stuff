@@ -43,14 +43,14 @@ int main()
     std::cout << "Weight of a single Coin: ";
     
     std::cin >> inputbuf;
-    CoinType.weight = std::stoi(inputbuf);
+    CoinType.weight = std::stof(inputbuf);
     std::cin.clear();
     inputbuf = "";
 
     std::cout << "Total weight of your coins: ";
 
     std::cin >> inputbuf;
-    fullWeight = std::stoi(inputbuf);
+    fullWeight = std::stof(inputbuf);
     std::cin.clear();
     inputbuf = "";
 
