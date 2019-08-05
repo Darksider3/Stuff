@@ -11,7 +11,7 @@ Done:
  - [ ] Mad Libs Story Maker
  - [ ] Change calculator
  - [ ] Mean, Median and Mode
- - [ ] Higher Lower Guessing Game
+ - [x] Higher Lower Guessing Game
  - [ ] Multiplication Table
  - [ ] Fibonacci Sequence
  - [ ] Base Jumper
