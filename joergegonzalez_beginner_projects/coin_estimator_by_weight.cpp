@@ -56,7 +56,7 @@ int main()
 
     std::cout << "\n\nYou could fill " << estimateWrappers(CoinType, fullWeight) << " wrappers with your " << CoinType.name << 
       ", and got a total of " << round(fullWeight/CoinType.weight) << " Coins, which have a total value of " << 
-      (float)( (fullWeight/CoinType.weight) / 100) <<" $Currency.\n\n";
+      (float)( ((fullWeight/CoinType.weight)*CoinType.value) / 100) <<" $Currency.\n\n";
     
     std::fflush(stdout);
   }
