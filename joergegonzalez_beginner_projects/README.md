@@ -9,7 +9,7 @@ Done:
  - [x] Rock, Paper, Scissors Game
  - [x] Coin Estimator By Weight
  - [ ] Mad Libs Story Maker
- - [ ] Change calculator
+ - [x] Change calculator
  - [ ] Mean, Median and Mode
  - [x] Higher Lower Guessing Game
  - [ ] Multiplication Table
