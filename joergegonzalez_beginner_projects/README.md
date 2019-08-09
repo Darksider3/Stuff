@@ -12,7 +12,6 @@ Done:
  - [x] Change calculator
  - [ ] Mean, Median and Mode
  - [x] Higher Lower Guessing Game
- - [ ] Multiplication Table
  - [ ] Fibonacci Sequence
  - [ ] Base Jumper
  - [ ] Hangman Game
