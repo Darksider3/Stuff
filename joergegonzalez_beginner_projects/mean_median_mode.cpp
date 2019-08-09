@@ -40,7 +40,8 @@ std::vector<int> seperateByDelimiter(std::string str, const char delimiter)
   Ret.push_back(std::stoi(buf));
   return Ret;
 }
-
+class Statistical
+{}; //@TODO: Add everything down below
 double mean(std::vector<int> N)
 {
   int Mean = 0;
