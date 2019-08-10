@@ -4,6 +4,7 @@ https://github.com/jorgegonzalez/beginner-projects#rock-paper-scissors-game
 
 CUSTOM:
  - [x] Palindrome
+ - [x] Base/Derived-Classes (c++ specific)
 Done:
  - [ ] 99 Bottles
  - [x] Magic 8 Ball (@TODO GUI)
