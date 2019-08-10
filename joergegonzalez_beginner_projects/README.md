@@ -2,6 +2,8 @@
 
 https://github.com/jorgegonzalez/beginner-projects#rock-paper-scissors-game
 
+CUSTOM:
+ - [x] Palindrome
 Done:
  - [ ] 99 Bottles
  - [x] Magic 8 Ball (@TODO GUI)
