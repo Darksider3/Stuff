@@ -1,5 +1,12 @@
 #include <iostream>
 #include <vector>
+#include <algorithm> //std::sort
+
+
+struct VectorSort
+{
+  bool operator() (int i, int j) {return (i<j); }
+} SortObj;
 
 size_t range(std::vector<float> R)
 {
@@ -55,6 +62,14 @@ double mean(std::vector<int> N)
   return Mean/i;
 }
 
+int median(std::vector<int> N)
+{
+  std::sort(N.begin(), N.end(), SortObj);
+  N.erase( std::unique(N.begin(), N.end() ), N.end());
+  return N[N.size()/2];
+}
+
+
 int main()
 {
   std::string inputbuf;
@@ -66,5 +81,6 @@ int main()
   std::cout << inputbuf << std::endl;
   std::vector<int> A = seperateByDelimiter(inputbuf, ',');
   std::cout << "Mean: " << mean(A) << std::endl;
+  std::cout << "Median: " << median(A) << std::endl;
   return 0;
 }
