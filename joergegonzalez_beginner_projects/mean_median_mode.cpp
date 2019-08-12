@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm> //std::sort
-
+#include <map> //mode
 
 struct VectorSort
 {
@@ -70,6 +70,30 @@ int median(std::vector<int> N)
 }
 
 
+int mode(std::vector<int> N)
+{
+  std::sort(N.begin(), N.end(), SortObj);
+  std::map<int, int> Modes;
+  
+  for(size_t i = 0; i != N.size(); ++i)
+  {
+    Modes[N[i]]++;
+  }
+
+  int mode = 0;
+  int mode_freq = 0;
+
+  for(auto it = Modes.begin(); it != Modes.end(); it++)
+  {
+    if(it->second > mode_freq)
+    {
+      mode = it->first;
+      mode_freq = it->second;
+    }
+  }
+
+  return mode;
+}
 int main()
 {
   std::string inputbuf;
@@ -82,5 +106,6 @@ int main()
   std::vector<int> A = seperateByDelimiter(inputbuf, ',');
   std::cout << "Mean: " << mean(A) << std::endl;
   std::cout << "Median: " << median(A) << std::endl;
+  std::cout << "Mode: " << mode(A) << std::endl;
   return 0;
 }
