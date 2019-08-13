@@ -3,9 +3,9 @@
 https://github.com/jorgegonzalez/beginner-projects#rock-paper-scissors-game
 
 CUSTOM:
- - [x] Palindrome
- - [x] Base/Derived-Classes (c++ specific)
-Done:
+ - [x] [Palindrome](palindrome.cpp)
+ - [x] [Base/Derived-Classes (c++ specific)
+Done:](BaseDeriveDynamic.cpp)
  - [ ] 99 Bottles
  - [x] Magic 8 Ball (@TODO GUI)
  - [x] Pythagorean Triples Checker
@@ -13,7 +13,7 @@ Done:
  - [x] Coin Estimator By Weight
  - [ ] Mad Libs Story Maker
  - [x] Change calculator
- - [ ] Mean, Median and Mode
+ - [x] Mean, Median and Mode
  - [x] Higher Lower Guessing Game
  - [ ] Fibonacci Sequence
  - [ ] Base Jumper
