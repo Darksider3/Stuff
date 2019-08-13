@@ -47,13 +47,15 @@ std::vector<int> seperateByDelimiter(std::string str, const char delimiter)
   Ret.push_back(std::stoi(buf));
   return Ret;
 }
+
 class Statistical
 {
 public:
-  static int median(std::vector<int>);
-  static int mode(std::vector<int>);
-  static double mean(std::vector<int>);
-}; //@TODO: Add everything down below
+  static int median(std::vector<int> N);
+  static int mode(std::vector<int> N);
+  static double mean(std::vector<int> N);
+};
+
 double Statistical::mean(std::vector<int> N)
 {
   int Mean = 0;
@@ -73,7 +75,6 @@ int Statistical::median(std::vector<int> N)
   N.erase( std::unique(N.begin(), N.end() ), N.end());
   return N[N.size()/2];
 }
-
 
 int Statistical::mode(std::vector<int> N)
 {
@@ -99,6 +100,7 @@ int Statistical::mode(std::vector<int> N)
 
   return mode;
 }
+
 int main()
 {
   std::string inputbuf;
