@@ -54,6 +54,12 @@ public:
   static int median(std::vector<int> N);
   static int mode(std::vector<int> N);
   static double mean(std::vector<int> N);
+  static int range(std::vector<int> N)
+  {
+    std::sort(N.begin(), N.end(), SortObj);
+    N.erase( std::unique(N.begin(), N.end()), N.end());
+    return N.at(N.size()-1) - N.at(0);
+  }
 };
 
 double Statistical::mean(std::vector<int> N)
@@ -114,5 +120,6 @@ int main()
   std::cout << "Mean: " << Statistical::mean(A) << std::endl;
   std::cout << "Median: " << Statistical::median(A) << std::endl;
   std::cout << "Mode: " << Statistical::mode(A) << std::endl;
+  std::cout << "Range: " << Statistical::range(A) << std::endl;
   return 0;
 }
