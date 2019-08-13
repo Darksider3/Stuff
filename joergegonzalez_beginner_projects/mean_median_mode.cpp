@@ -48,8 +48,13 @@ std::vector<int> seperateByDelimiter(std::string str, const char delimiter)
   return Ret;
 }
 class Statistical
-{}; //@TODO: Add everything down below
-double mean(std::vector<int> N)
+{
+public:
+  static int median(std::vector<int>);
+  static int mode(std::vector<int>);
+  static double mean(std::vector<int>);
+}; //@TODO: Add everything down below
+double Statistical::mean(std::vector<int> N)
 {
   int Mean = 0;
   int i=0;
@@ -62,7 +67,7 @@ double mean(std::vector<int> N)
   return Mean/i;
 }
 
-int median(std::vector<int> N)
+int Statistical::median(std::vector<int> N)
 {
   std::sort(N.begin(), N.end(), SortObj);
   N.erase( std::unique(N.begin(), N.end() ), N.end());
@@ -70,7 +75,7 @@ int median(std::vector<int> N)
 }
 
 
-int mode(std::vector<int> N)
+int Statistical::mode(std::vector<int> N)
 {
   std::sort(N.begin(), N.end(), SortObj);
   std::map<int, int> Modes;
@@ -104,8 +109,8 @@ int main()
   trimChar(inputbuf, ' ');
   std::cout << inputbuf << std::endl;
   std::vector<int> A = seperateByDelimiter(inputbuf, ',');
-  std::cout << "Mean: " << mean(A) << std::endl;
-  std::cout << "Median: " << median(A) << std::endl;
-  std::cout << "Mode: " << mode(A) << std::endl;
+  std::cout << "Mean: " << Statistical::mean(A) << std::endl;
+  std::cout << "Median: " << Statistical::median(A) << std::endl;
+  std::cout << "Mode: " << Statistical::mode(A) << std::endl;
   return 0;
 }
