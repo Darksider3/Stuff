@@ -8,13 +8,13 @@ CUSTOM:
 
 DONE
 
-- [ ] 99 Bottles
- - [x] Magic 8 Ball (@TODO GUI)
- - [x] Pythagorean Triples Checker
- - [x] Rock, Paper, Scissors Game
- - [x] Coin Estimator By Weight
+ - [ ] 99 Bottles
+ - [x] [Magic 8 Ball (@TODO GUI)](magic\_8\_ball.cpp)
+ - [x] [Pythagorean Triples Checker](pyathogrean\_triples\_checker.cpp)
+ - [x] [Rock, Paper, Scissors Game](rock\_paper\_scissors.cpp)
+ - [x] [Coin Estimator By Weight](coin\_estimator\_by\_weight.cpp)
  - [ ] Mad Libs Story Maker
- - [x] Change calculator
+ - [x] [Change calculator](change\_calculator.cpp)
  - [x] Mean, Median and Mode
  - [x] Higher Lower Guessing Game
  - [ ] Fibonacci Sequence
