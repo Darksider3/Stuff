@@ -26,7 +26,7 @@ public:
   std::string getGameString()
   {
     std::string Ret;
-    for(int i = 0; i != Word.length(); ++i)
+    for(size_t i = 0; i != Word.length(); ++i)
     {
       if( std::find(FoundCharacters.begin(), FoundCharacters.end(), i) != FoundCharacters.end())
       {
@@ -39,7 +39,27 @@ public:
     }
     return Ret;
   }
+
+  bool FindLetter(char c)
+  {
+    bool ret=false;
+    size_t oldSize = FoundCharacters.size();
+    for(size_t i = 0; i != Word.length(); ++i)
+    {
+      if(Word.at(i) == c)
+      {
+        FoundCharacters.push_back(i);
+      }
+    }
+    if(oldSize != FoundCharacters.size())
+    {
+      ret = true;
+    }
+    return ret;
+  }
 };
+
+
 int main()
 {
   std::vector<std::string> Words;
