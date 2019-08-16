@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <bsd/stdlib.h> //-lbsd
-
+#include <algorithm> //std::find
 class Hangman 
 {
 protected:
@@ -22,6 +22,23 @@ public:
       Word = Words.at(x);
     }
   }
+
+  std::string getGameString()
+  {
+    std::string Ret;
+    for(int i = 0; i != Word.length(); ++i)
+    {
+      if( std::find(FoundCharacters.begin(), FoundCharacters.end(), i) != FoundCharacters.end())
+      {
+        Ret += Word.at(i);
+      }
+      else
+      {
+        Ret += '_';
+      }
+    }
+    return Ret;
+  }
 };
 int main()
 {
@@ -32,6 +49,6 @@ int main()
   Words.push_back("Watchtover");
   Words.push_back("Insertion");
   Words.push_back("Ladybird");
-  Words.push_back("");
-  Words.push_back("");
+  Words.push_back("Test");
+  Words.push_back("Halleluja!");
 }
