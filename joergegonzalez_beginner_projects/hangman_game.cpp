@@ -71,4 +71,13 @@ int main()
   Words.push_back("Ladybird");
   Words.push_back("Test");
   Words.push_back("Halleluja!");
+  Hangman Game(Words, 1);
+  std::cout << Game.getGameString() << std::endl;
+  if(Game.FindLetter('e'))
+  {
+    std::cout << "Found! \n";
+    std::cout << Game.getGameString() << "\n";
+  }
+  else
+    std::cout << "Nope... \n";
 }
