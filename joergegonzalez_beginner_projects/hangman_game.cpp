@@ -10,6 +10,12 @@ protected:
   std::vector<std::string> Dict;
 
 public:
+  struct Statistic
+  {
+    size_t trys = 0;
+    size_t wins = 0;
+    size_t looses = 0;
+  } STATS;
   Hangman(std::vector<std::string> Words, int x = -1)
   {
     Dict = Words;
@@ -57,6 +63,14 @@ public:
     }
     return ret;
   }
+
+  bool Won()
+  {
+    if(Word.size() == FoundCharacters.size())
+      return true;
+    else
+      return false;
+  }
 };
 
 
@@ -71,7 +85,7 @@ int main()
   Words.push_back("Ladybird");
   Words.push_back("Test");
   Words.push_back("Halleluja!");
-  Hangman Game(Words, 1);
+  Hangman Game(Words);
   std::cout << Game.getGameString() << std::endl;
   if(Game.FindLetter('e'))
   {
