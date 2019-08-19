@@ -2,8 +2,11 @@
 #include <vector>
 #include <bsd/stdlib.h> //-lbsd
 #include <algorithm> //std::find
+
+
 class Hangman 
 {
+
 protected:
   std::string Word;
   std::vector<int> FoundCharacters; // holds the position of characters that are found; 
@@ -16,9 +19,9 @@ public:
     size_t wins = 0;
     size_t looses = 0;
   } STATS;
-  Hangman(std::vector<std::string> Words, int x = -1)
+
+  Hangman(std::vector<std::string> Words, int x = -1) : Dict{Words}
   {
-    Dict = Words;
     if(x == -1)
     {
       Word = Words.at( arc4random_uniform(Words.size()) );
