@@ -14,6 +14,7 @@ void getAsBase(int Number, int destBase, std::string &Holder)
 
 int main()
 {
+  //@TODO actual work pls
   std::string T;
   getAsBase(2, 2, T);
   std::cout << "Number" << T << std::endl;
