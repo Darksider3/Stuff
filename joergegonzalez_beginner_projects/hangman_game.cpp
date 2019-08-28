@@ -112,15 +112,16 @@ int main()
     char Guess;
     while(run)
     {
-      std::cout << "Current: \n" << Game.getGameString();
+      std::cout << "Current: \n" << Game.getGameString() << "\n";
       std::cout << "Your guess: ";
       Guess = getchar();
+      std::cout << "\n";
       if(Game.FindLetter(Guess))
       {
         if(Game.Won())
         {
           std::cout << "Congratulations, you won! The word was: '" << Game.getGameString() << "\n";
-          std::cout << "Running again!";
+          std::cout << "Running again! \n";
           Guess = '.';
           Game.New();
         }
