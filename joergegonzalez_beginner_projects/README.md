@@ -19,7 +19,7 @@ DONE
  - [x] Higher Lower Guessing Game
  - [ ] Fibonacci Sequence
  - [ ] Base Jumper
- - [ ] Hangman Game
+ - [x] [Hangman Game](hangman\_game.cpp)
  - [ ] Menu Calculator
  - [ ] Dice Rolling Simulator
  - [ ] Count and Fix Green Eggs and Ham
