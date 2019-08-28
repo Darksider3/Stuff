@@ -2,7 +2,7 @@
 #include <vector>
 #include <bsd/stdlib.h> //-lbsd
 #include <algorithm> //std::find
-
+#include <stdio.h> //getch()
 
 class Hangman 
 {
@@ -30,8 +30,14 @@ public:
     {
       Word = Words.at(x);
     }
+    Dict = Words;
   }
 
+  void New()
+  {
+    Word = Dict.at(arc4random_uniform(Dict.size()));
+    FoundCharacters.clear();
+  }
   std::string getGameString()
   {
     std::string Ret;
@@ -51,6 +57,9 @@ public:
 
   bool FindLetter(char c)
   {
+    if(Won())
+      return true;
+
     bool ret=false;
     size_t oldSize = FoundCharacters.size();
     for(size_t i = 0; i != Word.length(); ++i)
@@ -89,7 +98,7 @@ int main()
   Words.push_back("Test");
   Words.push_back("Halleluja!");
   Hangman Game(Words);
-  std::cout << Game.getGameString() << std::endl;
+  /*std::cout << Game.getGameString() << std::endl;
   if(Game.FindLetter('e'))
   {
     std::cout << "Found! \n";
@@ -97,4 +106,28 @@ int main()
   }
   else
     std::cout << "Nope... \n";
+  */
+  {
+    bool run = true;
+    char Guess;
+    while(run)
+    {
+      std::cout << "Current: \n" << Game.getGameString();
+      std::cout << "Your guess: ";
+      Guess = getchar();
+      if(Game.FindLetter(Guess))
+      {
+        if(Game.Won())
+        {
+          std::cout << "Congratulations, you won! The word was: '" << Game.getGameString() << "\n";
+          std::cout << "Running again!";
+          Guess = '.';
+          Game.New();
+        }
+        std::cout << "You found some letters! \n";
+      }
+      else
+        std::cout << "Sorry, " << Guess << " isn't in that word :/ \n";
+    }
+  }
 }
