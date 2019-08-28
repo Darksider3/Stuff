@@ -10,8 +10,6 @@ protected:
   size_t FromNum;
   size_t ToNum;
 public:
-  Random(size_t from, size_t to) : FromNum{from}, ToNum{to}
-  {}
 
   Random(size_t to) : ToNum{to}
   {
@@ -20,7 +18,7 @@ public:
 
   size_t rand()
   {
-    return arc4random_uniform(ToNum) - FromNum;
+    return arc4random_uniform(ToNum);
   }
 };
 
@@ -32,9 +30,12 @@ public:
   explicit Dice() : ran(6)
   {}
 
+  Dice(size_t upTo) : ran(upTo)
+  {}
+
   size_t roll()
   {
-    return ran.rand();
+    return ran.rand()+1;
   }
 
 };
@@ -43,7 +44,28 @@ public:
 
 int main()
 {
+  bool run = true;
+  size_t Sides = 0;
+  size_t Rolls = 0;
+  std::string temp;
   darkImp::Dice DiceRoll;
-  std::cout << DiceRoll.roll();
+  std::cout << "How many numbers/sides has the dice? ";
+  std::cin >> temp;
+  Sides = std::stoi(temp);
+
+  while(run)
+  {
+    std::cout << "How many rolls do you need? ";
+    std::cin >> temp;
+    Rolls = std::stoi(temp);
+    temp.clear();
+
+    for(size_t i = 0; i != Rolls; ++i)
+    {
+      DiceRoll = darkImp::Dice(Sides);
+      std::cout << DiceRoll.roll() << ", ";
+    }
+    std::cout << std::endl;
+  }
   return 0;
 }
