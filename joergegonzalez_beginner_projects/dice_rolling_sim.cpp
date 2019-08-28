@@ -24,6 +24,8 @@ public:
 
 class Dice
 {
+//@TODO: Keep track how often each number occurs, doesnt have to be displayed
+//@TODO: Print percentage how often each number occured, float-accuracy: 5 digits
 protected:
   Random ran;
 public:
@@ -52,7 +54,7 @@ int main()
   std::cout << "How many numbers/sides has the dice? ";
   std::cin >> temp;
   Sides = std::stoi(temp);
-
+  //@TODO: Keep asking if temp isnt a number!
   while(run)
   {
     std::cout << "How many rolls do you need? ";
