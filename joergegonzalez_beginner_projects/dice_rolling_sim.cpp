@@ -1,5 +1,7 @@
 #include <iostream>
 #include <bsd/stdlib.h> // arc4_random
+#include <map>
+#include <vector>
 
 namespace darkImp
 {
@@ -22,12 +24,18 @@ public:
   }
 };
 
+
 class Dice
 {
 //@TODO: Keep track how often each number occurs, doesnt have to be displayed
 //@TODO: Print percentage how often each number occured, float-accuracy: 5 digits
 protected:
   Random ran;
+  struct Statistics
+  {
+    std::map<size_t, size_t> Nums;
+  } STATS;
+
 public:
   explicit Dice() : ran(6)
   {}
@@ -37,7 +45,17 @@ public:
 
   size_t roll()
   {
-    return ran.rand()+1;
+    size_t Num = ran.rand()+1;
+    STATS.Nums[Num]++;
+    return Num;
+  }
+
+  void print_stats()
+  {
+    for(std::pair<size_t, size_t> elem : STATS.Nums)
+    {
+      std::cout << "Number: " << elem.first << " occured " << elem.second << " times!\n";
+    }
   }
 
 };
@@ -57,17 +75,22 @@ int main()
   //@TODO: Keep asking if temp isnt a number!
   while(run)
   {
+    std::vector<int> RanNums;
     std::cout << "How many rolls do you need? ";
     std::cin >> temp;
     Rolls = std::stoi(temp);
     temp.clear();
-
+    DiceRoll = darkImp::Dice(Sides);
     for(size_t i = 0; i != Rolls; ++i)
     {
-      DiceRoll = darkImp::Dice(Sides);
-      std::cout << DiceRoll.roll() << ", ";
+      RanNums.push_back(DiceRoll.roll());
+    }
+    for(int &N: RanNums)
+    {
+      std::cout << N << ", ";
     }
     std::cout << std::endl;
+    DiceRoll.print_stats();
   }
   return 0;
 }
