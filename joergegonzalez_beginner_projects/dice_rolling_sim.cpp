@@ -27,8 +27,6 @@ public:
 
 class Dice
 {
-//@TODO: Keep track how often each number occurs, doesnt have to be displayed
-//@TODO: Print percentage how often each number occured, float-accuracy: 5 digits
 protected:
   Random ran;
   struct Statistics
@@ -56,6 +54,7 @@ public:
     {
       std::cout << "Number: " << elem.first << " occured " << elem.second << " times!\n";
     }
+    //@TODO: Print percentage how often each number occured, float-accuracy: 5 digits
   }
 
 };
