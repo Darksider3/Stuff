@@ -1,4 +1,6 @@
 #include <iostream>
+#include <ios> //std:: floating point output manipulation(fixed, scientific..)
+#include <iomanip> //setprecision
 #include <bsd/stdlib.h> // arc4_random
 #include <map>
 #include <vector>
@@ -50,14 +52,17 @@ public:
     return Num;
   }
 
-  void print_stats()
+  void print_stats(size_t precision = 4)
   {
+    double percent = 0;
+    std::setprecision(precision);
     for(std::pair<size_t, size_t> elem : STATS.Nums)
     {
-      std::cout << "Number: " << elem.first << " occured " << elem.second << " times!\n";
+      percent = ((float)elem.second*100)/STATS.count;
+      std::cout << "Number: " << elem.first << " occured " << elem.second << " times! " <<
+        "Thats " << std::fixed << percent <<"\% of the total!\n";
     }
     //@TODO: Print percentage how often each number occured, float-accuracy: 5 digits
-    
   }
 
 };
