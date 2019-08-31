@@ -62,7 +62,6 @@ public:
       std::cout << "Number: " << elem.first << " occured " << elem.second << " times! " <<
         "Thats " << std::fixed << percent <<"\% of the total!\n";
     }
-    //@TODO: Print percentage how often each number occured, float-accuracy: 5 digits
   }
 
 };
