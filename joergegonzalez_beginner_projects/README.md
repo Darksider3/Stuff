@@ -15,8 +15,8 @@ DONE
  - [x] [Coin Estimator By Weight](coin\_estimator\_by\_weight.cpp)
  - [ ] Mad Libs Story Maker
  - [x] [Change calculator](change\_calculator.cpp)
- - [x] Mean, Median and Mode
- - [x] Higher Lower Guessing Game
+ - [x] [Mean, Median and Mode](mean\_median\_mode.cpp)
+ - [x] [Higher Lower Guessing Game](higher\_lower\_guessing\_game.cpp)
  - [ ] Fibonacci Sequence
  - [ ] Base Jumper
  - [x] [Hangman Game](hangman\_game.cpp)
