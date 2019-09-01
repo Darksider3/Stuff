@@ -5,7 +5,7 @@ https://github.com/jorgegonzalez/beginner-projects#rock-paper-scissors-game
 CUSTOM:
  - [x] [Palindrome](palindrome.cpp)
  - [x] [Base/Derived-Classes (c++ specific)](BaseDeriveDynamic.cpp)
-
+ - [x] [Command Line Progress bar! :)](progressbar.cpp)
 DONE
 
  - [ ] 99 Bottles
