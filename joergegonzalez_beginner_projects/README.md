@@ -17,7 +17,7 @@ DONE
  - [x] [Change calculator](change\_calculator.cpp)
  - [x] [Mean, Median and Mode](mean\_median\_mode.cpp)
  - [x] [Higher Lower Guessing Game](higher\_lower\_guessing\_game.cpp)
- - [ ] Fibonacci Sequence
+ - [x] [Fibonacci Sequence](fibonacci.cpp)  @TODO: Tail-Recursion
  - [x] Base Jumper
  - [x] [Hangman Game](hangman\_game.cpp)
  - [ ] Menu Calculator
