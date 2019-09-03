@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 struct Item
 {
   std::string name;
@@ -49,9 +50,26 @@ void populateMenue()
   MENU.nineth.price = 125;
 }
 
+std::vector<size_t> splitNums(std::string str)
+{
+  std::vector<size_t> ret;
+  for(char &c: str)
+  {
+    if(std::isdigit(c))
+      ret.push_back(c-'0');
+    else
+      continue; // current char is invalid
+  }
+  return ret;
+}
+
 int main()
 {
   populateMenue();
-
+  std::string test = "123123123";
+  std::vector<size_t> TestVec = splitNums(test);
+  for(size_t &N: TestVec)
+    std::cout << N << " ";
+  std::cout << "\n";
   return 0;
 }
