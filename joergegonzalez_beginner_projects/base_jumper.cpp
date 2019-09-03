@@ -1,6 +1,7 @@
 #include <iostream>
 
-
+namespace darkImpl
+{
 //....
 void getAsBase(int Number, int destBase, std::string &Holder)
 {
@@ -13,12 +14,12 @@ void getAsBase(int Number, int destBase, std::string &Holder)
   getAsBase(Number, destBase, Holder);
   Holder += x < 0 ? x + (destBase * -1) : x;
 }
-
+}
 int main()
 {
   //@TODO actual work pls
   std::string T;
-  getAsBase(2, 2, T);
+  darkImpl::getAsBase(2, 2, T);
   std::cout << "Number" << T << std::endl;
   return 0;
 }

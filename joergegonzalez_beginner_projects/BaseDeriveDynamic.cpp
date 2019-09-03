@@ -1,5 +1,7 @@
 #include <iostream>
 
+namespace darkImpl
+{
 class Base
 {
   public:
@@ -17,11 +19,11 @@ class Derive : public Base
     std::cout << "DERIVED!" << std::endl;
   }
 };
-
+}
 int main()
 {
-  Base Tester;
-  Base *Test = new Derive();
+  darkImpl::Base Tester;
+  darkImpl::Base *Test = new darkImpl::Derive();
   Test->print();
   Tester.print();
 }

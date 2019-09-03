@@ -1,5 +1,6 @@
 #include <iostream>
-
+namespace darkImpl
+{
 struct Result
 {
   int dollars;
@@ -25,10 +26,12 @@ void dumpResult(struct Result const re)
   std::cout << "Dollars: " << re.dollars << "\nQuartes: " << re.quarters << "\nDimes: "<< re.dimes << "\nNickels: " << re.nickels << "\n";
   std::cout << "Pennies: " << re.pennies << "\n";
 }
+}
+
 int main()
 {
   std::string inputbuf;
-  struct Result change;
+  struct darkImpl::Result change;
   bool runcondition = true;
   
 
@@ -42,8 +45,8 @@ int main()
       runcondition = false;
       continue;
     }
-    change = calcReturn(std::stof(inputbuf)*100, change);
-    dumpResult(change);
+    change = darkImpl::calcReturn(std::stof(inputbuf)*100, change);
+    darkImpl::dumpResult(change);
     std::cin.clear();
   }
 }
