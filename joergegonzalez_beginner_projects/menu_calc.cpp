@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <ios> // std::fixed
 struct Item
 {
   std::string name;
@@ -106,11 +107,15 @@ size_t calc(std::vector<size_t> Numbers)
 }
 int main()
 {
+  
   populateMenue();
-  std::string test = "123123123";
+  std::cout.precision(2);
+  std::string test = "111";
   std::vector<size_t> TestVec = splitNums(test);
   for(size_t &N: TestVec)
     std::cout << N << " ";
+  std::cout << "\n";
+  std::cout << "Calc: " << std::fixed << calc(TestVec)/MENU.ItemPriceDivisor;
   std::cout << "\n";
   return 0;
 }
