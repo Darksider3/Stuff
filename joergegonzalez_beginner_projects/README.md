@@ -20,7 +20,7 @@ DONE
  - [x] [Fibonacci Sequence](fibonacci.cpp)  @TODO: Tail-Recursion
  - [x] Base Jumper
  - [x] [Hangman Game](hangman\_game.cpp)
- - [ ] Menu Calculator
+ - [x] [Menu Calculator](menu\_calc.cpp)
  - [ ] Dice Rolling Simulator
  - [ ] Count and Fix Green Eggs and Ham
  - [ ] What's My Number?

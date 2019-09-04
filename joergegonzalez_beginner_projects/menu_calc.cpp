@@ -63,6 +63,47 @@ std::vector<size_t> splitNums(std::string str)
   return ret;
 }
 
+size_t calc(std::vector<size_t> Numbers)
+{
+  size_t ret=0;
+  for(size_t &N: Numbers)
+  {
+    switch(N)
+    {
+      case 1:
+        ret+=MENU.first.price;
+        break;
+      case 2:
+        ret+=MENU.second.price;
+        break;
+      case 3:
+        ret+=MENU.third.price;
+        break;
+      case 4:
+        ret+=MENU.fourth.price;
+        break;
+      case 5:
+        ret+=MENU.fifth.price;
+        break;
+      case 6:
+        ret+=MENU.sixth.price;
+        break;
+      case 7:
+        ret+=MENU.seventh.price;
+        break;
+      case 8:
+        ret+=MENU.eights.price;
+        break;
+      case 9:
+        ret+=MENU.nineth.price;
+        break;
+      default:
+        break;
+    }
+  }
+
+  return ret;
+}
 int main()
 {
   populateMenue();
