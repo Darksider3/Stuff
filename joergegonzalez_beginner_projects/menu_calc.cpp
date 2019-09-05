@@ -64,6 +64,12 @@ std::vector<size_t> splitNums(std::string str)
   return ret;
 }
 
+void buildVisualInvoice()
+{
+  //@TODO: Build invoice with a table (Quantity, Product_Name, sing cost, total cost)
+  //https://stackoverflow.com/questions/11226143/formatting-output-in-c
+}
+
 size_t calc(std::vector<size_t> Numbers)
 {
   size_t ret=0;
