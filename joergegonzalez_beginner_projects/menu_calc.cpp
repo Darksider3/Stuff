@@ -75,7 +75,27 @@ struct Menu
   struct Item seventh;
   struct Item eights;
   struct Item nineth;
+  
   double ItemPriceDivisor = 100.0;
+
+  std::string PriceStr(struct Item IT)
+  {
+    std::string r;
+    std::ostringstream Obj;
+    Obj << std::fixed;
+    Obj << std::setprecision(2);
+    Obj << IT.price/ItemPriceDivisor;
+    r+=Obj.str()+"€";
+    return r;
+  }
+
+  std::string NameStr(struct Item IT)
+  {
+    std::string r;
+    r = IT.name;
+    return r;
+  }
+
 } MENU;
 
 void populateMenue()
