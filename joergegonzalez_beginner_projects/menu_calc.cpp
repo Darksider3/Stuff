@@ -34,29 +34,6 @@ public:
 
 };
 
-class FFmt2
-{
-  int Width;
-  int Precision;
-
-public:
-  FFmt2(int width, int precision) : Width(width), Precision(precision)
-  {}
-
-  int getWidth()
-  { return Width; }
-  int getPrecision()
-  { return Precision; }
-template<typename T>
-  void format(std::ostream& dest, T arg)
-  {
-    dest.precision(getPrecision());
-    dest.setf(std::ios_base::right, std::ios_base::uppercase);
-    dest.flags(std::ios_base::uppercase);
-    dest.width(getWidth());
-    dest << arg;
-  }
-};
 
 struct Item
 {
@@ -78,7 +55,7 @@ struct Menu
   
   double ItemPriceDivisor = 100.0;
 
-  std::string PriceStr(struct Item IT)
+  std::string PriceStr(struct Item const &IT)
   {
     std::string r;
     std::ostringstream Obj;
@@ -89,7 +66,7 @@ struct Menu
     return r;
   }
 
-  std::string NameStr(struct Item IT)
+  std::string NameStr(struct Item const &IT)
   {
     std::string r;
     r = IT.name;
@@ -128,10 +105,10 @@ void populateMenue()
   MENU.nineth.price = 125;
 }
 
-std::vector<size_t> splitNums(std::string str)
+std::vector<size_t> splitNums(std::string const &str)
 {
   std::vector<size_t> ret;
-  for(char &c: str)
+  for(char c: str)
   {
     if(std::isdigit(c))
       ret.push_back(c-'0');
@@ -147,87 +124,110 @@ void buildVisualInvoice()
   //https://stackoverflow.com/questions/11226143/formatting-output-in-c
 }
 
-size_t calc(std::vector<size_t> Numbers)
+
+void output(std::vector<size_t> const &Vec)
 {
-  size_t ret=0;
-  for(size_t &N: Numbers)
-  {
-    switch(N)
-    {
+  /* QT=Quantity
+   * P/T=Price per Item
+   * T/Q=Total for Item count
+   */
+  size_t ret = 0;
+  FFmt col1(10,2), col2(10,2), col3(12,2);
+  struct Item ItemNumerator[9];
+  ItemNumerator[0] = MENU.first;
+  ItemNumerator[1] = MENU.second;
+  ItemNumerator[2] = MENU.third;
+  ItemNumerator[3] = MENU.fourth;
+  ItemNumerator[4] = MENU.fifth;
+  ItemNumerator[5] = MENU.sixth;
+  ItemNumerator[6] = MENU.seventh;
+  ItemNumerator[7] = MENU.eights;
+  ItemNumerator[8] = MENU.nineth;
+
+  size_t Times[9]={0,0,0,0,0,0,0,0,0};
+  std::vector<struct Item> ItemList;
+  for(size_t N: Vec) {
+    switch (N) {
       case 1:
-        ret+=MENU.first.price;
+        ret += MENU.first.price;
+        ItemList.push_back(ItemNumerator[0]);
+        Times[0]++;
         break;
       case 2:
-        ret+=MENU.second.price;
+        ret += MENU.second.price;
+        ItemList.push_back(ItemNumerator[1]);
+        Times[1]++;
         break;
       case 3:
-        ret+=MENU.third.price;
+        ret += MENU.third.price;
+        ItemList.push_back(ItemNumerator[2]);
+        Times[2]++;
         break;
       case 4:
-        ret+=MENU.fourth.price;
+        ret += MENU.fourth.price;
+        ItemList.push_back(ItemNumerator[3]);
+        Times[3]++;
         break;
       case 5:
-        ret+=MENU.fifth.price;
+        ret += MENU.fifth.price;
+        ItemList.push_back(ItemNumerator[4]);
+        Times[4]++;
         break;
       case 6:
-        ret+=MENU.sixth.price;
+        ret += MENU.sixth.price;
+        ItemList.push_back(ItemNumerator[5]);
+        Times[5]++;
         break;
       case 7:
-        ret+=MENU.seventh.price;
+        ret += MENU.seventh.price;
+        ItemList.push_back(ItemNumerator[6]);
+        Times[6]++;
         break;
       case 8:
-        ret+=MENU.eights.price;
+        ret += MENU.eights.price;
+        ItemList.push_back(ItemNumerator[7]);
+        Times[7]++;
         break;
       case 9:
-        ret+=MENU.nineth.price;
+        ret += MENU.nineth.price;
+        ItemList.push_back(ItemNumerator[8]);
+        Times[8]++;
         break;
       default:
         break;
     }
   }
 
-  return ret;
-}
-
-void output(std::vector<size_t> Vec)
-{
-  /* QT=Quantity
-   * P/T=Price per Item
-   * T/Q=Total for Item count
-   */
-  FFmt col1(10,2), col2(10,2), col3(10,2);
   std::cout << "YOUR INVOICE: \n";
-  std::cout << 
-    col1 << "QT" << col2 << "P/T" << col3 << "TIC\n" <<
-    col1 << "TO" << col2 << "DO:" << col3 << "HER" <<
-    "\n";
-  std::cout << std::setw(40) << std::setfill(' ') << std::setprecision(2) << "TOTAL: " << "TODO\n";
+  std::cout <<
+            col1 << "QT" << col2 << "P/T" << col3 << "TIC\n";
+
+  std::cout << std::setw(37) << std::setfill('=') << "\n" << std::setfill(' ');
+  for(size_t i = 0; i != 8; ++i)
+  {
+    if(Times[i] != 0)
+    {
+      std::cout << "|" <<
+            col1 << Times[i] << col2 << ItemNumerator[i].price/MENU.ItemPriceDivisor << "€" << col3 << (Times[i]*ItemNumerator[i].price)/MENU.ItemPriceDivisor << "€" << "|\n";
+    }
+  }
+  std::cout << std::setw(37) << std::setfill('=') << "\n" << std::setfill(' ');
+  std::cout << std::setw(40) << std::setfill(' ') << std::setprecision(2) << "TOTAL Items: " << ItemList.size();
+  std::cout << std::setw(40) << std::setfill(' ') << std::setprecision(2) << "TOTAL Price: " << ret;
 }
 
 
-void formatTest()
-{
-  FFmt b1(10, 2), b2(10, 2);
-  std::cout << 
-    b1 << "Hi!" << b2 << "World!" << "\n" <<
-    b1 << "No!" << b2 << "Wrarr!" << "\n";
-}
 int main()
 {
   
   populateMenue();
   std::cout.precision(2);
-  std::string test = "111";
+  std::string test = "121";
   std::vector<size_t> TestVec = splitNums(test);
   for(size_t &N: TestVec)
     std::cout << N << " ";
   std::cout << "\n";
-  std::cout << "Calc: " << std::fixed << calc(TestVec)/MENU.ItemPriceDivisor;
-  std::cout << "\n";
-  FFmt col1(10, 1);
-  FFmt col2(11, 1);
   output(TestVec);
   
-  formatTest();
   return 0;
 }
