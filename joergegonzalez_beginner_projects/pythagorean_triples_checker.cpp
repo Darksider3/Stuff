@@ -17,7 +17,11 @@ int main()
   {
     std::cout << "Input your first number: ";
     std::cin >> inputbuf;
-    
+    if(inputbuf=="q")
+    {
+      run=false;
+      continue;
+    }
     A = std::stoi(inputbuf);
     std::cin.clear();
     inputbuf = "";
