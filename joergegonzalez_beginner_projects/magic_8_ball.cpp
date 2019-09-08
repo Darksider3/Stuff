@@ -13,23 +13,23 @@ public:
   std::vector<std::string> answers;
   Answer()
   {
-    answers.push_back("The feelings are overcoming me! *sleeps*");
-    answers.push_back("There is no posssible outcome that would be good!");
-    answers.push_back("You will find your greatest love! DO IT!");
-    answers.push_back("Dont let your dreams be memes!");
-    answers.push_back("0w0");
-    answers.push_back("I see something bad happening!");
-    answers.push_back("Possibly, but maybe you should check your dog first!");
-    answers.push_back("NO! Or... i mean... maybe?");
-    answers.push_back("Think more about that.");
-    answers.push_back("UwU");
-    answers.push_back("Nice try! But doesnt work.");
-    answers.push_back("Nah.");
-    answers.push_back("Meh.");
-    answers.push_back("Yay");
-    answers.push_back("Yepp");
-    answers.push_back("Nay");
-    answers.push_back("Hereby i shall call out my gut feelings: We're done!");
+    answers.emplace_back("The feelings are overcoming me! *sleeps*");
+    answers.emplace_back("There is no posssible outcome that would be good!");
+    answers.emplace_back("You will find your greatest love! DO IT!");
+    answers.emplace_back("Dont let your dreams be memes!");
+    answers.emplace_back("0w0");
+    answers.emplace_back("I see something bad happening!");
+    answers.emplace_back("Possibly, but maybe you should check your dog first!");
+    answers.emplace_back("NO! Or... i mean... maybe?");
+    answers.emplace_back("Think more about that.");
+    answers.emplace_back("UwU");
+    answers.emplace_back("Nice try! But doesnt work.");
+    answers.emplace_back("Nah.");
+    answers.emplace_back("Meh.");
+    answers.emplace_back("Yay");
+    answers.emplace_back("Yepp");
+    answers.emplace_back("Nay");
+    answers.emplace_back("Hereby i shall call out my gut feelings: We're done!");
   }
 
   std::string get(size_t x)
@@ -43,7 +43,7 @@ public:
     return answers.at(Num);
   }
 
-  void think()
+  static void think()
   {
     std::cout << "thinking about this matter.... \n";
     std::fflush(stdout);
