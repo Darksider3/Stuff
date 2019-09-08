@@ -15,7 +15,7 @@ protected:
   size_t ToNum;
 public:
 
-  Random(size_t to) : ToNum{to}
+  explicit Random(size_t to) : ToNum{to}
   {
     FromNum = 0;
   }
@@ -41,7 +41,7 @@ public:
   explicit Dice() : ran(6)
   {}
 
-  Dice(size_t upTo) : ran(upTo)
+  explicit Dice(size_t upTo) : ran(upTo)
   {}
 
   size_t roll()
@@ -84,6 +84,11 @@ int main()
     std::vector<int> RanNums;
     std::cout << "How many rolls do you need? ";
     std::cin >> temp;
+    if(temp == "q")
+    {
+      run=false;
+      continue;
+    }
     Rolls = std::stoi(temp);
     temp.clear();
     DiceRoll = darkImp::Dice(Sides);
