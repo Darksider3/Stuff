@@ -5,7 +5,7 @@
 /*
  * A palindrome is a word that is the same regardless you read forward or backwards.
  */
-bool isPalindrome(std::string const word)
+bool isPalindrome(std::string const &word)
 {
   char start, end;
   for(size_t i = 0; i != word.length(); ++i)
