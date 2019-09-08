@@ -14,7 +14,7 @@ class Base
 class Derive : public Base
 {
   public:
-  void print()
+  void print() final
   {
     std::cout << "DERIVED!" << std::endl;
   }

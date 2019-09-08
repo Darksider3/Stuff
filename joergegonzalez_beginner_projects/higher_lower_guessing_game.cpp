@@ -7,6 +7,7 @@ class Higher_Lower
   public:
   Higher_Lower()
   {
+    Val=0;
     newNumber();
   }
 
@@ -28,7 +29,7 @@ int main()
 
   std::string WinMsg = "Yay you won! \n\n";
   size_t guessesTaken = 0;
-  std::string inputbuf = "";
+  std::string inputbuf;
   int guess;
   Higher_Lower Game{};
   std::cout << Intro;

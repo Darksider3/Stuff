@@ -43,7 +43,7 @@ public:
     return answers.at(Num);
   }
 
-  static void think()
+  void think()
   {
     std::cout << "thinking about this matter.... \n";
     std::fflush(stdout);

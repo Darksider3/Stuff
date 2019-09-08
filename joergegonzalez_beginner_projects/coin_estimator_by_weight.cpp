@@ -12,12 +12,12 @@ struct Coin
 };
 
 
-int estimateWrappers(struct Coin const c, size_t totalWeight)
+int estimateWrappers(struct Coin const &c, size_t totalWeight)
 {
   /* Pennies. 5g each, 50 per wrapper. Total 500g
    * (500/5)=100/50=2
    */
-  return (totalWeight / c.weight) / c.wrapperSize;
+  return (totalWeight / static_cast<int>(c.weight)) / c.wrapperSize;
 }
 
 int main()
@@ -27,7 +27,7 @@ int main()
   while(condition)
   {
     struct Coin CoinType;
-    size_t fullWeight;
+    double fullWeight;
    
     std::cout << "Which type you want an estimate from? Answer: ";
     
@@ -58,7 +58,7 @@ int main()
     std::cout << "Total weight of your coins: ";
 
     std::cin >> inputbuf;
-    fullWeight = std::stof(inputbuf);
+    fullWeight = std::stod(inputbuf);
     std::cin.clear();
     inputbuf = "";
 

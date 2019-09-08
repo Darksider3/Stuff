@@ -24,6 +24,11 @@ public:
   {
     return arc4random_uniform(ToNum);
   }
+
+  size_t randFrom()
+  {
+    return (arc4random_uniform(ToNum)+FromNum);
+  }
 };
 
 

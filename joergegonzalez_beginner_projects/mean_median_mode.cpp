@@ -10,7 +10,7 @@ struct VectorSort
 
 size_t range(std::vector<float> R)
 {
-  return R[0];
+  return static_cast<size_t>(R[0]);
 }
 
 void trimChar(std::string &Source, char trim)
@@ -53,7 +53,7 @@ class Statistical
 public:
   static int median(std::vector<int> N);
   static int mode(std::vector<int> N);
-  static double mean(std::vector<int> N);
+  static double mean(std::vector<int> &N);
   static int range(std::vector<int> N)
   {
     std::sort(N.begin(), N.end(), SortObj);
@@ -62,17 +62,17 @@ public:
   }
 };
 
-double Statistical::mean(std::vector<int> N)
+double Statistical::mean(std::vector<int> &N)
 {
   int Mean = 0;
   int i=0;
-  for(int &Num: N)
+  for(int Num: N)
   {
     Mean+=Num;
     i++;
   }
   //std::cout << Mean << "/" << i << " = " << Mean/i << '\n';
-  return Mean/i;
+  return (Mean*1.0)/i;
 }
 
 int Statistical::median(std::vector<int> N)

@@ -79,10 +79,7 @@ public:
 
   bool Won()
   {
-    if(Word.size() == FoundCharacters.size())
-      return true;
-    else
-      return false;
+    return Word.size() == FoundCharacters.size();
   }
 };
 
@@ -91,13 +88,13 @@ int main()
 {
   std::vector<std::string> Words;
   Words.emplace_back("Hangman");
-  Words.emplace_back(("Oversee");
-  Words.emplace_back(("Towel");
-  Words.emplace_back(("Watchtover");
-  Words.emplace_back(("Insertion");
-  Words.emplace_back(("Ladybird");
-  Words.emplace_back(("Test");
-  Words.emplace_back(("Halleluja!");
+  Words.emplace_back("Oversee");
+  Words.emplace_back("Towel");
+  Words.emplace_back("Watchtover");
+  Words.emplace_back("Insertion");
+  Words.emplace_back("Ladybird");
+  Words.emplace_back("Test");
+  Words.emplace_back("Halleluja!");
   Hangman Game(Words);
   /*std::cout << Game.getGameString() << std::endl;
   if(Game.FindLetter('e'))
