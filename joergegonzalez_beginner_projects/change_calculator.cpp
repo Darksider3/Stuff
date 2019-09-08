@@ -45,7 +45,7 @@ int main()
       runcondition = false;
       continue;
     }
-    change = darkImpl::calcReturn(std::stof(inputbuf)*100, change);
+    change = darkImpl::calcReturn(std::stoi(inputbuf)*100, change);
     darkImpl::dumpResult(change);
     std::cin.clear();
   }
