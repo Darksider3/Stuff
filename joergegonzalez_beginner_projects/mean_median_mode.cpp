@@ -95,12 +95,12 @@ int Statistical::mode(std::vector<int> N)
   int mode = 0;
   int mode_freq = 0;
 
-  for(auto it = Modes.begin(); it != Modes.end(); it++)
+  for(std::pair<int, int> it: Modes)
   {
-    if(it->second > mode_freq)
+    if(it.second > mode_freq)
     {
-      mode = it->first;
-      mode_freq = it->second;
+      mode = it.first;
+      mode_freq = it.second;
     }
   }
 
