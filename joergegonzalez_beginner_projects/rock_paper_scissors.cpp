@@ -6,6 +6,12 @@ struct Stats
  size_t playerWins = 0;
  size_t computerWins = 0;
  size_t ties = 0;
+ Stats()
+ {
+   playerWins=0;
+   computerWins=0;
+   ties=0;
+ }
 };
 /*
  * 1 - Rock
@@ -44,6 +50,8 @@ int main()
           std::cout << winstr;
           Statistics.playerWins++;
           break;
+        default:
+          break;
       }
     }
     else if(inputbuf == "Paper")
@@ -61,6 +69,8 @@ int main()
         case 3:
           std::cout << loosestr;
           Statistics.computerWins++;
+          break;
+        default:
           break;
       }
     }
@@ -80,10 +90,12 @@ int main()
           std::cout << tiestr;
           Statistics.ties++;
           break;
+        default:
+          break;
       }
     }
     else if(inputbuf == "quit")
-      return 0;
+      condition=false;
     else if(inputbuf == "Stats")
     {
       std::cout << "Computer Wins: " << Statistics.computerWins << '\n';
