@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <iostream>
 #include <cmath> //round
 
@@ -20,8 +22,9 @@ int estimateWrappers(struct Coin const c, size_t totalWeight)
 
 int main()
 {
+  bool condition=true;
   std::string inputbuf;
-  while(true)
+  while(condition)
   {
     struct Coin CoinType;
     size_t fullWeight;
@@ -29,6 +32,11 @@ int main()
     std::cout << "Which type you want an estimate from? Answer: ";
     
     std::cin >> inputbuf;
+    if(inputbuf=="q")
+    {
+      condition=false;
+      continue;
+    }
     CoinType.name = inputbuf;
     std::cin.clear();
     inputbuf = "";
@@ -55,7 +63,7 @@ int main()
     inputbuf = "";
 
     std::cout << "\n\nYou could fill " << estimateWrappers(CoinType, fullWeight) << " wrappers with your " << CoinType.name << 
-      ", and got a total of " << round(fullWeight/CoinType.weight) << " Coins, which have a total value of " << 
+      ", and got a total of " << std::round(fullWeight/CoinType.weight) << " Coins, which have a total value of " <<
       (float)( ((fullWeight/CoinType.weight)*CoinType.value) / 100) <<" $Currency.\n\n";
     
     std::fflush(stdout);
