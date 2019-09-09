@@ -17,11 +17,12 @@ DONE
  - [x] [Change calculator](change\_calculator.cpp)
  - [x] [Mean, Median and Mode](mean\_median\_mode.cpp)
  - [x] [Higher Lower Guessing Game](higher\_lower\_guessing\_game.cpp)
+ - [ ] Multiplication Table(use formatting from Menu\_calc)
  - [x] [Fibonacci Sequence](fibonacci.cpp)  @TODO: Tail-Recursion
- - [x] Base Jumper
+ - [x] [Base Jumper]{base\_jumper.cpp}
  - [x] [Hangman Game](hangman\_game.cpp)
  - [x] [Menu Calculator](menu\_calc.cpp)
- - [ ] Dice Rolling Simulator
+ - [x] [Dice Rolling Simulator](dice\_rolling\_sim.cpp)
  - [ ] Count and Fix Green Eggs and Ham
  - [ ] What's My Number?
  - [ ] Factors of a Number
