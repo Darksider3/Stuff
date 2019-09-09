@@ -9,3 +9,4 @@ a.out # a.out ignore
 
 .idea/
 cmake*/
+virtualenv/
