@@ -10,13 +10,15 @@ Headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:7    0.0) Gecko/201
 
 Base = "https://rextester.com/"
 
+Session = requests.Session()
+
 def getExistingCode(url: str, withbase=False) -> str:
     ret = ""
     if withbase:
         url = f'{Base}{url}'
 
     try:
-        response = requests.get(url, headers=Headers)
+        response = Session.get(url, headers=Headers)
         response.raise_for_status()
     except requests.HTTPError as http_err:
         print(f"HTTP Error: {http_err}")
@@ -28,14 +30,16 @@ def getExistingCode(url: str, withbase=False) -> str:
     try:
         soup = BeautifulSoup(responseHTML, features="lxml")
         if type(soup.textarea.string) != "NoneType":
-            ret = soup.textarea.string # couldnt get a freakin' exception without -.-
+            ret = soup.textarea.string.strip() # couldnt get a freakin' exception without -.-
     except AttributeError as e:
         print(f'Couldn\'t parse textarea to obtain code; probably not even there?')
     #  <textarea class="editor" spellcheck="false" cols="1000" id="Program" name="Program" rows="30" style="width: 100%;resize:none;">$CODE</textarea>
     return ret
 
-def updateExistingCode(mdURL: str):
-    return
+
+# uploads code and returns the new url
+def putCode(code: str) -> str:
+    return;
 
 def _unidiff_output(expected, actual):
     """
