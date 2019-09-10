@@ -6,6 +6,15 @@ CUSTOM:
  - [x] [Palindrome](palindrome.cpp)
  - [x] [Base/Derived-Classes (c++ specific)](BaseDeriveDynamic.cpp)
  - [x] [Command Line Progress bar! :)](progressbar.cpp)
+ - [ ] Student Report Card System
+  - Students should be represented in a binary file, e.g. `STARTSTDUDENT\nNAME=\nYEAR=\n` etc. They have the fields `roll no`, `name`, `marks` and `grade`. 
+  - There should be also a way to handle other ppl(but not implemented!)
+  - These unimplemented Ppl should throw a `NotImplemetedException` or similar, which you created
+  - Subgoals:
+    - Let Students also have a Bank account
+    - Save his address
+
+
 DONE
 
  - [ ] 99 Bottles
