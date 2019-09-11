@@ -78,13 +78,14 @@ def putCode(code: str, lang: int, name: str) -> str:
     data = urllib.parse.urlencode(data)
     # @TODO: Perform request, parse Link out of response and deliver \o/
     try:
-        pass
+        response = Session.post(url, data=data, headers=H)
+        response.raise_for_status()
     except requests.HTTPError as err:
-        pass
+        print(f'Couldn\'t save it! HTTP Error occured: {err}')
     except Exception as err:
-        pass
+        print(f'Save-Request didnt work! Uncatchable Exception: {err}')
     else:
-        pass
+        print(f'@TODO: LINK OUTPUT WTF')
     return;
 
 def _unidiff_output(expected, actual):
