@@ -11,3 +11,4 @@ fi
 cd virtualenv
 source bin/activate
 cd worktree/src
+pip install -r requirements.txt
