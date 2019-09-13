@@ -10,7 +10,7 @@ class API:
         if Headers != None:
             self.Headers = Headers
 
-        self.Base = NotImplementedError("Subclass should implement")
+        self.Base = NotImplementedError("Subclass not NotImplemented")
         self.Session =  requests.Session()
 
     def getExistingCode(self, locatestr):
