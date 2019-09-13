@@ -3,7 +3,7 @@ import requests
 
 class API:
     """ Interface for other APIs """
-    def __init__(self, customurl = None, Headers = None):
+    def __init__(self, Headers = None):
         if customurl != None:
             self.Base = customurl
         

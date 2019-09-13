@@ -2,7 +2,8 @@ import requests
 import sys, html
 from bs4 import BeautifulSoup
 
-import api
+from impl.api import API as ImplementAPI
+
 
 #curl 'https://rextester.com/TSBV14831' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: de' --compressed -H 'Referer: https://rextester.com/l/cpp_online_compiler_clang' -H 'Connection: keep-alive' -H 'Cookie: ASP.NET_SessionId=t4iaj3ycanhikkvb5aepiuq2' -H 'Upgrade-Insecure-Requests: 1' -H 'Cache-Control: max-age=0'
 Headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:7    0.0) Gecko/20100101 Firefox/70.0",
@@ -10,12 +11,12 @@ Headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:7    0.0) Gecko/201
 Base = "https://rextester.com/"
 Session = requests.Session()
 
-class Rextester(API):
-    def __init__(self):
+class Rextester(ImplementAPI):
+    def __init__(self, Headers = None):
         self.Base = "https://rextester.com/"
         self.Session = requests.Session()
 
-    def getExistingCode(self, code):
+    def getExistingCode(self, locatestr):
         pass
     def runCode(self, code):
         pass
