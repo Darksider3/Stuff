@@ -15,9 +15,13 @@ class Rextester(ImplementAPI):
     def __init__(self, Headers = None):
         self.Base = "https://rextester.com/"
         self.Session = requests.Session()
+        self.Headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:7    0.0) Gecko/20100101 Firefox/70.0",
+        "Referer": "https://rextester.com/l/cpp_online_compiler_clang", "charset": "UTF-8"}
 
-    def getExistingCode(self, locatestr):
-        pass
+    def getExistingCode(self, locatestr: str) -> requests.Response:
+        resp = self.__getSession(locatestr, self.Headers)
+        return resp;
+
     def runCode(self, code):
         pass
     def putCode(self, code):
