@@ -56,8 +56,10 @@ def runCode(code: str, lang: int) -> dict:
     H["Origin"] = "https://rextester.com"
     import urllib
     data = {"LanguageChoiceWrapper": lang, "EditorChoiceWrapper":1, "LayoutChoiceWrapper":1, "Program": code, 
-            "CompilerArgs": "-Wall -std=c++14 -stdlib=libc++ -O2 -o a.out source_file.cpp", "ShowWarning": "false", "Privacy": "", "PrivacyUsers": "", "Title": "",
-            "SavedOutput": "", "WholeError": "", "WholeWarning": "", "StatsToSave": "", "CodeGuid": "", "IsInEditMode": "False", "IsLive": "False"}
+            "CompilerArgs": "-Wall -std=c++14 -stdlib=libc++ -O2 -o a.out source_file.cpp", 
+            "ShowWarning": "false", "Privacy": "", "PrivacyUsers": "", "Title": "",
+            "SavedOutput": "", "WholeError": "", "WholeWarning": "", "StatsToSave": "",
+            "CodeGuid": "", "IsInEditMode": "False", "IsLive": "False"}
     data = urllib.parse.urlencode(data)
 
     try:
