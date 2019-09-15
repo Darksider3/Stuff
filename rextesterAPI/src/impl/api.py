@@ -4,14 +4,7 @@ import requests
 class API:
     """ Interface for other APIs """
     def __init__(self, Headers = None):
-        if customurl != None:
-            self.Base = customurl
-        
-        if Headers != None:
-            self.Headers = Headers
-
-        self.Base = NotImplementedError("Subclass not NotImplemented")
-        self.Session =  requests.Session()
+        raise NotImplementedError("Subclass not NotImplemented")
 
     def getExistingCode(self, locatestr):
         raise NotImplementedError("Subclass should implement this")
@@ -22,7 +15,8 @@ class API:
     def putCode(self, code):
         raise NotImplementedError("Subclass should implement this")
 
-    def __getSession(self, url, headers):
+    def getSession(self, url, headers, Session):
+        response = ""
         try:
             response = Session.get(url, headers = headers)
             response.raise_for_status()
@@ -34,7 +28,7 @@ class API:
             return response # Everything worked alright
         return None # Some exception got raised!
 
-    def __postSessions(self, url, headers, data):
+    def postSessions(self, url, headers, data, Session):
         try:
             response = Session.post(url, headers = headers, data = data)
             response.raise_for_status()
