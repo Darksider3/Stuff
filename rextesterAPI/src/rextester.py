@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from impl.api import API
 
 
-#curl 'https://rextester.com/TSBV14831' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: de' --compressed -H 'Referer: https://rextester.com/l/cpp_online_compiler_clang' -H 'Connection: keep-alive' -H 'Cookie: ASP.NET_SessionId=t4iaj3ycanhikkvb5aepiuq2' -H 'Upgrade-Insecure-Requests: 1' -H 'Cache-Control: max-age=0'
 Headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:7    0.0) Gecko/20100101 Firefox/70.0",
         "Referer": "https://rextester.com/l/cpp_online_compiler_clang", "charset": "UTF-8"}
 Base = "https://rextester.com/"
@@ -47,17 +46,20 @@ class Rextester(API):
         data = urllib.parse.urlencode(data)
         # @TODO replace with postSession
         # return super().postSession(url, H, data, self.Session).text
-        try:
-            response = Session.post(url, data=data, headers=Headers)
-            response.raise_for_status()
-        except requests.HTTPError as err:
-            print(f"Couldn't let that code run! :/ HTTP-Error: {err}")
-        except Exception as err:
-            print(f"Uncatchable exception occured: {err}")
-        else:
-            return response.text;
-        return
-   
+        response = super().postSessions(url, H, data, this.Session)
+
+        #try:
+        #    response = Session.post(url, data=data, headers=Headers)
+        #    response.raise_for_status()
+        #except requests.HTTPError as err:
+        #    print(f"Couldn't let that code run! :/ HTTP-Error: {err}")
+        #except Exception as err:
+        #    print(f"Uncatchable exception occured: {err}")
+        #else:
+        #    return response.text;
+        #return
+        return response.text
+
     def putCode(self, code):
         pass
 
@@ -155,8 +157,6 @@ def _unidiff_output(expected, actual):
     #result = list(d.compare(expected.splitlines(keepends=True), actual.splitlines(keepends=True)))
     return result
 
-Exist= getExistingCode("https://rextester.com/TSBV14831")
-print(Exist)
 ap = Rextester() 
 Exist = ap.getExistingCode("https://rextester.com/TSBV14831")
 print(30*'_')
