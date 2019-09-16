@@ -222,12 +222,32 @@ int main()
   
   populateMenue();
   std::cout.precision(2);
-  std::string test = "121";
-  std::vector<size_t> TestVec = splitNums(test);
-  for(size_t &N: TestVec)
-    std::cout << N << " ";
-  std::cout << "\n";
-  output(TestVec);
-  
+  //std::string test = "121";
+  //std::vector<size_t> TestVec = splitNums(test);
+  //for(size_t &N: TestVec)
+  //  std::cout << N << " ";
+  //std::cout << "\n";
+  //output(TestVec);
+  std::string in;
+  std::vector<size_t> InVec;
+  bool run = true;
+  while(run == true)
+  {
+    std::cout << "Enter the order: ";
+    std::cin >> in;
+    if(in == "q")
+    {
+      run = false;
+      continue;
+    }
+
+    InVec = splitNums(in);
+    output(InVec);
+    //clear everything up pls
+    InVec.clear();
+    std::cin.clear();
+    std::cout << "\n";
+    std::cout.flush();
+  }
   return 0;
 }
