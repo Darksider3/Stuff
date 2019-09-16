@@ -118,13 +118,6 @@ std::vector<size_t> splitNums(std::string const &str)
   return ret;
 }
 
-void buildVisualInvoice()
-{
-  //@TODO: Build invoice with a table (Quantity, Product_Name, sing cost, total cost)
-  //https://stackoverflow.com/questions/11226143/formatting-output-in-c
-}
-
-
 void output(std::vector<size_t> const &Vec)
 {
   /* QT=Quantity
