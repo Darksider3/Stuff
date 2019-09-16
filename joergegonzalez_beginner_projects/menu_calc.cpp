@@ -132,7 +132,7 @@ void output(std::vector<size_t> const &Vec)
    * T/Q=Total for Item count
    */
   size_t ret = 0;
-  FFmt col1(10,2), col2(10,2), col3(12,2);
+  FFmt col1(10,4), col2(10,4), col3(12,4);
   struct Item ItemNumerator[9];
   ItemNumerator[0] = MENU.first;
   ItemNumerator[1] = MENU.second;
@@ -212,8 +212,8 @@ void output(std::vector<size_t> const &Vec)
     }
   }
   std::cout << std::setw(37) << std::setfill('=') << "\n" << std::setfill(' ');
-  std::cout << std::setw(40) << std::setfill(' ') << std::setprecision(2) << "TOTAL Items: " << ItemList.size();
-  std::cout << std::setw(40) << std::setfill(' ') << std::setprecision(2) << "TOTAL Price: " << ret;
+  std::cout << std::setw(40) << std::setfill(' ') << std::setprecision(4) << "TOTAL Items: " << ItemList.size();
+  std::cout << std::setw(40) << std::setfill(' ') << std::setprecision(4) << "TOTAL Price: " << ret / MENU.ItemPriceDivisor *1.0 << "€\n";
 }
 
 
