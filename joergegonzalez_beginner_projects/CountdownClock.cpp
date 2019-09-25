@@ -7,7 +7,7 @@
 //gcc -I/usr/include/sdl -L/usr/lib -pthread -lSDL2 -lSDL2_mixer  main.c
 //#define WINDOW_WIDTH 600
 //#define WINDOW_HEIGHT 600
-
+bool quit = false;
 
 void playSoundOnce(std::string soundFile)
 {
@@ -40,6 +40,23 @@ void playSoundOnce(std::string soundFile)
   Mix_CloseAudio(); 
 }
 
+int EventFilterTest(void *userdata, SDL_Event *event)
+{
+  if(event->type == SDL_KEYDOWN)
+  {
+    quit = true;
+    return 1;
+  }
+  else if(event->type == SDL_QUIT)
+  {
+    quit = true;
+    return 1;
+  }
+  else
+  {
+    return 0;
+  }
+}
 
 int main(int argc, char ** argv) {
   /* Initialize SDL */
@@ -50,25 +67,17 @@ int main(int argc, char ** argv) {
     return 1; 
   } 
   SDL_Event event;
-  bool quit = false;
   while(quit == false )
   {
-    std::cout << "in loop \n";
-    if(SDL_WaitEvent(&event) != 0)
+    SDL_WaitEvent(&event);
+    if(event.type == SDL_QUIT)
+      break;
+    if(event.type == SDL_KEYDOWN)
     {
-      if(event.type == SDL_QUIT)
-      {
-        quit = true;
-      }
-      if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE)
-      {
-        quit = true;
-      }
+      std::cout << event.key.keysym.sym << "\n";
     }
     playSoundOnce("sound.wav");
-    std::cout << "play!\n";
   }
-  playSoundOnce("sound.wav");
   /* Deinitialize everything */
   SDL_Quit();
   return 0;
