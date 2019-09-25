@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 //@TODO: FFS replace SDL with ncurses and play the sound SOME other way, idc, wtf this sucks
+//https://gist.github.com/maxammann/52d6b65b42d8ce23512a
 //gcc -I/usr/include/sdl -L/usr/lib -pthread -lSDL2 -lSDL2_mixer  main.c
 //#define WINDOW_WIDTH 600
 //#define WINDOW_HEIGHT 600
