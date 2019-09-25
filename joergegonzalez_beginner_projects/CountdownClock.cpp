@@ -3,7 +3,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
-
+//@TODO: FFS replace SDL with ncurses and play the sound SOME other way, idc, wtf this sucks
 //gcc -I/usr/include/sdl -L/usr/lib -pthread -lSDL2 -lSDL2_mixer  main.c
 //#define WINDOW_WIDTH 600
 //#define WINDOW_HEIGHT 600
@@ -85,14 +85,25 @@ int main(int argc, char ** argv) {
     return 1; 
   } 
   SDL_Event event;
-  int counter= Timer.count();
+  double counter= Timer.count();
   while(quit == false )
   {
+    SDL_PumpEvents();
+    while(SDL_PollEvent(&event) != 0)
+    {
+      if(event.type == SDL_KEYDOWN)
+      {
+        SDL_Quit();
+      }
+      if(event.type == SDL_QUIT)
+        SDL_Quit();
+    }
     if(counter!=0)
     {
-      std::cout << '\b' << '\r' << "\033[K" << "Time remaining: " << counter--;
+      std::cout << '\b' << '\r' << "\033[K" << "Time remaining: " << (int)counter;
       std::cout.flush();
-      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      counter -= 0.1;
     }
     else 
       playSoundOnce("sound.wav");
