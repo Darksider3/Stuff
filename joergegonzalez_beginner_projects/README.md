@@ -28,7 +28,10 @@ DONE
  - [ ] Count and Fix Green Eggs and Ham
  - [ ] What's My Number?
  - [ ] Factors of a Number
- - [ ] Countdown check
+ - [ ] Countdown check | Turns out to be harder than thought, attempts made:
+   - With SDL(working), but without window(working!) and std::chrono(buggy but working)
+   - With libao and libsndfile, couldnt get it work with my sound sample(sound.wav)
+   - @TODO priority in order: LibBASS, FFmpeg
  - [ ] Turn Based Pokemon-Style Game
  - [ ] A variation of 21
  - [ ] Compare Recent reddit Karma
