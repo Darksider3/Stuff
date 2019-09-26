@@ -3,13 +3,19 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <csignal> // test signals...
 //@TODO: FFS replace SDL with ncurses and play the sound SOME other way, idc, wtf this sucks
-//https://gist.github.com/maxammann/52d6b65b42d8ce23512a
+//libao and such: https://gist.github.com/maxammann/52d6b65b42d8ce23512a
+//x11 Keypress detection: https://gist.github.com/javiercantero/7753444
 //gcc -I/usr/include/sdl -L/usr/lib -pthread -lSDL2 -lSDL2_mixer  main.c
 //#define WINDOW_WIDTH 600
 //#define WINDOW_HEIGHT 600
 bool quit = false;
-
+void signalHandler(int signum)
+{
+  SDL_Quit();
+  exit(0);
+}
 void playSoundOnce(std::string soundFile, std::chrono::duration<float> T=std::chrono::milliseconds(100))
 {
   int audio_rate = 22050;
@@ -64,7 +70,8 @@ int EventFilterTest(void *userdata, SDL_Event *event)
 int main(int argc, char ** argv) {
   /* Initialize SDL */
   //std::chrono::duration<float> Timer;
-  std::chrono::duration<double> Timer = std::chrono::milliseconds(1000);
+  std::chrono::duration<double> Timer = std::chrono::milliseconds(10000);
+  signal(SIGINT, signalHandler);
   if(argc > 1)
   {
     int temp = std::stoi(argv[2]);
@@ -99,14 +106,14 @@ int main(int argc, char ** argv) {
       if(event.type == SDL_QUIT)
         SDL_Quit();
     }
-    if(counter!=0)
+    if(counter>=0)
     {
       std::cout << '\b' << '\r' << "\033[K" << "Time remaining: " << (int)counter;
       std::cout.flush();
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
       counter -= 0.1;
     }
-    else 
+    else if(counter <= 0)  
       playSoundOnce("sound.wav");
   }
   /* Deinitialize everything */
