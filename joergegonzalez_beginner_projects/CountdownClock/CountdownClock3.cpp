@@ -5,6 +5,12 @@
 #include <chrono>
 #include <cctype>
 #include <vector>
+#ifdef DEBUG
+#define DEBUG_PRINT(fmt, args...)    fprintf(stderr, fmt, ## args)
+#else
+#define DEBUG_PRINT(fmt, args...)    /* Dont do anything at all pls*/
+#endif
+
 class BASSer
 {
 private:
@@ -116,13 +122,13 @@ int main(int argc, char **argv)
     }
     if(TMNG.Signs.size() != TMNG.Nums.size())
     {
-      std::cout << "nope, you likely forgot or added to much paramters. Inequal Numbers/Signs ratio\n";
+      DEBUG_PRINT("nope, you likely forgot or added to much paramters. Inequal Numbers/Signs ratio\n");
     }
     else
     {
       for(size_t i = 0; i != TMNG.Nums.size(); ++i)
       {
-        std::cout << "Num: " << TMNG.Nums[i] << "; Sign: " << TMNG.Signs[i] << ". \n";
+        DEBUG_PRINT("Num: %i; Sign: %s\n", TMNG.Nums[i], TMNG.Signs[i].c_str());
         if(TMNG.Signs[i] == "ms")
           tp += std::chrono::milliseconds(TMNG.Nums[i]);
         else if(TMNG.Signs[i] == "s")
