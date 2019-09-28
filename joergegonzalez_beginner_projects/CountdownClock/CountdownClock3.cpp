@@ -60,9 +60,21 @@ int main()
   BASS_SetVolume(1);
   HSAMPLE sample = BASS_SampleLoad(false, "sound.wav", 0, 0, 1, BASS_SAMPLE_FLOAT);
   HCHANNEL channel=BASS_SampleGetChannel(sample, FALSE);
+  /*typedef std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> MTP;
+
+  MTP want = std::chrono::time_point_cast<MTP::duration>(std::chrono::system_clock::time_point());
+  want+=std::chrono::seconds(5);
+  */
+  auto want = std::chrono::system_clock::now()+std::chrono::seconds(5);
+  auto cur = std::chrono::system_clock::now();
   while(1)
   {
-    BASS_ChannelPlay(channel, FALSE);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    cur = std::chrono::system_clock::now();
+    std::chrono::duration<float> diff = want-cur;
+    if(diff.count() <= 0)
+    {
+      BASS_ChannelPlay(channel, FALSE);
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
   }
 }
