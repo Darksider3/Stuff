@@ -128,7 +128,9 @@ int main(int argc, char **argv)
     {
       for(size_t i = 0; i != TMNG.Nums.size(); ++i)
       {
+#ifdef DEBUG
         DEBUG_PRINT("Num: %i; Sign: %s\n", TMNG.Nums[i], TMNG.Signs[i].c_str());
+#endif
         if(TMNG.Signs[i] == "ms")
           tp += std::chrono::milliseconds(TMNG.Nums[i]);
         else if(TMNG.Signs[i] == "s")
@@ -144,7 +146,16 @@ int main(int argc, char **argv)
       }
     }
   }
+
+  if(argc <= 1)
+  {
+    std::cout << "Sorry, you supplied no freakin' timings, so im going to play the sound instantly! \n";
+  }
+#ifdef DEBUG
   std::cout << "Milliseconds TP " << tp.count()  << "\n";
+#else 
+  std::cout << "Waiting exactly " << tp.count() << " seconds. \n";
+#endif
   /*typedef std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> MTP;
 
   MTP want = std::chrono::time_point_cast<MTP::duration>(std::chrono::system_clock::time_point());
