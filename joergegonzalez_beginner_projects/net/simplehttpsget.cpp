@@ -58,6 +58,9 @@ static bool init(CURL *&conn, char *url)
  
   return true;
 }
+//@TODO Redirect 
+//@TODO Simple XML parser
+//@TODO very simple json parser
 
 int main(int argc, char *argv[])
 {
