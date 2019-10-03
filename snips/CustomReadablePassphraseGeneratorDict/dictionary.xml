@@ -241,6 +241,55 @@ Schema version 5 adds:
   <noun singular="invoice" plural="invoices"/>
   <noun singular="incline" plural="inclines"/>
   <noun singular="telex" plural="telexes"/>
+  <!-- German -->
+    <indefinitePronoun singular="einer" plural="eine" personal="true"/>
+  <indefinitePronoun singular="Ding" plural="Dinge" personal="false"/>
+  <numberRange start="1" end="999"/>
+  <noun singular="Wasserweg"	plural="Wasserwege"/>
+  <noun singular="Korn"	plural="Körner"/>
+  <noun singular="Sonnenlampe"	plural="Sonnenlampen"/>
+  <noun singular="recliner"	plural="recliners"/>
+  <noun singular="brawler"	plural="brawlers"/>
+  <noun singular="ray"	plural="rays"/>
+  <noun singular="Idee"	plural="Ideen"/>
+  <noun singular="handyman"	plural="handymen"/>
+  <noun singular="Kamera"	plural="Kameras"/>
+  <noun singular="Thunfisch"	plural="Thunfische"/>
+  <noun singular="Keks"	plural="Kekse"/>
+  <noun singular="Limousine"	plural="Limousinen"/>
+  <noun singular="Schere"	plural="Scheren"/>
+  <noun singular="Dekade"	plural="Dekaden"/>
+  <noun singular="Birne"	plural="Birnen"/>
+  <noun singular="Datenbank"	plural="Datenbanken"/>
+  <noun singular="Kampf"	plural="Kämpfe"/>
+  <noun singular="Schnitzer"	plural="Schnitzer"/>
+  <noun singular="Querlenker"	plural="Querlenker"/>
+  <noun singular="tropfen"	plural="tropfen"/>
+  <noun singular="Sequenz"	plural="Sequenzrn"/>
+  <noun singular="Netzwerk"	plural="Netzwerke"/>
+  <noun singular="Bruch"	plural="Brüche"/>
+  <noun singular="Vorladung"	plural="Vorladungen"/>
+  <noun singular="Panorama"	plural="Panorama"/>
+  <noun singular="Paar"	plural="Paare"/>
+  <noun singular="Käfig"	plural="Käfige"/>
+  <noun singular="Dollar"	plural="Dollars"/>
+  <noun plural="Grog"/>
+  <noun singular="Nussfleisch"/>
+  <noun singular="Gewinner" plural="Gewinner"/>
+  <noun singular="Staatsangestellte" plural="Staatsangestellte"/>
+  <noun singular="Text" plural="Texte"/>
+  <noun singular="Pulpiz" plural="Pulpize"/>
+  <noun singular="Wächer" plural="Wächter"/>
+  <noun singular="Wagen" plural="Wagen"/>
+  <noun singular="Haut" plural="Häute"/>
+  <noun singular="Rumba"/>
+  <noun singular="Schneeglocke" plural="Schneeglöckchen"/>
+  <noun singular="Anatomie" plural="Anatomien"/>
+  <noun singular="Verhältnis" plural="Verhältnisse"/>
+  <noun singular="Rechnung" plural="Rechnungen"/>
+  <noun singular="Neigung" plural="Neigungen"/>
+  <noun singular="Fernschreiben" plural="Fernschreiben"/>
+  <!-- /German -->
   <noun plural="scum" />
   <noun singular="solstice" plural="solstices"/>
   <noun singular="toothpick" plural="toothpicks"/>
