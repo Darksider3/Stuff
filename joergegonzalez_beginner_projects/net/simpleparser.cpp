@@ -50,7 +50,7 @@ private:
   std::string File;
   size_t Position;
 public: 
-  Tokenizer(std::string &F)
+  Tokenizer(const std::string &F)
   {
     File=get_file_contents(F.c_str());
     Position = 0;
@@ -70,9 +70,14 @@ public:
 
   unsigned char nextTok()
   {
-    if(ignoreWhitespace())
+    if(!ignoreWhitespace())
       return 0;
     return File[Position++];
+  }
+
+  bool eof()
+  {
+    return File.size() > Position;
   }
   bool isSeperator(); // Return if Char is a seperator, for json that would be ,(comma)
   bool isChar(const char &c, unsigned int pos);
@@ -83,3 +88,30 @@ public:
     // work on cursor, ignore everything that's a space or newline, exit on nullbyte.
     // return true until nullbyte
 };
+
+class Parser
+{
+private:
+  Tokenizer s;
+public:
+  Parser(const std::string &c) : s{c}
+  {
+    s = Tokenizer(c);
+  }
+
+  void parse()
+  {
+    while(s.eof())
+    {
+      std::cout << s.nextTok();
+    }
+  }
+};
+
+
+int main()
+{
+  Parser s{"./example.json"};
+  s.parse();
+  std::cout << std::endl;
+}
