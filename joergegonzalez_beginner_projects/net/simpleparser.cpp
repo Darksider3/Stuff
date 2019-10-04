@@ -55,17 +55,28 @@ public:
     File=get_file_contents(F.c_str());
     Position = 0;
   }
-  char next()
-  {
-    if(Position > File.size())
-      return -1;
 
+
+  bool ignoreWhitespace()
+  {
+    while(File[Position] == '\t' || File[Position]  == '\r' || File[Position] == '\n' || File[Position] == ' ')
+    {   
+      if(Position > File.size())
+        return false;
+      ++Position;
+    }
+    return true;
+  }
+
+  unsigned char nextTok()
+  {
+    if(ignoreWhitespace())
+      return 0;
     return File[Position++];
   }
   bool isSeperator(); // Return if Char is a seperator, for json that would be ,(comma)
   bool isChar(const char &c, unsigned int pos);
     //return c == CURRENT_POS_CHAR;
-  bool ignoreWhitespace();
     /*
     while(**cursor == '\t' || **cursor  == '\r' || **cursor == '\n' || **cursor == ' ') ++(*cursor);
     */
