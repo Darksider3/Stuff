@@ -68,6 +68,16 @@ public:
     return true;
   }
 
+  void setPos(size_t pos)
+  {
+    Position = pos;
+  }
+  
+  size_t getPos()
+  {
+    return Position;
+  }
+
   unsigned char nextTok()
   {
     if(!ignoreWhitespace())
