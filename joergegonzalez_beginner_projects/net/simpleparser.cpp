@@ -78,6 +78,20 @@ public:
     return Position;
   }
 
+  std::string getStrFromTo(size_t frompos, size_t topos)
+  {
+    if(frompos < 0 || topos > File.size())
+      return std::string("");
+    if(frompos < topos)
+      return std::string("");
+    std::string ret;
+
+    for(size_t i=frompos; i != topos;  ++i)
+    {
+      ret += File[i];
+    }
+    return ret;
+  }
   unsigned char nextTok()
   {
     if(!ignoreWhitespace())
@@ -103,6 +117,7 @@ class Parser
 {
 private:
   Tokenizer s;
+  
 public:
   Parser(const std::string &c) : s{c}
   {
