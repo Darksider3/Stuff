@@ -170,10 +170,19 @@ public:
         case ']':
           AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_object));
           break;
+        case ',':
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::value_seperator));
+          break;
+        case ':':
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::name_seperator));
+          break;
         default:
+          std::cout << cur;
           break;
       }
     }
+
+    AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_of_input));
   }
 
   void PrintAST()
@@ -197,6 +206,9 @@ public:
         case JSON_TYPE::end_object:
           std::cout << "Array/Object ends"+endStr;
           break;
+        case JSON_TYPE::name_seperator:
+        case JSON_TYPE::value_seperator:
+          std::cout << "Value/Name seperator encountered\n";
         default:
           std::cout << "something else!" << std::endl;
       }
