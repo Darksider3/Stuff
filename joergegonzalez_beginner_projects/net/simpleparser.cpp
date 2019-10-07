@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdio>
 #include <cerrno>
+#include <vector>
 /*
  * HELPER
  */
@@ -20,29 +21,43 @@ std::string get_file_contents(const char *filename)
   throw(errno);
 }
 
-enum JSON_TYPE {
-  TYPE_NULL,
-  TYPE_BOOL,
-  TYPE_NUMBER,
-  TYPE_OBJECT,
-  TYPE_ARRAY,
-  TYPE_STRING,
-  TYPE_KEY
+enum class JSON_TYPE {
+  uninitialised,
+  literal_true,
+  literal_false,
+  value_string,
+  value_unsigned,
+  value_integer,
+  value_float,
+  begin_array,
+  begin_object,
+  end_array,
+  end_object,
+  name_seperator, // In JSON it's actually just a .. : lel
+  value_seperator, // here it is the , (comma)
+  parse_error,
+  end_of_input
 };
 
-struct json_val
+struct JSON_VAL
 {
-  int T;
-  union
+  JSON_TYPE Type;
+  union VAL
   {
     bool boolean;
     double number;
-    std::string str;
-    std::string key;
-    //std::vector array;
-    //std::vector object;
+    char *str;
+    char *key;
   } value;
+
+  static JSON_VAL inplace(JSON_TYPE t)
+  {
+    JSON_VAL tmp;
+    tmp.Type=t;
+    return tmp;
+  }
 };
+
 
 class Tokenizer
 {
@@ -56,6 +71,17 @@ public:
     Position = 0;
   }
 
+  size_t lookForChar(char ch)
+  {
+    size_t ret=0, oldPos=Position;
+    while(File[Position] != ch)
+    {
+      Position++;
+      ret++;
+    }
+    Position=oldPos;
+    return ret;
+  }
 
   bool ignoreWhitespace()
   {
@@ -117,18 +143,63 @@ class Parser
 {
 private:
   Tokenizer s;
-  
+  std::vector<JSON_VAL> AST;
 public:
   Parser(const std::string &c) : s{c}
   {
     s = Tokenizer(c);
+    // @TODO: check for syntax - { at start, } at end required.
   }
 
   void parse()
   {
     while(s.eof())
     {
-      std::cout << s.nextTok();
+      char cur = s.nextTok();
+      switch(cur)
+      {
+        case '{':
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_array));
+          break;
+        case '[':
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_object));
+          break;
+        case '}':
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_array));
+          break;
+        case ']':
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_object));
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  void PrintAST()
+  {
+    std::string endStr = ", hurray!\n";
+    for(JSON_VAL &c: AST)
+    {
+      switch(c.Type)
+      {
+        case JSON_TYPE::literal_true:
+          break;
+        case JSON_TYPE::literal_false:
+          break;
+        case JSON_TYPE::uninitialised:
+          break;
+        case JSON_TYPE::begin_object:
+        case JSON_TYPE::begin_array:
+          std::cout << "Array/Object starts"+endStr;
+          break;
+        case JSON_TYPE::end_array:
+        case JSON_TYPE::end_object:
+          std::cout << "Array/Object ends"+endStr;
+          break;
+        default:
+          std::cout << "something else!" << std::endl;
+      }
     }
   }
 };
@@ -136,7 +207,11 @@ public:
 
 int main()
 {
+  JSON_VAL b;
+  b.Type = JSON_TYPE::begin_array;
   Parser s{"./example.json"};
   s.parse();
+  s.PrintAST();
   std::cout << std::endl;
+
 }
