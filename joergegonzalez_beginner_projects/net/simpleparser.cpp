@@ -21,7 +21,7 @@ std::string get_file_contents(const char *filename)
   throw(errno);
 }
 
-enum class JSON_TYPE {
+enum class JSON_SYM {
   uninitialised,
   literal_true,
   literal_false,
@@ -41,7 +41,7 @@ enum class JSON_TYPE {
 
 struct JSON_VAL
 {
-  JSON_TYPE Type;
+  JSON_SYM Type;
   union VAL
   {
     bool boolean;
@@ -51,7 +51,7 @@ struct JSON_VAL
   } value;
   int Pos;
 
-  static JSON_VAL inplace(JSON_TYPE t, size_t pos=0)
+  static JSON_VAL inplace(JSON_SYM t, size_t pos=0)
   {
     JSON_VAL tmp;
     tmp.Type = t;
@@ -78,8 +78,8 @@ public:
     size_t ret=0, oldPos=Position;
     while(File[Position] != ch)
     {
-      Position++;
-      ret++;
+      ++Position;
+      ++ret;
     }
     Position=oldPos;
     return ret;
@@ -130,7 +130,7 @@ public:
 
   bool eof()
   {
-    return File.size() > Position;
+    return File.size() < Position;
   }
   bool isSeperator(); // Return if Char is a seperator, for json that would be ,(comma)
   bool isChar(const char &c, unsigned int pos);
@@ -156,40 +156,40 @@ public:
 
   void parse()
   {
-    while(s.eof())
+    while(!s.eof())
     {
       char cur = s.nextTok();
       switch(cur)
       {
         case '{':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_array, s.getPos()));
+          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::begin_object, s.getPos()));
           continue;
           break;
         case '[':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_object, s.getPos()));
+          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::begin_array, s.getPos()));
           continue;
           break;
         case '}':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_array, s.getPos()));
+          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_object, s.getPos()));
           continue;
           break;
         case ']':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_object, s.getPos()));
+          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_array, s.getPos()));
           continue;
           break;
         case ',':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::value_seperator, s.getPos()));
+          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::value_seperator, s.getPos()));
           continue;
           break;
         case ':':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::name_seperator, s.getPos()));
+          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::name_seperator, s.getPos()));
           continue;
           break;
         default:
           break;
       }
-      JSON_TYPE curSym = AST.at(AST.size()-1).Type;
-      if(curSym == JSON_TYPE::name_seperator)
+      JSON_SYM curSym = AST.at(AST.size()-1).Type;
+      if(curSym == JSON_SYM::name_seperator)
       {
         // @TODO: Left should be a ", ' or number, get that. Ignore every escaped character! 
         std::cout << "Got Name Seperator ";
@@ -200,7 +200,7 @@ public:
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
 
-    AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_of_input, s.getPos()));
+    AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_of_input, s.getPos()));
   }
 
   void PrintAST()
@@ -210,34 +210,34 @@ public:
     {
       switch(c.Type)
       {
-        case JSON_TYPE::literal_true:
+        case JSON_SYM::literal_true:
           std::cout << "literal_true at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::literal_false:
+        case JSON_SYM::literal_false:
           std::cout << "literal_false at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::uninitialised:
+        case JSON_SYM::uninitialised:
           std::cout << "uninitialised at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::begin_object:
+        case JSON_SYM::begin_object:
           std::cout << "begin_object at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::begin_array:
+        case JSON_SYM::begin_array:
           std::cout << "begin_array at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::end_array:
+        case JSON_SYM::end_array:
           std::cout << "end_array at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::end_object:
+        case JSON_SYM::end_object:
           std::cout << "end_object at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::name_seperator:
+        case JSON_SYM::name_seperator:
           std::cout << "name_seperator at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::value_seperator:
+        case JSON_SYM::value_seperator:
           std::cout << "value_seperator at " << c.Pos << ", ";
           break;
-        case JSON_TYPE::end_of_input:
+        case JSON_SYM::end_of_input:
           std::cout << "End at "<< c.Pos << ".\n";
           break;
         default:
@@ -252,7 +252,7 @@ public:
 int main()
 {
   JSON_VAL b;
-  b.Type = JSON_TYPE::begin_array;
+  b.Type = JSON_SYM::begin_array;
   Parser s{"./example.json"};
   s.parse();
   s.PrintAST();
