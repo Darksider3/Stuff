@@ -183,10 +183,13 @@ public:
           continue;
           break;
         default:
-          std::cout << cur;
           break;
       }
       JSON_TYPE curSym = AST.at(AST.size()-1).Type;
+      if(curSym == JSON_TYPE::name_seperator)
+      {
+        // @TODO: Left should be a ", ' or number, get that. Ignore every escaped character! 
+      }
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
 
