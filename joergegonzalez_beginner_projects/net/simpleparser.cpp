@@ -192,6 +192,10 @@ public:
       if(curSym == JSON_TYPE::name_seperator)
       {
         // @TODO: Left should be a ", ' or number, get that. Ignore every escaped character! 
+        std::cout << "Got Name Seperator ";
+        if(cur == '"')
+          std::cout << "and a \"";
+        std::cout << "\n";
       }
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
