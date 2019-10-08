@@ -113,7 +113,8 @@ public:
   }
 
   /*
-   * HELPER
+   * HELPERS
+   * @TODO: own namespace? Won't use this-> than i think o-o
    */
 
   size_t lookForChar(char ch)
