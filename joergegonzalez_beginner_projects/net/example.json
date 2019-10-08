@@ -1,10 +1,14 @@
 [
   {
     "name": "Molecule Man",
-    "age": 29,
+    "age": 29
   },
   {
-    "name": "Madame Uppercut",
-    "age": 39,
+    "name": "M\"adame Uppercut",
+    "age": 39
+  },
+  {
+    "name": "Me",
+    "age": 2.5
   }
 ]
