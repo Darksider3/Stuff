@@ -184,6 +184,91 @@ public:
     */
     // work on cursor, ignore everything that's a space or newline, exit on nullbyte.
     // return true until nullbyte
+    /*
+      if(cur == '\'' && cur == '"')
+      {
+        std::cout << "str start\n";
+        StrStarterEncounter = cur;
+        bool escaped=false;
+        for(bool runner=true; runner && !s.eof();)
+        {
+          char tcur = s.nextTok();
+          if(tcur == '\\')
+            escaped=true;
+          else if(tcur == StrStarterEncounter)
+          {
+           std::cout << "str end\n";
+            if(!escaped)
+              runner=false;
+            else
+            {
+              std::cout << "huh, escaped: " << tcur;
+              escaped=false;
+            }
+          }
+        }
+      }
+     */
+  std::string getStrOnPos(size_t startingPos)
+  {
+    if(startingPos >= File.size())
+      return "";
+
+    size_t oldPos = Position;
+    bool escaped = false;
+    std::string temp;
+    char StrStarter = getChar(startingPos), cur;
+    if(!isQuote(StrStarter))
+      return "";
+    // looks like a string?
+    for(bool runner = true; runner && !eof();)
+    {
+      cur = nextTok();
+      if(cur == '\\')
+      {
+        temp+=cur;
+        escaped=true;
+      }
+      else if (cur == StrStarter)
+      {
+        //str end!
+        if(!escaped)
+          runner=false;
+        else
+        {
+          temp+=cur;
+          escaped=false;
+        }
+      }
+      else
+      {
+        temp+=cur;
+      }
+    }
+    Position = oldPos;
+    return temp;
+  }
+
+  bool isQuote(size_t Pos)
+  {
+    if(Pos >= File.size())
+      return false;
+
+    return isQuote(File[Pos]); 
+  }
+
+  bool isQuote(char ch)
+  {
+    return (ch == '\'' || ch == '"');
+  }
+
+  char getChar(size_t Pos)
+  {
+    if(Pos >= File.size())
+      return '\0';
+
+    return File[Pos];
+  }
 };
 
 class Parser
@@ -235,6 +320,7 @@ public:
       }
 
       // if string
+      // @TODO simplify by putting in a function dafuq is this going to get complex
       if(cur == '"' || cur == '\'')
       {
         std::cout << "str start\n";
