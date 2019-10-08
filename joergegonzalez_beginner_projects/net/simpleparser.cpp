@@ -2,6 +2,9 @@
 #include <cstdio>
 #include <cerrno>
 #include <vector>
+#include <zconf.h>
+
+
 /*
  * HELPER
  */
@@ -220,7 +223,9 @@ public:
   std::string getStrOnPos(size_t startingPos)
   {
     if(startingPos >= File.size())
+    {
       return "";
+    }
 
     size_t oldPos = Position;
     bool escaped = false;
@@ -228,11 +233,15 @@ public:
     char StrStarter = getChar(startingPos);
     unsigned char cur;
     if(!isQuote(StrStarter))
-      return "";
-    // looks like a string?
-    for(bool runner = true; runner && !eof();)
     {
-      cur = nextTok();
+      return "";
+    }
+    // looks like a string?
+
+    bool runner = true;
+    for(unsigned int i = startingPos+1; runner && !eof(); ++i)
+    {
+      cur = getChar(static_cast<size_t>(i));
       if(cur == '\\')
       {
         temp+=cur;
@@ -326,30 +335,13 @@ public:
       // @TODO simplify by putting in a function dafuq is this going to get complex
       if(cur == '"' || cur == '\'')
       {
-        std::cout << "str start\n";
-        StrStarterEncounter = cur;
-        bool escaped=false;
-        for(bool runner=true; runner && !s.eof();)
-        {
-          unsigned char tcur = s.nextTok();
-          if(tcur == '\\')
-            escaped=true;
-          else if(tcur == StrStarterEncounter)
-          {
-           std::cout << "str end\n";
-            if(!escaped)
-              runner=false;
-            else
-            {
-              std::cout << "huh, escaped: " << tcur;
-              escaped=false;
-            }
-          }
-        }
+        std::string temp = s.getStrOnPos(s.getPos()-1);
+        std::cout << "getStrOnPos(): '" << temp << " ' <- STR\n";
+        s.setPos(s.getPos()+temp.size()+1);
       }
       else
       {
-        std::string num = s.getNumber(s.getPos()-1);
+        std::string num = s.getNumber(s.getPos());
         if(num.empty())
         {
           if(cur == '\0')
