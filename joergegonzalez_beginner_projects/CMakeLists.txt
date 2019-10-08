@@ -21,3 +21,7 @@ add_executable(palindrome palindrome.cpp)
 add_executable(progressbar progressbar.cpp)
 add_executable(pythagorean_triples_checker pythagorean_triples_checker.cpp)
 add_executable(rock_paper_scissors rock_paper_scissors.cpp)
+
+
+
+add_executable(simpleparser net/simpleparser.cpp)
