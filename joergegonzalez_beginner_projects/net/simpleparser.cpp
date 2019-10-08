@@ -160,26 +160,34 @@ public:
       {
         case '{':
           AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_array));
+          continue;
           break;
         case '[':
           AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_object));
+          continue;
           break;
         case '}':
           AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_array));
+          continue;
           break;
         case ']':
           AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_object));
+          continue;
           break;
         case ',':
           AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::value_seperator));
+          continue;
           break;
         case ':':
           AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::name_seperator));
+          continue;
           break;
         default:
           std::cout << cur;
           break;
       }
+      JSON_TYPE curSym = AST.at(AST.size()-1).Type;
+      //std::cout << "SWITCH done, here must be a value or key\n";
     }
 
     AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_of_input));
@@ -193,26 +201,40 @@ public:
       switch(c.Type)
       {
         case JSON_TYPE::literal_true:
+          std::cout << "literal_true, ";
           break;
         case JSON_TYPE::literal_false:
+          std::cout << "literal_false, ";
           break;
         case JSON_TYPE::uninitialised:
+          std::cout << "uninitialised, ";
           break;
         case JSON_TYPE::begin_object:
+          std::cout << "begin_object, ";
+          break;
         case JSON_TYPE::begin_array:
-          std::cout << "Array/Object starts"+endStr;
+          std::cout << "begin_array, ";
           break;
         case JSON_TYPE::end_array:
+          std::cout << "end_array, ";
+          break;
         case JSON_TYPE::end_object:
-          std::cout << "Array/Object ends"+endStr;
+          std::cout << "end_object, ";
           break;
         case JSON_TYPE::name_seperator:
+          std::cout << "name_seperator, ";
+          break;
         case JSON_TYPE::value_seperator:
-          std::cout << "Value/Name seperator encountered\n";
+          std::cout << "value_seperator, ";
+          break;
+        case JSON_TYPE::end_of_input:
+          std::cout << "End.\n";
+          break;
         default:
           std::cout << "something else!" << std::endl;
       }
     }
+    std::cout << std::endl;
   }
 };
 
