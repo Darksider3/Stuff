@@ -21,6 +21,7 @@ std::string get_file_contents(const char *filename)
   throw(errno);
 }
 
+
 enum class JSON_SYM {
   uninitialised,
   literal_true,
@@ -66,25 +67,28 @@ class Tokenizer
 private:
   std::string File;
   size_t Position;
-public: 
+
+public:
   Tokenizer(const std::string &F)
   {
     File=get_file_contents(F.c_str());
     Position = 0;
   }
 
-  size_t lookForChar(char ch)
+  size_t size()
   {
-    size_t ret=0, oldPos=Position;
-    while(File[Position] != ch)
-    {
-      ++Position;
-      ++ret;
-    }
-    Position=oldPos;
-    return ret;
+    return File.size();
   }
 
+  void setPos(size_t pos)
+  {
+    Position = pos;
+  }
+  
+  size_t getPos()
+  {
+    return Position;
+  }
   bool ignoreWhitespace()
   {
     while(File[Position] == '\t' || File[Position]  == '\r' || File[Position] == '\n' || File[Position] == ' ')
@@ -96,14 +100,32 @@ public:
     return true;
   }
 
-  void setPos(size_t pos)
+  unsigned char nextTok()
   {
-    Position = pos;
+    if(!ignoreWhitespace())
+      return 0;
+    return File[Position++];
   }
-  
-  size_t getPos()
+
+  bool eof()
   {
-    return Position;
+    return File.size() <= Position;
+  }
+
+  /*
+   * HELPER
+   */
+
+  size_t lookForChar(char ch)
+  {
+    size_t ret=0, oldPos=Position;
+    while(File[Position] != ch)
+    {
+      ++Position;
+      ++ret;
+    }
+    Position=oldPos;
+    return ret;
   }
 
   std::string getStrFromTo(size_t frompos, size_t topos)
@@ -121,16 +143,23 @@ public:
     return ret;
   }
 
-  unsigned char nextTok()
+  std::string getNumber(size_t FromPos)
   {
-    if(!ignoreWhitespace())
-      return 0;
-    return File[Position++];
-  }
+    if(FromPos >= File.size())
+      return "";
 
-  bool eof()
-  {
-    return File.size() < Position;
+    size_t cursor=FromPos;
+    bool runner=true;
+    std::string temp;
+    for(;runner; ++cursor)
+    {
+      if(std::isdigit(File[cursor]) || File[cursor] == '.')
+        temp+=File[cursor];
+      else
+        runner=false;
+    }
+    std::cout << "NUM: "<< temp << "\n";
+    return temp;
   }
   bool isSeperator(); // Return if Char is a seperator, for json that would be ,(comma)
   bool isChar(const char &c, unsigned int pos);
@@ -156,6 +185,7 @@ public:
 
   void parse()
   {
+    char StrStarterEncounter;
     while(!s.eof())
     {
       char cur = s.nextTok();
@@ -188,14 +218,44 @@ public:
         default:
           break;
       }
-      JSON_SYM curSym = AST.at(AST.size()-1).Type;
-      if(curSym == JSON_SYM::name_seperator)
+
+      // if string
+      if(cur == '"' || cur == '\'')
       {
-        // @TODO: Left should be a ", ' or number, get that. Ignore every escaped character! 
-        std::cout << "Got Name Seperator ";
-        if(cur == '"')
-          std::cout << "and a \"";
-        std::cout << "\n";
+        std::cout << "str start\n";
+        StrStarterEncounter = cur;
+        bool escaped=false;
+        for(bool runner=true; runner && !s.eof();)
+        {
+          char tcur = s.nextTok();
+          if(tcur == '\\')
+            escaped=true;
+          else if(tcur == StrStarterEncounter)
+          {
+           std::cout << "str end\n";
+            if(!escaped)
+              runner=false;
+            else
+            {
+              std::cout << "huh, escaped: " << tcur;
+              escaped=false;
+            }
+          }
+        }
+      }
+      else
+      {
+        std::string num = s.getNumber(s.getPos()-1);
+        if(num.size() == 0)
+        {
+          std::cout << "Parser Error. '"<< cur <<"' \n";
+        }
+        else
+        {
+          std::cout <<" NUMBERNUMBER\n";
+          s.setPos(s.getPos()+num.size()+1);
+        }
+
       }
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
