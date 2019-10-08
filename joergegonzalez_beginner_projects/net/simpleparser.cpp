@@ -54,7 +54,7 @@ struct JSON_VAL
 
   static JSON_VAL inplace(JSON_SYM t, size_t pos=0)
   {
-    JSON_VAL tmp;
+    JSON_VAL tmp = {.Type=t, .Pos=static_cast<int>(pos)};
     tmp.Type = t;
     tmp.Pos = pos;
     return tmp;
@@ -69,10 +69,18 @@ private:
   size_t Position;
 
 public:
-  Tokenizer(const std::string &F)
+  explicit Tokenizer(const std::string &F)
   {
-    File=get_file_contents(F.c_str());
-    Position = 0;
+    try
+    {
+      File = get_file_contents(F.c_str());
+      Position = 0;
+    }
+    catch(int &e)
+    {
+      std::cout << "Sorry, something went wrong here! Your file doesn't exist.\n";
+      std::exit(e);
+    }
   }
 
   size_t size()
@@ -217,7 +225,8 @@ public:
     size_t oldPos = Position;
     bool escaped = false;
     std::string temp;
-    char StrStarter = getChar(startingPos), cur;
+    char StrStarter = getChar(startingPos);
+    unsigned char cur;
     if(!isQuote(StrStarter))
       return "";
     // looks like a string?
@@ -257,7 +266,7 @@ public:
     return isQuote(File[Pos]); 
   }
 
-  bool isQuote(char ch)
+  static bool isQuote(char ch)
   {
     return (ch == '\'' || ch == '"');
   }
@@ -277,7 +286,7 @@ private:
   Tokenizer s;
   std::vector<JSON_VAL> AST;
 public:
-  Parser(const std::string &c) : s{c}
+  explicit Parser(const std::string &c) : s{c}
   {
     s = Tokenizer(c);
     // @TODO: check for syntax - { at start, } at end required.
@@ -285,36 +294,30 @@ public:
 
   void parse()
   {
-    char StrStarterEncounter;
+    unsigned char StrStarterEncounter;
     while(!s.eof())
     {
-      char cur = s.nextTok();
+      unsigned char cur = s.nextTok();
       switch(cur)
       {
         case '{':
           AST.emplace_back(JSON_VAL::inplace(JSON_SYM::begin_object, s.getPos()));
           continue;
-          break;
         case '[':
           AST.emplace_back(JSON_VAL::inplace(JSON_SYM::begin_array, s.getPos()));
           continue;
-          break;
         case '}':
           AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_object, s.getPos()));
           continue;
-          break;
         case ']':
           AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_array, s.getPos()));
           continue;
-          break;
         case ',':
           AST.emplace_back(JSON_VAL::inplace(JSON_SYM::value_seperator, s.getPos()));
           continue;
-          break;
         case ':':
           AST.emplace_back(JSON_VAL::inplace(JSON_SYM::name_seperator, s.getPos()));
           continue;
-          break;
         default:
           break;
       }
@@ -328,7 +331,7 @@ public:
         bool escaped=false;
         for(bool runner=true; runner && !s.eof();)
         {
-          char tcur = s.nextTok();
+          unsigned char tcur = s.nextTok();
           if(tcur == '\\')
             escaped=true;
           else if(tcur == StrStarterEncounter)
@@ -347,9 +350,16 @@ public:
       else
       {
         std::string num = s.getNumber(s.getPos()-1);
-        if(num.size() == 0)
+        if(num.empty())
         {
-          std::cout << "Parser Error. '"<< cur <<"' \n";
+          if(cur == '\0')
+          {
+            break;
+          }
+          else
+          {
+            std::cout << "Parser Error. '" << cur << "' \n";
+          }
         }
         else
         {
