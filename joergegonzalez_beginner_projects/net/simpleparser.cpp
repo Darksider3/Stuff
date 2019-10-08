@@ -117,6 +117,20 @@ public:
    * @TODO: own namespace? Won't use this-> than i think o-o
    */
 
+  size_t countNewlineUntilPos(size_t pos)
+  {
+    if(pos >= File.size())
+      return -1;
+    size_t cursor = 0;
+    size_t counter = 0;
+    for(; cursor != pos; ++cursor)
+    {
+      if(File[cursor] == '\n')
+        counter++;
+    }
+
+    return counter;
+  }
   size_t lookForChar(char ch)
   {
     size_t ret=0, oldPos=Position;
