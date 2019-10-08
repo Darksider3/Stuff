@@ -49,11 +49,13 @@ struct JSON_VAL
     char *str;
     char *key;
   } value;
+  int Pos;
 
-  static JSON_VAL inplace(JSON_TYPE t)
+  static JSON_VAL inplace(JSON_TYPE t, size_t pos=0)
   {
     JSON_VAL tmp;
-    tmp.Type=t;
+    tmp.Type = t;
+    tmp.Pos = pos;
     return tmp;
   }
 };
@@ -118,6 +120,7 @@ public:
     }
     return ret;
   }
+
   unsigned char nextTok()
   {
     if(!ignoreWhitespace())
@@ -159,27 +162,27 @@ public:
       switch(cur)
       {
         case '{':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_array));
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_array, s.getPos()));
           continue;
           break;
         case '[':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_object));
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::begin_object, s.getPos()));
           continue;
           break;
         case '}':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_array));
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_array, s.getPos()));
           continue;
           break;
         case ']':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_object));
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_object, s.getPos()));
           continue;
           break;
         case ',':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::value_seperator));
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::value_seperator, s.getPos()));
           continue;
           break;
         case ':':
-          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::name_seperator));
+          AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::name_seperator, s.getPos()));
           continue;
           break;
         default:
@@ -193,7 +196,7 @@ public:
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
 
-    AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_of_input));
+    AST.emplace_back(JSON_VAL::inplace(JSON_TYPE::end_of_input, s.getPos()));
   }
 
   void PrintAST()
@@ -204,34 +207,34 @@ public:
       switch(c.Type)
       {
         case JSON_TYPE::literal_true:
-          std::cout << "literal_true, ";
+          std::cout << "literal_true at " << c.Pos << ", ";
           break;
         case JSON_TYPE::literal_false:
-          std::cout << "literal_false, ";
+          std::cout << "literal_false at " << c.Pos << ", ";
           break;
         case JSON_TYPE::uninitialised:
-          std::cout << "uninitialised, ";
+          std::cout << "uninitialised at " << c.Pos << ", ";
           break;
         case JSON_TYPE::begin_object:
-          std::cout << "begin_object, ";
+          std::cout << "begin_object at " << c.Pos << ", ";
           break;
         case JSON_TYPE::begin_array:
-          std::cout << "begin_array, ";
+          std::cout << "begin_array at " << c.Pos << ", ";
           break;
         case JSON_TYPE::end_array:
-          std::cout << "end_array, ";
+          std::cout << "end_array at " << c.Pos << ", ";
           break;
         case JSON_TYPE::end_object:
-          std::cout << "end_object, ";
+          std::cout << "end_object at " << c.Pos << ", ";
           break;
         case JSON_TYPE::name_seperator:
-          std::cout << "name_seperator, ";
+          std::cout << "name_seperator at " << c.Pos << ", ";
           break;
         case JSON_TYPE::value_seperator:
-          std::cout << "value_seperator, ";
+          std::cout << "value_seperator at " << c.Pos << ", ";
           break;
         case JSON_TYPE::end_of_input:
-          std::cout << "End.\n";
+          std::cout << "End at "<< c.Pos << ".\n";
           break;
         default:
           std::cout << "something else!" << std::endl;
