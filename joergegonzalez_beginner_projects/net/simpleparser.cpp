@@ -92,6 +92,8 @@ public:
     return File.size();
   }
 
+  //@TODO Bounds checking File.size();
+  //@TODO Also exception
   void setPos(size_t pos)
   {
     Position = pos;
@@ -101,6 +103,7 @@ public:
   {
     return Position;
   }
+
   bool ignoreWhitespace()
   {
     while(File[Position] == '\t' || File[Position]  == '\r' || File[Position] == '\n' || File[Position] == ' ')
@@ -129,6 +132,11 @@ public:
    * @TODO: own namespace? Won't use this-> than i think o-o
    */
 
+  bool checkSize(size_t num)
+  {
+    return (num >= File.size());
+  }
+
   size_t countNewlineUntilPos(size_t pos)
   {
     if(pos >= File.size())
@@ -143,6 +151,7 @@ public:
 
     return counter;
   }
+
   size_t lookForChar(char ch)
   {
     size_t ret=0, oldPos=Position;
@@ -155,6 +164,7 @@ public:
     return ret;
   }
 
+  // @TODO: Exception.
   std::string getStrFromTo(size_t frompos, size_t topos)
   {
     if(frompos < 0 || topos > File.size())
@@ -170,6 +180,7 @@ public:
     return ret;
   }
 
+  // @TODO: Exception. Now.
   std::string getNumber(size_t FromPos)
   {
     if(FromPos >= File.size())
@@ -424,8 +435,43 @@ public:
     std::cout << std::endl;
   }
 };
+namespace ParserAndTokenExceptions
+{
 
+#include <exception>
 
+class TokenSizeException : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "size exceeds File bounds!";
+  }
+} tse;
+
+class TokenNumberMultipleExponentException : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Number has multiple exponents";
+  }
+} tnmee;
+
+class TokenStringWithoutEnding : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Detected string has no end in file...";
+  }
+} tswe;
+
+class ParserUnknownCharacterEncountered : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Parser encountered unknown character";
+  }
+} puce;
+};
 int main()
 {
   JSON_VAL b;
