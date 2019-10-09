@@ -87,19 +87,19 @@ public:
     }
   }
 
-  size_t size()
+  size_t size() const
   {
     return File.size();
   }
 
   //@TODO Bounds checking File.size();
   //@TODO Also exception
-  void setPos(size_t pos)
+  void setPos(size_t const pos)
   {
     Position = pos;
   }
   
-  size_t getPos()
+  size_t getPos() const
   {
     return Position;
   }
@@ -122,7 +122,7 @@ public:
     return File[Position++];
   }
 
-  bool eof()
+  bool eof() const
   {
     return File.size() <= Position;
   }
@@ -132,12 +132,12 @@ public:
    * @TODO: own namespace? Won't use this-> than i think o-o
    */
 
-  bool checkSize(size_t num)
+  bool checkSize(size_t const num) const
   {
     return (num >= File.size());
   }
 
-  size_t countNewlineUntilPos(size_t pos)
+  size_t countNewlineUntilPos(size_t const pos)
   {
     if(pos >= File.size())
       return -1;
@@ -152,7 +152,7 @@ public:
     return counter;
   }
 
-  size_t lookForChar(char ch)
+  size_t lookForChar(char const ch)
   {
     size_t ret=0, oldPos=Position;
     while(File[Position] != ch)
@@ -165,7 +165,7 @@ public:
   }
 
   // @TODO: Exception.
-  std::string getStrFromTo(size_t frompos, size_t topos)
+  std::string getStrFromTo(size_t const frompos, size_t const topos)
   {
     if(frompos < 0 || topos > File.size())
       return std::string("");
@@ -181,7 +181,7 @@ public:
   }
 
   // @TODO: Exception. Now.
-  std::string getNumber(size_t FromPos)
+  std::string getNumber(size_t const FromPos)
   {
     if(FromPos >= File.size())
       return "";
@@ -246,7 +246,7 @@ public:
         }
       }
      */
-  std::string getStrOnPos(size_t startingPos)
+  std::string getStrOnPos(size_t const startingPos)
   {
     if(startingPos >= File.size())
     {
@@ -293,7 +293,7 @@ public:
     return temp;
   }
 
-  bool isQuote(size_t Pos)
+  bool isQuote(size_t const Pos) const
   {
     if(Pos >= File.size())
       return false;
@@ -301,12 +301,12 @@ public:
     return isQuote(File[Pos]); 
   }
 
-  static bool isQuote(char ch)
+  static bool isQuote(char const ch)
   {
     return (ch == '\'' || ch == '"');
   }
 
-  char getChar(size_t Pos)
+  char getChar(size_t const Pos) const
   {
     if(Pos >= File.size())
       return '\0';
