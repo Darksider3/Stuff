@@ -176,12 +176,26 @@ public:
       return "";
 
     size_t cursor=FromPos;
-    bool runner=true;
+    bool runner=true, hasE=false;
     std::string temp;
     for(;runner; ++cursor)
     {
       if(std::isdigit(File[cursor]) || File[cursor] == '.')
         temp+=File[cursor];
+      else if(hasE == false && (File[cursor] == 'e' || File[cursor] == 'E'))
+      {
+        hasE = true;
+        temp+=File[cursor];
+      }
+      else if(hasE == true && (File[cursor] == 'e' || File[cursor] == 'E'))
+      {
+        std::cout << "ERROR! Multiple expotentials in one number!\n";
+        exit(123);
+      }
+      else if(File[cursor] == '-' || File[cursor] == '+')
+      {
+        temp+=File[cursor];
+      }
       else
         runner=false;
     }
