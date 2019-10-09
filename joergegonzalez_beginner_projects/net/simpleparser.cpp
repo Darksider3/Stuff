@@ -65,6 +65,7 @@ struct JSON_VAL
 };
 
 
+// @TODO: __PLEASE__ use exceptions..... -.- 
 class Tokenizer
 {
 private:
@@ -303,7 +304,6 @@ public:
 
   void parse()
   {
-    unsigned char StrStarterEncounter;
     while(!s.eof())
     {
       unsigned char cur = s.nextTok();
@@ -341,7 +341,7 @@ public:
       }
       else
       {
-        std::string num = s.getNumber(s.getPos());
+        std::string num = s.getNumber(s.getPos()-1);
         if(num.empty())
         {
           if(cur == '\0')
