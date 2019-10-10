@@ -2,9 +2,74 @@
 #include <cstdio>
 #include <cerrno>
 #include <vector>
-#include <zconf.h>
+#include <cstring>
+//#include <zconf.h>
 
+// @TODO: General Exception as base class?
+namespace ParserAndTokenExceptions
+{
 
+#include <exception>
+class GeneralException : public std::exception
+{
+private:
+  std::string msg;
+  int line;
+public:
+  GeneralException(std::string Msg, const int LNo)
+  {
+    line=LNo;
+    msg=Msg+std::to_string(line);
+  }
+  virtual const char* what() const throw()
+  {
+    return msg.c_str();
+  }
+};
+
+class TokenSizeException : public std::exception
+{
+private:
+  std::string msg;
+  int line;
+public:
+  TokenSizeException(std::string Msg, const int LNo)
+  {
+    //char tmp[10];
+    //sprintf(tmp, "%d", LNo);
+    line=LNo;
+    msg=Msg+std::to_string(LNo);
+  }
+  virtual const char* what() const throw()
+  {
+    return msg.c_str();
+  }
+};
+
+class TokenNumberMultipleExponentException : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Number has multiple exponents";
+  }
+} tnmee;
+
+class TokenStringWithoutEnding : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Detected string has no end in file...";
+  }
+} tswe;
+
+class ParserUnknownCharacterEncountered : public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "Parser encountered unknown character";
+  }
+} puce;
+};
 /*
  * HELPER
  */
@@ -140,7 +205,10 @@ public:
   size_t countNewlineUntilPos(size_t const pos)
   {
     if(pos >= File.size())
+    {
+      throw(ParserAndTokenExceptions::TokenSizeException("Size bounds error", __LINE__));
       return -1;
+    }
     size_t cursor = 0;
     size_t counter = 0;
     for(; cursor != pos; ++cursor)
@@ -168,9 +236,15 @@ public:
   std::string getStrFromTo(size_t const frompos, size_t const topos)
   {
     if(frompos < 0 || topos > File.size())
+    {
+      throw(ParserAndTokenExceptions::TokenSizeException("Size Bounds Error", __LINE__));
       return std::string("");
+    }
     if(frompos < topos)
+    {
+      throw(ParserAndTokenExceptions::TokenSizeException("Size bounds error", __LINE__));
       return std::string("");
+    }
     std::string ret;
 
     for(size_t i=frompos; i != topos;  ++i)
@@ -184,7 +258,10 @@ public:
   std::string getNumber(size_t const FromPos)
   {
     if(FromPos >= File.size())
+    {
+      throw(ParserAndTokenExceptions::TokenSizeException("Size bounds error", __LINE__));
       return "";
+    }
 
     size_t cursor=FromPos;
     bool runner=true, hasE=false;
@@ -200,8 +277,7 @@ public:
       }
       else if(hasE == true && (File[cursor] == 'e' || File[cursor] == 'E'))
       {
-        std::cout << "ERROR! Multiple expotentials in one number!\n";
-        exit(123);
+        throw(ParserAndTokenExceptions::TokenNumberMultipleExponentException());
       }
       else if(File[cursor] == '-' || File[cursor] == '+')
       {
@@ -366,7 +442,16 @@ public:
       }
       else
       {
-        std::string num = s.getNumber(s.getPos()-1);
+        std::string num;
+        try
+        {
+          num = s.getNumber(s.getPos()-1);
+        }
+        catch(ParserAndTokenExceptions::TokenSizeException& e)
+        {
+          std::cout << "end encounter!";
+          break;
+        }
         if(num.empty())
         {
           if(cur == '\0')
@@ -435,43 +520,8 @@ public:
     std::cout << std::endl;
   }
 };
-namespace ParserAndTokenExceptions
-{
 
-#include <exception>
 
-class TokenSizeException : public std::exception
-{
-  virtual const char* what() const throw()
-  {
-    return "size exceeds File bounds!";
-  }
-} tse;
-
-class TokenNumberMultipleExponentException : public std::exception
-{
-  virtual const char* what() const throw()
-  {
-    return "Number has multiple exponents";
-  }
-} tnmee;
-
-class TokenStringWithoutEnding : public std::exception
-{
-  virtual const char* what() const throw()
-  {
-    return "Detected string has no end in file...";
-  }
-} tswe;
-
-class ParserUnknownCharacterEncountered : public std::exception
-{
-  virtual const char* what() const throw()
-  {
-    return "Parser encountered unknown character";
-  }
-} puce;
-};
 int main()
 {
   JSON_VAL b;
