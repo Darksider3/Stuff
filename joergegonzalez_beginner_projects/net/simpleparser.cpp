@@ -19,57 +19,43 @@ public:
   GeneralException(std::string Msg, const int LNo)
   {
     line=LNo;
-    msg=Msg+std::to_string(line);
+    msg=Msg;
   }
+
+  GeneralException(GeneralException const &p)
+  {
+    line=p.line;
+    msg=p.msg;
+  }
+
   virtual const char* what() const throw()
   {
-    return msg.c_str();
+    std::string tmp=msg+std::to_string(line);
+    return tmp.c_str();
   }
+
 };
 
-class TokenSizeException : public std::exception
+class TokenSizeException : public GeneralException
 {
-private:
-  std::string msg;
-  int line;
-public:
-  TokenSizeException(std::string Msg, const int LNo)
-  {
-    //char tmp[10];
-    //sprintf(tmp, "%d", LNo);
-    line=LNo;
-    msg=Msg+std::to_string(LNo);
-  }
-  virtual const char* what() const throw()
-  {
-    return msg.c_str();
-  }
+  using GeneralException::GeneralException;
 };
 
-class TokenNumberMultipleExponentException : public std::exception
+class TokenNumberMultipleExponentException : public GeneralException
 {
-  virtual const char* what() const throw()
-  {
-    return "Number has multiple exponents";
-  }
-} tnmee;
-
-class TokenStringWithoutEnding : public std::exception
-{
-  virtual const char* what() const throw()
-  {
-    return "Detected string has no end in file...";
-  }
-} tswe;
-
-class ParserUnknownCharacterEncountered : public std::exception
-{
-  virtual const char* what() const throw()
-  {
-    return "Parser encountered unknown character";
-  }
-} puce;
+  using GeneralException::GeneralException;
 };
+
+class TokenStringWithoutEnding : public GeneralException
+{
+  using GeneralException::GeneralException;
+};
+
+class ParserUnknownCharacterEncountered : public GeneralException
+{
+  using GeneralException::GeneralException;
+};
+}
 /*
  * HELPER
  */
@@ -207,7 +193,6 @@ public:
     if(pos >= File.size())
     {
       throw(ParserAndTokenExceptions::TokenSizeException("Size bounds error", __LINE__));
-      return -1;
     }
     size_t cursor = 0;
     size_t counter = 0;
@@ -237,13 +222,11 @@ public:
   {
     if(frompos < 0 || topos > File.size())
     {
-      throw(ParserAndTokenExceptions::TokenSizeException("Size Bounds Error", __LINE__));
-      return std::string("");
+      throw(ParserAndTokenExceptions::TokenSizeException("Requested Positions exit file bounds, in: ", __LINE__));
     }
     if(frompos < topos)
     {
-      throw(ParserAndTokenExceptions::TokenSizeException("Size bounds error", __LINE__));
-      return std::string("");
+      throw(ParserAndTokenExceptions::TokenSizeException("given Position to start is bigger then the one requested to end! In: ", __LINE__));
     }
     std::string ret;
 
@@ -259,8 +242,7 @@ public:
   {
     if(FromPos >= File.size())
     {
-      throw(ParserAndTokenExceptions::TokenSizeException("Size bounds error", __LINE__));
-      return "";
+      throw(ParserAndTokenExceptions::TokenSizeException("Requested starting position is out of bounds in: ", __LINE__));
     }
 
     size_t cursor=FromPos;
@@ -277,7 +259,7 @@ public:
       }
       else if(hasE == true && (File[cursor] == 'e' || File[cursor] == 'E'))
       {
-        throw(ParserAndTokenExceptions::TokenNumberMultipleExponentException());
+        throw(ParserAndTokenExceptions::TokenNumberMultipleExponentException("Encountered multiple exponents in number in line ", __LINE__));
       }
       else if(File[cursor] == '-' || File[cursor] == '+')
       {
@@ -326,7 +308,7 @@ public:
   {
     if(startingPos >= File.size())
     {
-      return "";
+      throw(ParserAndTokenExceptions::TokenSizeException("Requested starting position is out of bounds of your given file in line: ", __LINE__));
     }
 
     size_t oldPos = Position;
@@ -336,7 +318,8 @@ public:
     unsigned char cur;
     if(!isQuote(StrStarter))
     {
-      return "";
+      throw(ParserAndTokenExceptions::ParserUnknownCharacterEncountered("Expected to encouter \' or \", but instead got something else("+std::to_string(StrStarter)+
+            ") in line: ", __LINE__));
     }
     // looks like a string?
 
@@ -372,7 +355,7 @@ public:
   bool isQuote(size_t const Pos) const
   {
     if(Pos >= File.size())
-      return false;
+      throw(ParserAndTokenExceptions::TokenSizeException("Reqeusted position is out of bounds of the given file. Thrown in line: ", __LINE__));
 
     return isQuote(File[Pos]); 
   }
@@ -385,7 +368,7 @@ public:
   char getChar(size_t const Pos) const
   {
     if(Pos >= File.size())
-      return '\0';
+      throw(ParserAndTokenExceptions::TokenSizeException("Requested position is out of bounds of the given file. Thrown in line: ", __LINE__));
 
     return File[Pos];
   }
@@ -440,6 +423,7 @@ public:
         std::cout << "getStrOnPos(): '" << temp << " ' <- STR\n";
         s.setPos(s.getPos()+temp.size()+1);
       }
+      // it should be a number now
       else
       {
         std::string num;
@@ -449,7 +433,7 @@ public:
         }
         catch(ParserAndTokenExceptions::TokenSizeException& e)
         {
-          std::cout << "end encounter!";
+          std::cout << "Oh, it seems like our file has an end here! We take that and exit gracefully. \n";
           break;
         }
         if(num.empty())
@@ -465,8 +449,8 @@ public:
         }
         else
         {
-          std::cout <<" NUMBERNUMBER\n";
           s.setPos(s.getPos()+num.size()+1);
+          // ok, it's definitly a number. Detect if it's a floating point or an integer and go add it!
         }
 
       }
