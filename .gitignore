@@ -12,3 +12,12 @@ a.out
 cmake*/
 virtualenv/
 __pycache__/
+*.cflags
+*.config
+*.creator
+*.cxxflag
+*.files
+*.includes
+*.creator.user
+*.cxxflags
+

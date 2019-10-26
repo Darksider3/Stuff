@@ -4,6 +4,22 @@
 #include <vector>
 #include <cstring>
 //#include <zconf.h>
+#define FOR_EACH_SYM \
+  SYMBOLNAME (Unknown) \
+  SYMBOLNAME (literal_true) \
+  SYMBOLNAME (literal_false) \
+  SYMBOLNAME (value_string) \
+  SYMBOLNAME (value_unsigned) \
+  SYMBOLNAME (value_integer) \
+  SYMBOLNAME (value_float) \
+  SYMBOLNAME (begin_array) \
+  SYMBOLNAME (begin_object) \
+  SYMBOLNAME (end_array) \
+  SYMBOLNAME (end_object) \
+  SYMBOLNAME (name_seperator) \
+  SYMBOLNAME (value_seperator) \
+  SYMBOLNAME (parse_error) \
+  SYMBOLNAME (end_of_input)
 
 // @TODO: General Exception as base class?
 namespace ParserAndTokenExceptions
@@ -13,8 +29,9 @@ namespace ParserAndTokenExceptions
 class GeneralException : public std::exception
 {
 private:
-  std::string msg;
+  std::string msg = {""};
   int line;
+
 public:
   GeneralException(std::string Msg, const int LNo)
   {
@@ -28,7 +45,7 @@ public:
     msg=p.msg;
   }
 
-  virtual const char* what() const throw()
+  virtual const char* what() const noexcept
   {
     std::string tmp=msg+std::to_string(line);
     return tmp.c_str();
@@ -75,43 +92,44 @@ std::string get_file_contents(const char *filename)
   throw(errno);
 }
 
-
 enum class JSON_SYM {
-  uninitialised,
-  literal_true,
-  literal_false,
-  value_string,
-  value_unsigned,
-  value_integer,
-  value_float,
-  begin_array,
-  begin_object,
-  end_array,
-  end_object,
-  name_seperator, // In JSON it's actually just a .. : lel
-  value_seperator, // here it is the , (comma)
-  parse_error,
-  end_of_input
+  #define SYMBOLNAME(x) x,
+  FOR_EACH_SYM
+  #undef SYMBOLNAME
+};
+struct NumberResult
+{
+  bool hasDot = {false};
+  bool hasE = {false};
+  long startPos = {-1}, EndPos = {-1};
+  double Number= {0};
+  std::string str = {""};
+};
+
+
+struct StringResult
+{
+  std::string str;
+  long startPos={-1}, endPos={-1};
 };
 
 struct JSON_VAL
 {
   std::vector<JSON_VAL> ArryObj;
-  JSON_SYM Type;
-  union VAL
+  struct VAL
   {
     bool boolean;
-    double number;
-    char *str;
-    char *key;
+    NumberResult number = {false, false, 0,0,0,""};
+    StringResult str;
   } value;
-  int Pos;
+  JSON_SYM Type;
 
+  int Pos;
   static JSON_VAL inplace(JSON_SYM t, size_t pos=0)
   {
-    JSON_VAL tmp = {.Type=t, .Pos=static_cast<int>(pos)};
+    JSON_VAL tmp;
     tmp.Type = t;
-    tmp.Pos = pos;
+    tmp.Pos = static_cast<int>(pos);
     return tmp;
   }
 };
@@ -167,7 +185,7 @@ public:
     return true;
   }
 
-  unsigned char nextTok()
+  char nextTok()
   {
     if(!ignoreWhitespace())
       return 0;
@@ -183,11 +201,6 @@ public:
    * HELPERS
    * @TODO: own namespace? Won't use this-> than i think o-o
    */
-
-  bool checkSize(size_t const num) const
-  {
-    return (num >= File.size());
-  }
 
   size_t countNewlineUntilPos(size_t const pos)
   {
@@ -206,22 +219,10 @@ public:
     return counter;
   }
 
-  size_t lookForChar(char const ch)
-  {
-    size_t ret=0, oldPos=Position;
-    while(File[Position] != ch)
-    {
-      ++Position;
-      ++ret;
-    }
-    Position=oldPos;
-    return ret;
-  }
-
   // @TODO: Exception.
   std::string getStrFromTo(size_t const frompos, size_t const topos)
   {
-    if(frompos < 0 || topos > File.size())
+    if(topos > File.size())
     {
       throw(ParserAndTokenExceptions::TokenSizeException("Requested Positions exit file bounds, in: ", __LINE__));
     }
@@ -237,24 +238,21 @@ public:
     }
     return ret;
   }
-  
-  struct NumberResult
-  {
-    std::string str;
-    bool hasDot = false;
-    bool hasE = false;
-  };
 
   // @TODO: Exception. Now.
-  struct NumberResult getNumber(size_t const FromPos)
+  struct NumberResult getNumber(size_t FromPos = 0)
   {
+    if(FromPos == 0)
+      FromPos = this->getPos()-1;
+
     if(FromPos >= File.size())
     {
       throw(ParserAndTokenExceptions::TokenSizeException("Requested starting position is out of bounds in: ", __LINE__));
     }
 
     size_t cursor=FromPos;
-    NumberResult res = {.hasDot=false };
+    NumberResult res;
+    res.hasDot = false;
     bool runner=true;
     std::string temp;
     for(;runner; ++cursor)
@@ -280,7 +278,8 @@ public:
       else
         runner=false;
     }
-    std::cout << "NUM: "<< temp << "\n";
+    res.startPos = static_cast<long>(FromPos);
+    res.EndPos = static_cast<long>(cursor);
     res.str = temp;
     return res;
   }
@@ -317,18 +316,22 @@ public:
         }
       }
      */
-  std::string getStrOnPos(size_t const startingPos)
+
+  StringResult getStrOnPos(size_t startingPos = 0)
   {
+    if(startingPos == 0)
+    {
+      startingPos = getPos();
+    }
     if(startingPos >= File.size())
     {
       throw(ParserAndTokenExceptions::TokenSizeException("Requested starting position is out of bounds of your given file in line: ", __LINE__));
     }
-
-    size_t oldPos = Position;
+    StringResult returner;
     bool escaped = false;
     std::string temp;
     char StrStarter = peek(startingPos);
-    unsigned char cur;
+    char cur;
     if(!isQuote(StrStarter))
     {
       throw(ParserAndTokenExceptions::ParserUnknownCharacterEncountered("Expected to encouter \' or \", but instead got something else("+std::to_string(StrStarter)+
@@ -337,7 +340,8 @@ public:
     // looks like a string?
 
     bool runner = true;
-    for(unsigned int i = startingPos+1; runner && !eof(); ++i)
+    unsigned long i = startingPos+1;
+    for(; runner && !eof(); ++i)
     {
       cur = peek(static_cast<size_t>(i));
       if(cur == '\\')
@@ -361,8 +365,10 @@ public:
         temp+=cur;
       }
     }
-    Position = oldPos;
-    return temp;
+    returner.str = temp;
+    returner.startPos = static_cast<long>(startingPos);
+    returner.endPos = static_cast<long>(i);
+    return returner;
   }
 
   bool isQuote(size_t const Pos) const
@@ -378,8 +384,10 @@ public:
     return (ch == '\'' || ch == '"');
   }
 
-  char peek(size_t const Pos) const
+  char peek(size_t Pos=0) const
   {
+    if(Pos == 0)
+      Pos = this->getPos();
     if(Pos >= File.size())
       throw(ParserAndTokenExceptions::TokenSizeException("Requested position is out of bounds of the given file. Thrown in line: ", __LINE__));
 
@@ -404,9 +412,16 @@ public:
     auto emit = [&](auto Type) {
       AST.emplace_back(JSON_VAL::inplace(Type, s.getPos()));
     };
+
+//    auto strCopy = [](auto str, auto ptr) {
+//      for(unsigned long i = 0; i != str.length()+1; ++i)
+//      {
+//        ptr[i] = str[i];
+//      }
+//    };
     while(!s.eof())
     {
-      unsigned char cur = s.nextTok();
+      char cur = s.nextTok();
       switch(cur)
       {
         case '{':
@@ -427,69 +442,105 @@ public:
         case ':':
           emit(JSON_SYM::name_seperator);
           continue;
+        case 't':
+          if(s.peek() == 'r' && s.peek(s.getPos()+1) == 'u' && s.peek(s.getPos()+2) == 'e')
+          {
+            emit(JSON_SYM::literal_true);
+            s.setPos(s.getPos()+3);
+          }
+          else
+          {
+            emit(JSON_SYM::parse_error);
+          }
+          continue;
+        case 'f':
+          if(s.peek() == 'a' && s.peek(s.getPos()+1) == 'l' && s.peek(s.getPos()+2) == 's'  && s.peek(s.getPos()+3) == 'e')
+          {
+            emit(JSON_SYM::literal_false);
+            s.setPos(s.getPos()+4);
+          }
+          else
+          {
+            emit(JSON_SYM::parse_error);
+          }
+          continue;
+        case '\0':
+          return;
         default:
           break;
       }
-
       // if string
       // @TODO simplify by putting in a function dafuq is this going to get complex
       if(cur == '"' || cur == '\'')
       {
-        std::string temp = s.getStrOnPos(s.getPos()-1);
-        std::cout << "getStrOnPos(): '" << temp << " ' <- STR\n";
-        s.setPos(s.getPos()+temp.size()+1);
+        JSON_VAL found_str;
+        StringResult temp = s.getStrOnPos(s.getPos()-1);
+        found_str.Pos = static_cast<int>(s.getPos());
+        found_str.Type = JSON_SYM::value_string;
+        found_str.value.str = temp;
+        std::cout << "getStrOnPos(): '" << found_str.value.str.str << "' <- STR\n";
+        AST.push_back(found_str);
+        s.setPos(s.getPos()+temp.str.size()+1);
+        continue;
       }
       // it should be a number now
       else
       {
-        struct Tokenizer::NumberResult num;
+        struct NumberResult num;
         try
         {
-          num = s.getNumber(s.getPos()-1);
+          num = s.getNumber();
         }
-        catch(ParserAndTokenExceptions::TokenSizeException& e)
+        catch(ParserAndTokenExceptions::TokenSizeException&)
         {
           std::cout << "Oh, it seems like our file has an end here! We take that and exit gracefully. \n";
           break;
         }
         if(num.str.empty())
         {
-          if(cur == '\0')
-          {
-            break;
-          }
-          else
-          {
-            std::cout << "Parser Error. '" << cur << "' \n";
-          }
+          std::cout << "Error! Couldn't really parse number?\n";
         }
         else
         {
+
           s.setPos(s.getPos()+num.str.size()+1);
           // ok, it's definitly a number. Detect if it's a floating point or an integer and go add it!
+          continue;
         }
-
+        if(cur == '\0')
+        {
+          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_of_input, s.getPos()));
+          return;
+        }
       }
+
+      std::cout << "ASSERT NOT REACHED ON CHAR " << cur;
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
-
     AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_of_input, s.getPos()));
   }
 
   void PrintAST()
   {
+    auto printStringResult = [&](StringResult& res) {
+      std::cout << "\t\tStringDump: Str: '"<< res.str << "'; Start: '" << res.startPos << "'; end: '"<<res.endPos<<"'\n";
+    };
     std::string endStr = ", hurray!\n";
     for(JSON_VAL &c: AST)
     {
       switch(c.Type)
       {
+        case JSON_SYM::value_string:
+          std::cout << "Value found.\n";
+          printStringResult(c.value.str);
+          break;
         case JSON_SYM::literal_true:
           std::cout << "literal_true at " << c.Pos << ", ";
           break;
         case JSON_SYM::literal_false:
           std::cout << "literal_false at " << c.Pos << ", ";
           break;
-        case JSON_SYM::uninitialised:
+        case JSON_SYM::Unknown:
           std::cout << "uninitialised at " << c.Pos << ", ";
           break;
         case JSON_SYM::begin_object:

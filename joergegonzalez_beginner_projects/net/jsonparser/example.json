@@ -1,5 +1,9 @@
 [
   {
+  "here": true,
+  "living": false
+  },
+  {
     "name": "Molecule Man",
     "age": 29
   },
