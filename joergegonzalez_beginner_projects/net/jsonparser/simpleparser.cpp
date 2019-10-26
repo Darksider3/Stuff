@@ -5,20 +5,20 @@
 #include <cstring>
 //#include <zconf.h>
 #define FOR_EACH_SYM \
-  SYMBOLNAME (Unknown) \
-  SYMBOLNAME (literal_true) \
-  SYMBOLNAME (literal_false) \
-  SYMBOLNAME (value_string) \
-  SYMBOLNAME (value_unsigned) \
-  SYMBOLNAME (value_integer) \
-  SYMBOLNAME (value_float) \
-  SYMBOLNAME (begin_array) \
-  SYMBOLNAME (begin_object) \
-  SYMBOLNAME (end_array) \
-  SYMBOLNAME (end_object) \
-  SYMBOLNAME (name_seperator) \
-  SYMBOLNAME (value_seperator) \
-  SYMBOLNAME (parse_error) \
+  SYMBOLNAME (Unknown)          \
+  SYMBOLNAME (literal_true)     \
+  SYMBOLNAME (literal_false)    \
+  SYMBOLNAME (literal_null)     \
+  SYMBOLNAME (value_string)     \
+  SYMBOLNAME (value_number)    \
+  SYMBOLNAME (value_float)      \
+  SYMBOLNAME (begin_array)      \
+  SYMBOLNAME (begin_object)     \
+  SYMBOLNAME (end_array)        \
+  SYMBOLNAME (end_object)       \
+  SYMBOLNAME (name_seperator)   \
+  SYMBOLNAME (member_seperator) \
+  SYMBOLNAME (parse_error)      \
   SYMBOLNAME (end_of_input)
 
 // @TODO: General Exception as base class?
@@ -101,7 +101,7 @@ struct NumberResult
 {
   bool hasDot = {false};
   bool hasE = {false};
-  long startPos = {-1}, EndPos = {-1};
+  long StartPos = {-1}, EndPos = {-1};
   double Number= {0};
   std::string str = {""};
 };
@@ -110,7 +110,7 @@ struct NumberResult
 struct StringResult
 {
   std::string str;
-  long startPos={-1}, endPos={-1};
+  long StartPos={-1}, EndPos={-1};
 };
 
 struct JSON_VAL
@@ -278,7 +278,7 @@ public:
       else
         runner=false;
     }
-    res.startPos = static_cast<long>(FromPos);
+    res.StartPos = static_cast<long>(FromPos);
     res.EndPos = static_cast<long>(cursor);
     res.str = temp;
     return res;
@@ -366,8 +366,8 @@ public:
       }
     }
     returner.str = temp;
-    returner.startPos = static_cast<long>(startingPos);
-    returner.endPos = static_cast<long>(i);
+    returner.StartPos = static_cast<long>(startingPos);
+    returner.EndPos = static_cast<long>(i);
     return returner;
   }
 
@@ -437,7 +437,7 @@ public:
           emit(JSON_SYM::end_array);
           continue;
         case ',':
-          emit(JSON_SYM::value_seperator);
+          emit(JSON_SYM::member_seperator);
           continue;
         case ':':
           emit(JSON_SYM::name_seperator);
@@ -464,18 +464,30 @@ public:
             emit(JSON_SYM::parse_error);
           }
           continue;
+        case 'n':
+          if(s.peek() == 'u' && s.peek(s.getPos()+1) == 'l' && s.peek(s.getPos()+2) == 'l')
+          {
+            emit(JSON_SYM::literal_null);
+            s.setPos(s.getPos()+3);
+          }
+          else
+          {
+            emit(JSON_SYM::parse_error);
+          }
+          continue;
         case '\0':
+          emit(JSON_SYM::end_of_input);
           return;
         default:
           break;
       }
       // if string
-      // @TODO simplify by putting in a function dafuq is this going to get complex
+      // @TODO ' => CHARACTER POINT! __Not__ strings!
       if(cur == '"' || cur == '\'')
       {
         JSON_VAL found_str;
         StringResult temp = s.getStrOnPos(s.getPos()-1);
-        found_str.Pos = static_cast<int>(s.getPos());
+        found_str.Pos = static_cast<int>(s.getPos()-1);
         found_str.Type = JSON_SYM::value_string;
         found_str.value.str = temp;
         std::cout << "getStrOnPos(): '" << found_str.value.str.str << "' <- STR\n";
@@ -502,19 +514,24 @@ public:
         }
         else
         {
-
+          JSON_VAL found_num;
+          found_num.Pos = static_cast<int>(s.getPos()-1);
+          found_num.Type = JSON_SYM::value_number;
+          found_num.value.number = num;
+          AST.emplace_back(found_num);
           s.setPos(s.getPos()+num.str.size()+1);
           // ok, it's definitly a number. Detect if it's a floating point or an integer and go add it!
           continue;
         }
         if(cur == '\0')
         {
-          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_of_input, s.getPos()));
+          emit(JSON_SYM::end_of_input);
           return;
         }
       }
 
       std::cout << "ASSERT NOT REACHED ON CHAR " << cur;
+      emit(JSON_SYM::Unknown);
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
     AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_of_input, s.getPos()));
@@ -522,46 +539,78 @@ public:
 
   void PrintAST()
   {
-    auto printStringResult = [&](StringResult& res) {
-      std::cout << "\t\tStringDump: Str: '"<< res.str << "'; Start: '" << res.startPos << "'; end: '"<<res.endPos<<"'\n";
+    auto printStringResult = [](const StringResult& res) {
+      std::cout << "StringDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+    };
+    auto printNumberResult = [](const NumberResult& res) {
+      std::cout << "NumberDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
     };
     std::string endStr = ", hurray!\n";
+    int indent = 0;
+    auto indenter=[&indent]()
+    {
+      for(int j = indent; j != 0; --j)
+        std::cout <<'\t';
+    };
     for(JSON_VAL &c: AST)
     {
       switch(c.Type)
       {
         case JSON_SYM::value_string:
-          std::cout << "Value found.\n";
+          indenter();
           printStringResult(c.value.str);
           break;
+        case JSON_SYM::value_number:
+          indenter();
+          printNumberResult(c.value.number);
+          break;
         case JSON_SYM::literal_true:
-          std::cout << "literal_true at " << c.Pos << ", ";
+          indenter();
+          std::cout << "literal_true at " << c.Pos << ". \n";
           break;
         case JSON_SYM::literal_false:
-          std::cout << "literal_false at " << c.Pos << ", ";
+          indenter();
+          std::cout << "literal_false at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::literal_null:
+          indenter();
+          std::cout << "literal_null at " << c.Pos << ". \n";
           break;
         case JSON_SYM::Unknown:
-          std::cout << "uninitialised at " << c.Pos << ", ";
+          indenter();
+          std::cout << "uninitialised at " << c.Pos << ". \n";
           break;
         case JSON_SYM::begin_object:
-          std::cout << "begin_object at " << c.Pos << ", ";
+          indenter();
+          ++indent;
+          std::cout << "begin_object at " << c.Pos << ". \n";
           break;
         case JSON_SYM::begin_array:
-          std::cout << "begin_array at " << c.Pos << ", ";
+          indenter();
+          ++indent;
+          std::cout << "begin_array at " << c.Pos << ". \n";
           break;
         case JSON_SYM::end_array:
-          std::cout << "end_array at " << c.Pos << ", ";
+          indenter();
+          --indent;
+          std::cout << "end_array at " << c.Pos << ". \n";
           break;
         case JSON_SYM::end_object:
-          std::cout << "end_object at " << c.Pos << ", ";
+          indenter();
+          --indent;
+          std::cout << "end_object at " << c.Pos << ". \n";
           break;
         case JSON_SYM::name_seperator:
-          std::cout << "name_seperator at " << c.Pos << ", ";
+          indenter();
+          std::cout << "name_seperator at " << c.Pos << ": ";
           break;
-        case JSON_SYM::value_seperator:
-          std::cout << "value_seperator at " << c.Pos << ", ";
+        case JSON_SYM::member_seperator:
+          indenter();
+          std::cout << "member_seperator at " << c.Pos << ",\n";
           break;
         case JSON_SYM::end_of_input:
+          if(indent!=0)
+            std::cout << "huh....\n";
           std::cout << "End at "<< c.Pos << ".\n";
           break;
         default:

@@ -1,11 +1,13 @@
 [
   {
   "here": true,
-  "living": false
+  "living": false,
+  "with Nulls": null,
+  "and a hex": 0x444
   },
   {
     "name": "Molecule Man",
-    "age": 29
+    "age": 29e123
   },
   {
     "name": "M\"adame Uppercut",
