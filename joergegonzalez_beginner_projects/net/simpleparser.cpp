@@ -401,7 +401,7 @@ public:
 
   void parse()
   {
-    auto emit = [this](auto Type) {
+    auto emit = [&](auto Type) {
       AST.emplace_back(JSON_VAL::inplace(Type, s.getPos()));
     };
     while(!s.eof())
