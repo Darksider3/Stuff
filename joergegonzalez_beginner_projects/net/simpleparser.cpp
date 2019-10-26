@@ -327,7 +327,7 @@ public:
     size_t oldPos = Position;
     bool escaped = false;
     std::string temp;
-    char StrStarter = getChar(startingPos);
+    char StrStarter = peek(startingPos);
     unsigned char cur;
     if(!isQuote(StrStarter))
     {
@@ -339,7 +339,7 @@ public:
     bool runner = true;
     for(unsigned int i = startingPos+1; runner && !eof(); ++i)
     {
-      cur = getChar(static_cast<size_t>(i));
+      cur = peek(static_cast<size_t>(i));
       if(cur == '\\')
       {
         temp+=cur;
@@ -378,7 +378,7 @@ public:
     return (ch == '\'' || ch == '"');
   }
 
-  char getChar(size_t const Pos) const
+  char peek(size_t const Pos) const
   {
     if(Pos >= File.size())
       throw(ParserAndTokenExceptions::TokenSizeException("Requested position is out of bounds of the given file. Thrown in line: ", __LINE__));
