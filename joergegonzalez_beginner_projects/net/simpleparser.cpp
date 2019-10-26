@@ -96,6 +96,7 @@ enum class JSON_SYM {
 
 struct JSON_VAL
 {
+  std::vector<JSON_VAL> ArryObj;
   JSON_SYM Type;
   union VAL
   {
@@ -236,9 +237,16 @@ public:
     }
     return ret;
   }
+  
+  struct NumberResult
+  {
+    std::string str;
+    bool hasDot = false;
+    bool hasE = false;
+  };
 
   // @TODO: Exception. Now.
-  std::string getNumber(size_t const FromPos)
+  struct NumberResult getNumber(size_t const FromPos)
   {
     if(FromPos >= File.size())
     {
@@ -246,18 +254,22 @@ public:
     }
 
     size_t cursor=FromPos;
-    bool runner=true, hasE=false;
+    NumberResult res = {.hasDot=false };
+    bool runner=true;
     std::string temp;
     for(;runner; ++cursor)
     {
       if(std::isdigit(File[cursor]) || File[cursor] == '.')
-        temp+=File[cursor];
-      else if(hasE == false && (File[cursor] == 'e' || File[cursor] == 'E'))
       {
-        hasE = true;
+        res.hasDot = true;
         temp+=File[cursor];
       }
-      else if(hasE == true && (File[cursor] == 'e' || File[cursor] == 'E'))
+      else if(res.hasE == false && (File[cursor] == 'e' || File[cursor] == 'E'))
+      {
+        res.hasE = true;
+        temp+=File[cursor];
+      }
+      else if(res.hasE == true && (File[cursor] == 'e' || File[cursor] == 'E'))
       {
         throw(ParserAndTokenExceptions::TokenNumberMultipleExponentException("Encountered multiple exponents in number in line ", __LINE__));
       }
@@ -269,7 +281,8 @@ public:
         runner=false;
     }
     std::cout << "NUM: "<< temp << "\n";
-    return temp;
+    res.str = temp;
+    return res;
   }
   bool isSeperator(); // Return if Char is a seperator, for json that would be ,(comma)
   bool isChar(const char &c, unsigned int pos);
@@ -388,28 +401,31 @@ public:
 
   void parse()
   {
+    auto emit = [this](auto Type) {
+      AST.emplace_back(JSON_VAL::inplace(Type, s.getPos()));
+    };
     while(!s.eof())
     {
       unsigned char cur = s.nextTok();
       switch(cur)
       {
         case '{':
-          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::begin_object, s.getPos()));
+          emit(JSON_SYM::begin_object);
           continue;
         case '[':
-          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::begin_array, s.getPos()));
+          emit(JSON_SYM::begin_array);
           continue;
         case '}':
-          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_object, s.getPos()));
+          emit(JSON_SYM::end_object);
           continue;
         case ']':
-          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_array, s.getPos()));
+          emit(JSON_SYM::end_array);
           continue;
         case ',':
-          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::value_seperator, s.getPos()));
+          emit(JSON_SYM::value_seperator);
           continue;
         case ':':
-          AST.emplace_back(JSON_VAL::inplace(JSON_SYM::name_seperator, s.getPos()));
+          emit(JSON_SYM::name_seperator);
           continue;
         default:
           break;
@@ -426,7 +442,7 @@ public:
       // it should be a number now
       else
       {
-        std::string num;
+        struct Tokenizer::NumberResult num;
         try
         {
           num = s.getNumber(s.getPos()-1);
@@ -436,7 +452,7 @@ public:
           std::cout << "Oh, it seems like our file has an end here! We take that and exit gracefully. \n";
           break;
         }
-        if(num.empty())
+        if(num.str.empty())
         {
           if(cur == '\0')
           {
@@ -449,7 +465,7 @@ public:
         }
         else
         {
-          s.setPos(s.getPos()+num.size()+1);
+          s.setPos(s.getPos()+num.str.size()+1);
           // ok, it's definitly a number. Detect if it's a floating point or an integer and go add it!
         }
 
