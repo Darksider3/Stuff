@@ -257,15 +257,23 @@ public:
     std::string temp;
     for(;runner; ++cursor)
     {
-      if(std::isdigit(File[cursor]) || File[cursor] == '.')
+
+      if(std::isdigit(File[cursor]))
+      {
+        temp+=File[cursor];
+        continue;
+      }
+      else if(File[cursor] == '.' && std::isdigit(File[cursor+1]))
       {
         res.hasDot = true;
         temp+=File[cursor];
+        continue;
       }
       else if(res.hasE == false && (File[cursor] == 'e' || File[cursor] == 'E'))
       {
         res.hasE = true;
         temp+=File[cursor];
+        continue;
       }
       else if(res.hasE == true && (File[cursor] == 'e' || File[cursor] == 'E'))
       {
@@ -274,48 +282,16 @@ public:
       else if(File[cursor] == '-' || File[cursor] == '+')
       {
         temp+=File[cursor];
+        continue;
       }
       else
-        runner=false;
+        break;
     }
     res.StartPos = static_cast<long>(FromPos);
-    res.EndPos = static_cast<long>(cursor);
+    res.EndPos = static_cast<long>(--cursor);
     res.str = temp;
     return res;
   }
-  bool isSeperator(); // Return if Char is a seperator, for json that would be ,(comma)
-  bool isChar(const char &c, unsigned int pos);
-    //return c == CURRENT_POS_CHAR;
-    /*
-    while(**cursor == '\t' || **cursor  == '\r' || **cursor == '\n' || **cursor == ' ') ++(*cursor);
-    */
-    // work on cursor, ignore everything that's a space or newline, exit on nullbyte.
-    // return true until nullbyte
-    /*
-      if(cur == '\'' && cur == '"')
-      {
-        std::cout << "str start\n";
-        StrStarterEncounter = cur;
-        bool escaped=false;
-        for(bool runner=true; runner && !s.eof();)
-        {
-          char tcur = s.nextTok();
-          if(tcur == '\\')
-            escaped=true;
-          else if(tcur == StrStarterEncounter)
-          {
-           std::cout << "str end\n";
-            if(!escaped)
-              runner=false;
-            else
-            {
-              std::cout << "huh, escaped: " << tcur;
-              escaped=false;
-            }
-          }
-        }
-      }
-     */
 
   StringResult getStrOnPos(size_t startingPos = 0)
   {
@@ -393,6 +369,19 @@ public:
 
     return File[Pos];
   }
+  bool peek(const std::string &strToPeekFor) const
+  {
+    bool peeker = true;
+    for(size_t i = 0; i != strToPeekFor.size(); ++i)
+    {
+      if(strToPeekFor[i] != peek(getPos()+i))
+      {
+        peeker = false;
+        break;
+      }
+    }
+    return peeker;
+  }
 };
 
 class Parser
@@ -443,7 +432,7 @@ public:
           emit(JSON_SYM::name_seperator);
           continue;
         case 't':
-          if(s.peek() == 'r' && s.peek(s.getPos()+1) == 'u' && s.peek(s.getPos()+2) == 'e')
+          if(s.peek("rue"))
           {
             emit(JSON_SYM::literal_true);
             s.setPos(s.getPos()+3);
@@ -454,7 +443,7 @@ public:
           }
           continue;
         case 'f':
-          if(s.peek() == 'a' && s.peek(s.getPos()+1) == 'l' && s.peek(s.getPos()+2) == 's'  && s.peek(s.getPos()+3) == 'e')
+          if(s.peek("alse"))
           {
             emit(JSON_SYM::literal_false);
             s.setPos(s.getPos()+4);
@@ -465,7 +454,7 @@ public:
           }
           continue;
         case 'n':
-          if(s.peek() == 'u' && s.peek(s.getPos()+1) == 'l' && s.peek(s.getPos()+2) == 'l')
+          if(s.peek("ull"))
           {
             emit(JSON_SYM::literal_null);
             s.setPos(s.getPos()+3);
@@ -490,7 +479,6 @@ public:
         found_str.Pos = static_cast<int>(s.getPos()-1);
         found_str.Type = JSON_SYM::value_string;
         found_str.value.str = temp;
-        std::cout << "getStrOnPos(): '" << found_str.value.str.str << "' <- STR\n";
         AST.push_back(found_str);
         s.setPos(s.getPos()+temp.str.size()+1);
         continue;
@@ -516,10 +504,17 @@ public:
         {
           JSON_VAL found_num;
           found_num.Pos = static_cast<int>(s.getPos()-1);
-          found_num.Type = JSON_SYM::value_number;
           found_num.value.number = num;
+          if(found_num.value.number.hasDot)
+          {
+            found_num.Type = JSON_SYM::value_float;
+          }
+          else
+          {
+            found_num.Type = JSON_SYM::value_number;
+          }
           AST.emplace_back(found_num);
-          s.setPos(s.getPos()+num.str.size()+1);
+          s.setPos(s.getPos()+num.str.size()-1);
           // ok, it's definitly a number. Detect if it's a floating point or an integer and go add it!
           continue;
         }
@@ -537,32 +532,47 @@ public:
     AST.emplace_back(JSON_VAL::inplace(JSON_SYM::end_of_input, s.getPos()));
   }
 
-  void PrintAST()
+  void PrintAST(void (*function_hook)(std::vector<JSON_VAL>&) = nullptr)
   {
-    auto printStringResult = [](const StringResult& res) {
-      std::cout << "StringDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
-    };
-    auto printNumberResult = [](const NumberResult& res) {
-      std::cout << "NumberDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
-    };
-    std::string endStr = ", hurray!\n";
     int indent = 0;
     auto indenter=[&indent]()
     {
       for(int j = indent; j != 0; --j)
         std::cout <<'\t';
     };
-    for(JSON_VAL &c: AST)
+    auto printStringResult = [&](const StringResult& res) {
+      indenter();
+      std::cout << "StringDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+    };
+    auto printNumberResult = [&](const NumberResult& res) {
+      indenter();
+      std::cout << "NumberDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+    };
+    auto printFloatResult = [&](const NumberResult& res) {
+      indenter();
+      std::cout << "FloatDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+    };
+
+    std::string endStr = ", hurray!\n";
+    std::vector<JSON_VAL> ASTCop(AST);
+    if(function_hook != nullptr)
+    {
+      // @TODO Functor! Filters for example!
+      function_hook(ASTCop);
+    }
+
+    for(JSON_VAL &c: ASTCop)
     {
       switch(c.Type)
       {
         case JSON_SYM::value_string:
-          indenter();
           printStringResult(c.value.str);
           break;
         case JSON_SYM::value_number:
-          indenter();
           printNumberResult(c.value.number);
+          break;
+        case JSON_SYM::value_float:
+          printFloatResult(c.value.number);
           break;
         case JSON_SYM::literal_true:
           indenter();
@@ -576,10 +586,6 @@ public:
           indenter();
           std::cout << "literal_null at " << c.Pos << ". \n";
           break;
-        case JSON_SYM::Unknown:
-          indenter();
-          std::cout << "uninitialised at " << c.Pos << ". \n";
-          break;
         case JSON_SYM::begin_object:
           indenter();
           ++indent;
@@ -591,13 +597,13 @@ public:
           std::cout << "begin_array at " << c.Pos << ". \n";
           break;
         case JSON_SYM::end_array:
-          indenter();
           --indent;
+          indenter();
           std::cout << "end_array at " << c.Pos << ". \n";
           break;
         case JSON_SYM::end_object:
-          indenter();
           --indent;
+          indenter();
           std::cout << "end_object at " << c.Pos << ". \n";
           break;
         case JSON_SYM::name_seperator:
@@ -607,6 +613,10 @@ public:
         case JSON_SYM::member_seperator:
           indenter();
           std::cout << "member_seperator at " << c.Pos << ",\n";
+          break;
+        case JSON_SYM::Unknown:
+          indenter();
+          std::cout << "uninitialised at " << c.Pos << ". \n";
           break;
         case JSON_SYM::end_of_input:
           if(indent!=0)

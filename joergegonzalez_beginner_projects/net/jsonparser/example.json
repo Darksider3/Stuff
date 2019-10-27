@@ -1,9 +1,9 @@
 [
   {
-  "here": true,
-  "living": false,
-  "with Nulls": null,
-  "and a hex": 0x444
+    "here": true,
+    "living": false,
+    "with Nulls": null,
+    "and a hex": "0x444",
   },
   {
     "name": "Molecule Man",
