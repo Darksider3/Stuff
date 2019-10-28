@@ -119,11 +119,12 @@ struct StringResult
 struct JSON_VAL
 {
   std::vector<JSON_VAL> ArryObj;
+  int *before;
   struct VAL
   {
-    bool literal;
-    NumberResult number = {};
     StringResult Str;
+    NumberResult number = {};
+    bool literal;
     enum class Set
     {
       Number,
@@ -131,29 +132,29 @@ struct JSON_VAL
       Boolean,
       Literal,
       None
-    } Type;
+    };
+    Set Type;
   } value;
   JSON_SYM Sym;
 
   int Pos;
-  static JSON_VAL inplace(JSON_SYM t, size_t pos=0, JSON_VAL::VAL::Set T = JSON_VAL::VAL::Set::None)
-  {
-    JSON_VAL tmp;
-    tmp.value.Type = T;
-    tmp.Sym = t;
-    tmp.Pos = static_cast<int>(pos);
-    return tmp;
-  }
-
-  bool hasStrOrInt()
-  {
-    if(value.number.StartPos != -1 || value.Str.StartPos != -1)
-      return true;
-    else
-      return false;
-  }
 };
+static JSON_VAL create_in_place(JSON_SYM t, size_t pos=0, JSON_VAL::VAL::Set T = JSON_VAL::VAL::Set::None)
+{
+  JSON_VAL tmp;
+  tmp.value.Type = T;
+  tmp.Sym = t;
+  tmp.Pos = static_cast<int>(pos);
+  return tmp;
+}
 
+bool hasStrOrInt(JSON_VAL obj)
+{
+  if(obj.value.number.StartPos != -1 || obj.value.Str.StartPos != -1)
+    return true;
+  else
+    return false;
+}
 
 // @TODO: __PLEASE__ use exceptions..... -.-
 class Tokenizer
@@ -295,6 +296,15 @@ public:
 
   StringResult getStrOnPos(size_t startingPos = 0)
   {
+    auto isViableHexChar=[](char s)
+    {
+      return (std::isdigit(s) ||
+         s == 'A' || s == 'a' ||
+         s == 'B' || s == 'b' ||
+         s == 'C' || s == 'c' ||
+         s == 'D' || s == 'd' ||
+         s == 'E' || s == 'e');
+    };
     if(startingPos == 0)
     {
       startingPos = getPos();
@@ -322,6 +332,14 @@ public:
       cur = peek(static_cast<size_t>(i));
       if(cur == '\\')
       {
+        if((peek(static_cast<size_t>(i+1)) == 'u' || peek(static_cast<size_t>(i+1)) == 'U') &&
+           isViableHexChar(peek(static_cast<size_t>(i+1))) &&
+           isViableHexChar(peek(static_cast<size_t>(i+2))) &&
+           isViableHexChar(peek(static_cast<size_t>(i+3))) &&
+           isViableHexChar(peek(static_cast<size_t>(i+4))))
+        {
+          // @TODO it's a valid codepoint. Process it...
+        }
         temp+=cur;
         escaped=true;
       }
@@ -401,7 +419,7 @@ public:
   {
     std::vector<JSON_VAL> CurObj;
     auto emit = [&](auto Type) {
-      CurObj.emplace_back(JSON_VAL::inplace(Type, s.getPos()));
+      CurObj.emplace_back(create_in_place(Type, s.getPos()));
     };
 
 //    auto strCopy = [](auto str, auto ptr) {
