@@ -514,9 +514,9 @@ public:
           // ok, it's definitly a number. Detect if it's a floating point or an integer and go add it!
           continue;
         }
-        std::cout << "ASSERT NOT REACHED ON CHAR " << cur;
-        emit(JSON_SYM::Unknown);
       }
+      std::cout << "ASSERT NOT REACHED ON CHAR " << cur << "\n";
+      emit(JSON_SYM::Unknown);
       //std::cout << "SWITCH done, here must be a value or key\n";
     }
     AST=std::vector<JSON_VAL>(CurObj);
@@ -607,7 +607,7 @@ public:
           break;
         case JSON_SYM::Unknown:
           indenter();
-          std::cout << "uninitialised at " << c.Pos << ". \n";
+          std::cout << "UNKNOWN at " << c.Pos << ". \n";
           break;
         case JSON_SYM::end_of_input:
           if(indent!=0)
@@ -620,6 +620,69 @@ public:
     }
     std::cout << std::endl;
   }
+  bool validate()
+  {
+    bool valid = true;
+    size_t i = 0;
+    if(AST[0].Type != JSON_SYM::begin_array && AST[0].Type != JSON_SYM::begin_object)
+    {
+      std::cout << "JSON MUST START WITH AN ARRAY OR OBJECT DECLARATION!!!!\n";
+      valid = false;
+    }
+    for(; i <= AST.size(); ++i)
+    {
+      // @TODO validation...
+    }
+    return valid;
+  }
+
+  std::string statistics()
+  {
+    size_t separators=0, values=0, numbers=0, floats=0, strings=0, literals=0, unknowns=0, begin=0, end=0;
+    std::string out;
+    for(size_t i = 0; i <= AST.size(); ++i)
+    {
+      switch(AST[i].Type)
+      {
+        case JSON_SYM::Unknown:
+          ++unknowns;
+          break;
+        case JSON_SYM::value_float:
+          ++floats;
+          break;
+        case JSON_SYM::value_number:
+          ++numbers;
+          break;
+        case JSON_SYM::value_string:
+          ++strings;
+          break;
+        case JSON_SYM::value_separator:
+        case JSON_SYM::member_seperator:
+          ++separators;
+          break;
+        case JSON_SYM::literal_null:
+        case JSON_SYM::literal_true:
+        case JSON_SYM::literal_false:
+          ++literals;
+          break;
+        case JSON_SYM::begin_object:
+        case JSON_SYM::begin_array:
+          ++begin;
+          break;
+        case JSON_SYM::end_object:
+        case JSON_SYM::end_array:
+          ++end;
+          break;
+        default:
+          break;
+      }
+    }
+    values = numbers+floats+strings;
+    std::cout << "There are: \n\t* " << values <<" Values, consisting of\n\t\t* " << strings << " strings, \n\t\t* "<< numbers << " numbers,\n\t\t* " << floats << " floats,\n\t\t* " << literals << " literals!\n";
+    std::cout << "\t* " << unknowns-1 << " Unknown Symbols\n\t* " << separators << " Separators,\n\t* " << begin << " begins{array,object},\n\t* " << end << " ends!\n";
+    return out;
+  }
+
   size_t Turn(std::vector<JSON_VAL> Head, size_t cursor=0)
   {
     auto isValue = [](JSON_VAL p)
