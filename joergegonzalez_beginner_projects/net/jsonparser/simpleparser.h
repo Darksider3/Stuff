@@ -121,17 +121,26 @@ struct JSON_VAL
   std::vector<JSON_VAL> ArryObj;
   struct VAL
   {
-    bool boolean;
+    bool literal;
     NumberResult number = {};
     StringResult Str;
+    enum class Set
+    {
+      Number,
+      String,
+      Boolean,
+      Literal,
+      None
+    } Type;
   } value;
-  JSON_SYM Type;
+  JSON_SYM Sym;
 
   int Pos;
-  static JSON_VAL inplace(JSON_SYM t, size_t pos=0)
+  static JSON_VAL inplace(JSON_SYM t, size_t pos=0, JSON_VAL::VAL::Set T = JSON_VAL::VAL::Set::None)
   {
     JSON_VAL tmp;
-    tmp.Type = t;
+    tmp.value.Type = T;
+    tmp.Sym = t;
     tmp.Pos = static_cast<int>(pos);
     return tmp;
   }
@@ -473,8 +482,9 @@ public:
         JSON_VAL found_str;
         StringResult temp = s.getStrOnPos(s.getPos()-1);
         found_str.Pos = static_cast<int>(s.getPos()-1);
-        found_str.Type = JSON_SYM::value_string;
+        found_str.Sym = JSON_SYM::value_string;
         found_str.value.Str = temp;
+        found_str.value.Type = JSON_VAL::VAL::Set::String;
         CurObj.push_back(found_str);
         s.setPos(s.getPos()+temp.str.size()+1);
         continue;
@@ -503,12 +513,14 @@ public:
           found_num.value.number = num;
           if(found_num.value.number.hasDot)
           {
-            found_num.Type = JSON_SYM::value_float;
+            found_num.Sym = JSON_SYM::value_float;
           }
           else
           {
-            found_num.Type = JSON_SYM::value_number;
+            found_num.Sym = JSON_SYM::value_number;
           }
+
+          found_num.value.Type = JSON_VAL::VAL::Set::Number;
           CurObj.emplace_back(found_num);
           s.setPos(s.getPos()+num.str.size()-1);
           // ok, it's definitly a number. Detect if it's a floating point or an integer and go add it!
@@ -554,7 +566,7 @@ public:
 
     for(JSON_VAL &c: ASTCop)
     {
-      switch(c.Type)
+      switch(c.Sym)
       {
         case JSON_SYM::value_string:
           printStringResult(c.value.Str);
@@ -624,7 +636,7 @@ public:
   {
     bool valid = true;
     size_t i = 0;
-    if(AST[0].Type != JSON_SYM::begin_array && AST[0].Type != JSON_SYM::begin_object)
+    if(AST[0].Sym != JSON_SYM::begin_array && AST[0].Sym != JSON_SYM::begin_object)
     {
       std::cout << "JSON MUST START WITH AN ARRAY OR OBJECT DECLARATION!!!!\n";
       valid = false;
@@ -638,11 +650,14 @@ public:
 
   std::string statistics()
   {
-    size_t separators=0, values=0, numbers=0, floats=0, strings=0, literals=0, unknowns=0, begin=0, end=0;
+    size_t separators=0, values=0, numbers=0, floats=0, strings=0, literals=0, unknowns=0, begin=0, end=0, none=0;
     std::string out;
-    for(size_t i = 0; i <= AST.size(); ++i)
+    size_t i = 0;
+    for(; i != AST.size(); ++i)
     {
-      switch(AST[i].Type)
+      if(AST[i].value.Type == JSON_VAL::VAL::Set::None)
+        ++none;
+      switch(AST[i].Sym)
       {
         case JSON_SYM::Unknown:
           ++unknowns;
@@ -673,6 +688,9 @@ public:
         case JSON_SYM::end_array:
           ++end;
           break;
+        case JSON_SYM::parse_error:
+          std::cout << "errrr\n";
+          break;
         default:
           break;
       }
@@ -680,6 +698,7 @@ public:
     values = numbers+floats+strings;
     std::cout << "There are: \n\t* " << values <<" Values, consisting of\n\t\t* " << strings << " strings, \n\t\t* "<< numbers << " numbers,\n\t\t* " << floats << " floats,\n\t\t* " << literals << " literals!\n";
     std::cout << "\t* " << unknowns-1 << " Unknown Symbols\n\t* " << separators << " Separators,\n\t* " << begin << " begins{array,object},\n\t* " << end << " ends!\n";
+    std::cout << "\t and finally you've got exactly " << none << " Elements without a type, with in TOTAL you've got " << i  << "! \\o \n";
     return out;
   }
 
@@ -687,16 +706,16 @@ public:
   {
     auto isValue = [](JSON_VAL p)
     {
-      return (p.Type == JSON_SYM::value_string
-              || p.Type == JSON_SYM::value_number
-              || p.Type == JSON_SYM::value_float);
+      return (p.Sym == JSON_SYM::value_string
+              || p.Sym == JSON_SYM::value_number
+              || p.Sym == JSON_SYM::value_float);
     };
 
     auto isLiteral = [](JSON_VAL p)
     {
-      return (p.Type == JSON_SYM::literal_null
-            || p.Type == JSON_SYM::literal_true
-            || p.Type == JSON_SYM::literal_false);
+      return (p.Sym == JSON_SYM::literal_null
+            || p.Sym == JSON_SYM::literal_true
+            || p.Sym == JSON_SYM::literal_false);
     };
     auto isValueOrLiteral = [&](JSON_VAL p)
     {
@@ -706,16 +725,16 @@ public:
 
     for(; cursor <= Head.size(); ++cursor)
     {
-      if(Head[cursor].Type == JSON_SYM::end_array || Head[cursor].Type == JSON_SYM::end_object)
+      if(Head[cursor].Sym == JSON_SYM::end_array || Head[cursor].Sym == JSON_SYM::end_object)
       {
         std::cout << "ended\n";
         return cursor;
       }
-      if(Head[cursor].Type == JSON_SYM::begin_array || Head[cursor].Type == JSON_SYM::begin_object)
+      if(Head[cursor].Sym == JSON_SYM::begin_array || Head[cursor].Sym == JSON_SYM::begin_object)
       {
         if(cursor-1 > 0)
         {
-          if(Head[cursor-1].Type == JSON_SYM::value_separator && Head[cursor].Type == JSON_SYM::begin_object)
+          if(Head[cursor-1].Sym == JSON_SYM::value_separator && Head[cursor].Sym == JSON_SYM::begin_object)
           {
             std::cout << "And a named object/array\n";
           }
@@ -724,7 +743,7 @@ public:
         cursor = Turn(Head, cursor);
         continue;
       }
-      if(Head[cursor].Type == JSON_SYM::value_separator && isValueOrLiteral(Head[cursor+1]) && isValueOrLiteral(Head[cursor-1]))
+      if(Head[cursor].Sym == JSON_SYM::value_separator && isValueOrLiteral(Head[cursor+1]) && isValueOrLiteral(Head[cursor-1]))
       {
         std::cout << "Here Value separator, next element is float/number/str/bool/null\n";
         if(isValue(Head[cursor-1]))

@@ -3,7 +3,7 @@
 int main()
 {
   JSON_VAL b;
-  b.Type = JSON_SYM::begin_array;
+  b.Sym = JSON_SYM::begin_array;
   Parser s{"./example.json"};
   s.parse();
   s.PrintAST();
