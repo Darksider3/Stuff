@@ -1,3 +1,4 @@
+#pragma once
 #ifndef SIMPLEPARSER_H
 #define SIMPLEPARSER_H
 #include <iostream>
