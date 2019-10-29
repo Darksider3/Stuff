@@ -1,11 +1,6 @@
 [
   {
-    "Thingy is": {
-      "here": true,
-      "living": false,
-      "with Nulls": null,
-      "and a hex": "0x444",
-    },
+    "Thingy is": {"here": true,"living": false,"with Nulls": null,"and a hex": "0x444",},
   },
   {
     "name": "Molecule Man",
@@ -18,5 +13,5 @@
   {
     "name": "Me",
     "age": 2.5
-  }
+  },
 ]

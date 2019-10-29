@@ -296,6 +296,10 @@ public:
 
   StringResult getStrOnPos(size_t startingPos = 0)
   {
+    auto isQuote = [](char ch)
+    {
+      return (ch == '\'' || ch == '"');
+    };
     auto isViableHexChar=[](char s)
     {
       return (std::isdigit(s) ||
@@ -336,7 +340,7 @@ public:
            isViableHexChar(peek(static_cast<size_t>(i+1))) &&
            isViableHexChar(peek(static_cast<size_t>(i+2))) &&
            isViableHexChar(peek(static_cast<size_t>(i+3))) &&
-           isViableHexChar(peek(static_cast<size_t>(i+4))))
+           isViableHexChar(peek(static_cast<size_t>(i+4)))) // @TODO OTHERWISE escaped == True bla
         {
           // @TODO it's a valid codepoint. Process it...
         }
@@ -363,19 +367,6 @@ public:
     returner.StartPos = static_cast<long>(startingPos);
     returner.EndPos = static_cast<long>(i);
     return returner;
-  }
-
-  bool isQuote(size_t const Pos) const
-  {
-    if(Pos >= File.size())
-      throw(ParserAndTokenExceptions::TokenSizeException("Reqeusted position is out of bounds of the given file. Thrown in line: ", __LINE__));
-
-    return isQuote(File[Pos]);
-  }
-
-  static bool isQuote(char const ch)
-  {
-    return (ch == '\'' || ch == '"');
   }
 
   char peek(size_t Pos=0) const
@@ -715,27 +706,27 @@ public:
     }
     values = numbers+floats+strings;
     std::cout << "There are: \n\t* " << values <<" Values, consisting of\n\t\t* " << strings << " strings, \n\t\t* "<< numbers << " numbers,\n\t\t* " << floats << " floats,\n\t\t* " << literals << " literals!\n";
-    std::cout << "\t* " << unknowns-1 << " Unknown Symbols\n\t* " << separators << " Separators,\n\t* " << begin << " begins{array,object},\n\t* " << end << " ends!\n";
+    std::cout << "\t* " << unknowns << " Unknown Symbols\n\t* " << separators << " Separators,\n\t* " << begin << " begins{array,object},\n\t* " << end << " ends!\n";
     std::cout << "\t and finally you've got exactly " << none << " Elements without a type, with in TOTAL you've got " << i  << "! \\o \n";
     return out;
   }
 
   size_t Turn(std::vector<JSON_VAL> Head, size_t cursor=0)
   {
-    auto isValue = [](JSON_VAL p)
+    auto isValue = [](JSON_VAL &p)
     {
       return (p.Sym == JSON_SYM::value_string
               || p.Sym == JSON_SYM::value_number
               || p.Sym == JSON_SYM::value_float);
     };
 
-    auto isLiteral = [](JSON_VAL p)
+    auto isLiteral = [](JSON_VAL &p)
     {
       return (p.Sym == JSON_SYM::literal_null
             || p.Sym == JSON_SYM::literal_true
             || p.Sym == JSON_SYM::literal_false);
     };
-    auto isValueOrLiteral = [&](JSON_VAL p)
+    auto isValueOrLiteral = [&](JSON_VAL &p)
     {
 
       return (isValue(p) || isLiteral(p));
