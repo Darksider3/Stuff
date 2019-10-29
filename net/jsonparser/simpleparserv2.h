@@ -37,7 +37,8 @@ std::string get_file_contents(const char *filename)
     std::fclose(fp);
     return(contents);
   }
-  throw(errno);
+  std::cout << (errno);
+  std::abort();
 }
 
 enum class JSON_SYM {
@@ -61,14 +62,20 @@ struct StringResult
   long StartPos={-1}, EndPos={-1};
 };
 
+
 struct JSON_Object
 {
+
+  struct KeyNameOrNumber
+  {
+    std::string str;
+    int i;
+  } Key;
   std::vector<JSON_Object> ArryObj;
   struct Value
   {
     StringResult String;
     NumberResult number = {};
-    bool literal;
     enum class Typename
     {
       Number,
@@ -80,7 +87,6 @@ struct JSON_Object
     Typename Type;
   } value;
   JSON_SYM Sym;
-
   int Pos;
 };
 
@@ -93,16 +99,8 @@ private:
 public:
   explicit Tokenizer(const std::string &F)
   {
-    try
-    {
-      File = get_file_contents(F.c_str());
-      Position = 0;
-    }
-    catch(int &e)
-    {
-      std::cout << "Sorry, something went wrong here! Your file doesn't exist.\n";
-      std::exit(e);
-    }
+    File = get_file_contents(F.c_str());
+    Position = 0;
   }
 
   size_t size() const
@@ -213,7 +211,7 @@ public:
     };
     if(startingPos == 0)
     {
-      startingPos = getPos();
+      startingPos = getPos()-1;
     }
     assert(startingPos <= File.size() && "Requested startingPosition is bigger then the actual file size.");
     StringResult returner;
@@ -234,7 +232,8 @@ public:
       cur = peek(static_cast<size_t>(i));
       if(cur == '\\')
       {
-        if((peek(static_cast<size_t>(i+1)) == 'u' || peek(static_cast<size_t>(i+1)) == 'U') &&
+        if(StrStarter == '\'' &&
+           (peek(static_cast<size_t>(i+1)) == 'u' || peek(static_cast<size_t>(i+1)) == 'U') &&
            isViableHexChar(peek(static_cast<size_t>(i+1))) &&
            isViableHexChar(peek(static_cast<size_t>(i+2))) &&
            isViableHexChar(peek(static_cast<size_t>(i+3))) &&

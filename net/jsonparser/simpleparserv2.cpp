@@ -72,7 +72,7 @@ void simpleparserv2::parse()
     if(cur == '"' || cur == '\'')
     {
       JSON_Object found_str;
-      StringResult tmp = tok.getStrOnPos(tok.getPos()-1);
+      StringResult tmp = tok.getStrOnPos();
       found_str.Pos = static_cast<int>(tok.getPos()-1);
       found_str.Sym = JSON_SYM::value_string;
       found_str.value.String = tmp;
@@ -96,6 +96,7 @@ void simpleparserv2::parse()
       {
         found_num.Sym = JSON_SYM::value_number;
       }
+      num.Number = std::stod(num.str);
       found_num.value.number = num;
       H.emplace_back(found_num);
       tok.setPos(tok.getPos()+num.str.size()-1); // -1 here because size() is not null-indexed, but numbers don't start with an own identifier...
