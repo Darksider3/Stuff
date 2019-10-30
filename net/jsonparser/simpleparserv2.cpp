@@ -78,7 +78,7 @@ void simpleparserv2::parse()
       found_str.value = tmp;
       found_str.Type = JSON_Object::Typename::String;
       H.emplace_back(found_str);
-      tok.setPos(tok.getPos()+tmp->str.size()+1); // we didnt include the quotes - so size is already +1 off, but we need +1 for the second one
+      tok.setPos(tok.getPos()+tmp->String.size()+1); // we didnt include the quotes - so size is already +1 off, but we need +1 for the second one
       continue;
     }
     if(std::isdigit(cur))
@@ -86,7 +86,7 @@ void simpleparserv2::parse()
       struct NumberResult *num;
       struct JSON_Object found_num;
       num = new NumberResult(tok.getNumber());
-      assert(!num->str.empty() && "How is this empty?");
+      assert(!num->String.empty() && "How is this empty?");
       found_num.Type = JSON_Object::Typename::Number;
       if(num->hasDot)
       {
@@ -96,10 +96,10 @@ void simpleparserv2::parse()
       {
         found_num.Sym = JSON_SYM::value_number;
       }
-      num->Number = std::stod(num->str);
+      num->Number = std::stod(num->String);
       found_num.value = num;
       H.emplace_back(found_num);
-      tok.setPos(tok.getPos()+num->str.size()-1); // -1 here because size() is not null-indexed, but numbers don't start with an own identifier...
+      tok.setPos(tok.getPos()+num->String.size()-1); // -1 here because size() is not null-indexed, but numbers don't start with an own identifier...
       continue;
     }
     std::cout << "UNKNOWN CHAR : " << cur << "\n";

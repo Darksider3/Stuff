@@ -51,7 +51,7 @@ enum class JSON_SYM {
 struct GenericResult
 {
   long StartPos=-1, EndPos=-1;
-  std::string str = {""};
+  std::string String = {""};
 };
 
 struct NumberResult : public GenericResult
@@ -71,7 +71,7 @@ struct NumberResult : public GenericResult
     StartPos = p.StartPos;
     EndPos = p.EndPos;
     Number = p.Number;
-    str = p.str;
+    String = p.String;
   }
   NumberResult(const NumberResult &&p)
   {
@@ -80,7 +80,7 @@ struct NumberResult : public GenericResult
     StartPos = p.StartPos;
     EndPos = p.EndPos;
     Number = p.Number;
-    str = p.str;
+    String = p.String;
   }
 };
 
@@ -93,7 +93,7 @@ struct StringResult : GenericResult
   }
   StringResult(const StringResult &p)
   {
-    str = p.str;
+    String = p.String;
     StartPos = p.StartPos;
     EndPos = p.EndPos;
   }
@@ -223,7 +223,7 @@ public:
     }
     res.StartPos = static_cast<long>(FromPos);
     res.EndPos = static_cast<long>(--cursor);
-    res.str = temp;
+    res.String = temp;
     return res;
   }
 
@@ -293,7 +293,7 @@ public:
         temp+=cur;
       }
     }
-    returner.str = temp;
+    returner.String = temp;
     returner.StartPos = static_cast<long>(startingPos);
     returner.EndPos = static_cast<long>(i);
     return returner;
@@ -341,15 +341,15 @@ public:
     };
     auto printStringResult = [&](const GenericResult& res) {
       indenter();
-      std::cout << "StringDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+      std::cout << "StringDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
     };
     auto printNumberResult = [&](const GenericResult& res) {
       indenter();
-      std::cout << "NumberDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+      std::cout << "NumberDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
     };
     auto printFloatResult = [&](const GenericResult& res) {
       indenter();
-      std::cout << "FloatDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+      std::cout << "FloatDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
     };
 
     std::string endStr = ", hurray!\n";
@@ -359,9 +359,10 @@ public:
       // @TODO Functor! Filters for example!
       function_hook(ASTCop);
     }
-
+    size_t i = 0;
     for(JSON_Object &c: ASTCop)
     {
+      ++i;
       switch(c.Sym)
       {
         case JSON_SYM::value_string:
@@ -413,6 +414,7 @@ public:
           indenter();
           std::cout << "member_seperator at " << c.Pos << ",\n";
           break;
+        case JSON_SYM::parse_error:
         case JSON_SYM::Unknown:
           indenter();
           std::cout << "UNKNOWN at " << c.Pos << ". \n";
@@ -422,11 +424,9 @@ public:
             std::cout << "huh....\n";
           std::cout << "End at "<< c.Pos << ".\n";
           break;
-        default:
-          std::cout << "something else!" << std::endl;
       }
     }
-    std::cout << std::endl;
+    std::cout << "Saw " << i << " objects " << std::endl;
   }
   virtual ~simpleparserv2();
 };
