@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstring>
 #include <cassert>
+#include <memory>
 //#include <zconf.h>
 #define FOR_EACH_SYM \
   SYMBOLNAME (Unknown)          \
@@ -46,48 +47,80 @@ enum class JSON_SYM {
   FOR_EACH_SYM
   #undef SYMBOLNAME
 };
-struct NumberResult
+
+struct GenericResult
 {
-  bool hasDot = {false};
-  bool hasE = {false};
-  long StartPos = {-1}, EndPos = {-1};
-  double Number= {0};
+  long StartPos=-1, EndPos=-1;
   std::string str = {""};
 };
 
-
-struct StringResult
+struct NumberResult : public GenericResult
 {
-  std::string str;
-  long StartPos={-1}, EndPos={-1};
+  bool hasDot = {false};
+  bool hasE = {false};
+  double Number = {0};
+
+  NumberResult()
+  {
+    return;
+  }
+  NumberResult(const NumberResult &p)
+  {
+    hasDot = p.hasDot;
+    hasE = p.hasE;
+    StartPos = p.StartPos;
+    EndPos = p.EndPos;
+    Number = p.Number;
+    str = p.str;
+  }
+  NumberResult(const NumberResult &&p)
+  {
+    hasDot = p.hasDot;
+    hasE = p.hasE;
+    StartPos = p.StartPos;
+    EndPos = p.EndPos;
+    Number = p.Number;
+    str = p.str;
+  }
+};
+
+
+struct StringResult : GenericResult
+{
+  StringResult()
+  {
+    return;
+  }
+  StringResult(const StringResult &p)
+  {
+    str = p.str;
+    StartPos = p.StartPos;
+    EndPos = p.EndPos;
+  }
 };
 
 
 struct JSON_Object
 {
-
+public:
   struct KeyNameOrNumber
   {
     std::string str;
     int i;
   } Key;
-  std::vector<JSON_Object> ArryObj;
-  struct Value
+  enum class Typename
   {
-    StringResult String;
-    NumberResult number = {};
-    enum class Typename
-    {
-      Number,
-      String,
-      Boolean,
-      Null,
-      None
-    };
-    Typename Type;
-  } value;
-  JSON_SYM Sym;
+    Number,
+    String,
+    Boolean,
+    Null,
+    None
+  };
+  GenericResult *value;
   int Pos;
+  Typename Type;
+  JSON_SYM Sym;
+  std::vector<JSON_Object> ArryObj;
 };
 
 class Tokenizer
@@ -297,6 +330,105 @@ public:
 
   simpleparserv2(const std::string&);
   void parse();
+  void PrintAST(void (*function_hook)(std::vector<JSON_Object>&) = nullptr)
+  {
+    std::cout << "AST Size: " << H.size() << "\n";
+    int indent = 0;
+    auto indenter=[&indent]()
+    {
+      for(int j = indent; j != 0; --j)
+        std::cout <<'\t';
+    };
+    auto printStringResult = [&](const GenericResult& res) {
+      indenter();
+      std::cout << "StringDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+    };
+    auto printNumberResult = [&](const GenericResult& res) {
+      indenter();
+      std::cout << "NumberDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+    };
+    auto printFloatResult = [&](const GenericResult& res) {
+      indenter();
+      std::cout << "FloatDump: Str: '" << res.str << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+    };
+
+    std::string endStr = ", hurray!\n";
+    std::vector<JSON_Object> ASTCop(H);
+    if(function_hook != nullptr)
+    {
+      // @TODO Functor! Filters for example!
+      function_hook(ASTCop);
+    }
+
+    for(JSON_Object &c: ASTCop)
+    {
+      switch(c.Sym)
+      {
+        case JSON_SYM::value_string:
+          printStringResult(*(c).value);
+          break;
+        case JSON_SYM::value_number:
+          printNumberResult(*(c).value);
+          break;
+        case JSON_SYM::value_float:
+          printFloatResult(*(c).value);
+          break;
+        case JSON_SYM::literal_true:
+          indenter();
+          std::cout << "literal_true at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::literal_false:
+          indenter();
+          std::cout << "literal_false at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::literal_null:
+          indenter();
+          std::cout << "literal_null at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::begin_object:
+          indenter();
+          ++indent;
+          std::cout << "begin_object at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::begin_array:
+          indenter();
+          ++indent;
+          std::cout << "begin_array at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::end_array:
+          --indent;
+          indenter();
+          std::cout << "end_array at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::end_object:
+          --indent;
+          indenter();
+          std::cout << "end_object at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::value_separator:
+          indenter();
+          std::cout << "name_seperator at " << c.Pos << ": ";
+          break;
+        case JSON_SYM::member_seperator:
+          indenter();
+          std::cout << "member_seperator at " << c.Pos << ",\n";
+          break;
+        case JSON_SYM::Unknown:
+          indenter();
+          std::cout << "UNKNOWN at " << c.Pos << ". \n";
+          break;
+        case JSON_SYM::end_of_input:
+          if(indent!=0)
+            std::cout << "huh....\n";
+          std::cout << "End at "<< c.Pos << ".\n";
+          break;
+        default:
+          std::cout << "something else!" << std::endl;
+      }
+    }
+    std::cout << std::endl;
+  }
+  virtual ~simpleparserv2();
 };
 
 #endif // SIMPLEPARSERV2_H
