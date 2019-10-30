@@ -123,10 +123,30 @@ simpleparserv2::~simpleparserv2()
     }
   }
 }
+/*
+void Functor(std::vector<JSON_Object>& s)
+{
+  for(auto &c: s)
+  {
+    if(c.Sym == JSON_SYM::end_of_input)
+    {
+      JSON_Object tmp;
+      GenericResult *bla=new StringResult;
+      bla->String = "HAHAHAHA THIS FUNCTOR WORKS FUCK YE";
+      tmp.Pos = -1;
+      tmp.Type = JSON_Object::Typename::String;
+      tmp.Sym = JSON_SYM::value_string;
+      tmp.value = bla;
+      s.emplace_back(tmp);
+      return;
+    }
+  }
+}
+*/
 int main()
 {
   simpleparserv2 Test{"./example.json"};
   Test.parse();
-  Test.PrintAST();
+  Test.PrintAST(); // Functor
   return 0;
 }

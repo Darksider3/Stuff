@@ -97,6 +97,12 @@ struct StringResult : GenericResult
     StartPos = p.StartPos;
     EndPos = p.EndPos;
   }
+  StringResult(const StringResult &&p)
+  {
+    StartPos = p.StartPos;
+    EndPos = p.EndPos;
+    String = p.String;
+  }
 };
 
 
@@ -116,7 +122,7 @@ public:
     Null,
     None
   };
-  GenericResult *value;
+  GenericResult *value = {nullptr};
   int Pos;
   Typename Type;
   JSON_SYM Sym;
@@ -357,7 +363,7 @@ public:
     if(function_hook != nullptr)
     {
       // @TODO Functor! Filters for example!
-      function_hook(ASTCop);
+      (*function_hook)(ASTCop);
     }
     size_t i = 0;
     for(JSON_Object &c: ASTCop)
