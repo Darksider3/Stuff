@@ -78,7 +78,7 @@ void simpleparserv2::parse()
       found_str.value = tmp;
       found_str.Type = JSON_Object::Typename::String;
       H.emplace_back(found_str);
-      tok.setPos(tok.getPos()+tmp->String.size()+1); // we didnt include the quotes - so size is already +1 off, but we need +1 for the second one
+      tok.setPos(tok.getPos()+tmp->String.size()+1); // we didnt include the quotes - so size is already(due to being not null-indexed) +1 off, but we need +1 for the second one
       continue;
     }
     if(std::isdigit(cur))
