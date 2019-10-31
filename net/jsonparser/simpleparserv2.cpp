@@ -81,7 +81,7 @@ void simpleparserv2::parse()
       tok.setPos(tok.getPos()+tmp->String.size()+1); // we didnt include the quotes - so size is already(due to being not null-indexed) +1 off, but we need +1 for the second one
       continue;
     }
-    if(std::isdigit(cur))
+    if(std::isdigit(cur) || (cur == '-' && std::isdigit(tok.peek())))
     {
       struct NumberResult *num;
       struct JSON_Object found_num;
