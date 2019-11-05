@@ -2,6 +2,104 @@
 
 simpleparserv2::simpleparserv2(const std::string& t) : tok{t}
 {}
+void simpleparserv2::PrintAST(void (*function_hook)(std::vector<JSON_Object>&))
+{
+  std::cout << "AST Size: " << H.size() << "\n";
+  int indent = 0;
+  auto indenter=[&indent]()
+  {
+    for(int j = indent; j != 0; --j)
+      std::cout <<'\t';
+  };
+  auto printStringResult = [&](const GenericResult& res) {
+    indenter();
+    std::cout << "StringDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+  };
+  auto printNumberResult = [&](const GenericResult& res) {
+    indenter();
+    std::cout << "NumberDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+  };
+  auto printFloatResult = [&](const GenericResult& res) {
+    indenter();
+    std::cout << "FloatDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
+  };
+
+  std::string endStr = ", hurray!\n";
+  std::vector<JSON_Object> ASTCop(H);
+  if(function_hook != nullptr)
+  {
+    // @TODO Functor! Filters for example!
+    (*function_hook)(ASTCop);
+  }
+  size_t i = 0;
+  for(JSON_Object &c: ASTCop)
+  {
+    ++i;
+    switch(c.Sym)
+    {
+      case JSON_SYM::value_string:
+        printStringResult(*(c).value);
+        break;
+      case JSON_SYM::value_number:
+        printNumberResult(*(c).value);
+        break;
+      case JSON_SYM::value_float:
+        printFloatResult(*(c).value);
+        break;
+      case JSON_SYM::literal_true:
+        indenter();
+        std::cout << "literal_true at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::literal_false:
+        indenter();
+        std::cout << "literal_false at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::literal_null:
+        indenter();
+        std::cout << "literal_null at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::begin_object:
+        indenter();
+        ++indent;
+        std::cout << "begin_object at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::begin_array:
+        indenter();
+        ++indent;
+        std::cout << "begin_array at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::end_array:
+        --indent;
+        indenter();
+        std::cout << "end_array at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::end_object:
+        --indent;
+        indenter();
+        std::cout << "end_object at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::value_separator:
+        indenter();
+        std::cout << "name_seperator at " << c.Pos << ": ";
+        break;
+      case JSON_SYM::member_seperator:
+        indenter();
+        std::cout << "member_seperator at " << c.Pos << ",\n";
+        break;
+      case JSON_SYM::parse_error:
+      case JSON_SYM::Unknown:
+        indenter();
+        std::cout << "UNKNOWN at " << c.Pos << ". \n";
+        break;
+      case JSON_SYM::end_of_input:
+        if(indent!=0)
+          std::cout << "huh....\n";
+        std::cout << "End at "<< c.Pos << ".\n";
+        break;
+    }
+  }
+  std::cout << "Saw " << i << " objects " << std::endl;
+}
 
 void simpleparserv2::parse()
 {
@@ -143,10 +241,66 @@ void Functor(std::vector<JSON_Object>& s)
   }
 }
 */
+bool isValidValue(JSON_Object p)
+{
+  return (p.Type != JSON_Object::Typename::None);
+}
+
+bool isString(JSON_Object p)
+{
+  return(p.Type == JSON_Object::Typename::String);
+}
+
+size_t simpleparserv2::turn(std::vector<JSON_Object> Head, std::vector<JSON_Object> Dest, size_t p, size_t destp)
+{
+  size_t i = p;
+  size_t arrayAccessPointer = 0;
+  for(;i <= Head.size(); ++i)
+  {
+    Dest = std::vector<JSON_Object>(1);
+
+    // encountered value seperator(:)
+    if(Head[i].Sym == JSON_SYM::value_separator)
+    {
+      // valid value ahead!
+      if(isValidValue(Head[i+1]))
+      {
+        std::cout << "VALID! \n";
+        //...do things...
+      }
+      // named objects
+      if(Head[i+1].Sym == JSON_SYM::begin_object)
+      {
+        // if not a string, error.
+        if(isString(Head[i-1]))
+        {
+          // FIXME Go down the paaaath!
+        }
+      }
+
+    }
+    if(Head[i].Sym == JSON_SYM::begin_array || Head[i].Sym == JSON_SYM::begin_object)
+    {
+      std::cout << "here\n";
+      ++i;
+      i = turn(Head, Dest[destp].ArryObj, i, destp);
+      ++destp;
+      continue;
+    }
+    if(Head[i].Sym == JSON_SYM::end_array || Head[i].Sym == JSON_SYM::end_object)
+    {
+      std::cout << "end\n";
+      return i;
+    }
+  }
+  assert(false && "SHOULDNT REACH THAT! -.-");
+}
 int main()
 {
   simpleparserv2 Test{"./example.json"};
   Test.parse();
   Test.PrintAST(); // Functor
+  std::vector<JSON_Object> tmp;
+  Test.turn(Test.H, tmp);
   return 0;
 }

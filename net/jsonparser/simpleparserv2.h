@@ -333,107 +333,11 @@ class simpleparserv2
 public:
   Tokenizer tok;
   std::vector<JSON_Object> H;
-
   simpleparserv2(const std::string&);
-  void parse();
-  void PrintAST(void (*function_hook)(std::vector<JSON_Object>&) = nullptr)
-  {
-    std::cout << "AST Size: " << H.size() << "\n";
-    int indent = 0;
-    auto indenter=[&indent]()
-    {
-      for(int j = indent; j != 0; --j)
-        std::cout <<'\t';
-    };
-    auto printStringResult = [&](const GenericResult& res) {
-      indenter();
-      std::cout << "StringDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
-    };
-    auto printNumberResult = [&](const GenericResult& res) {
-      indenter();
-      std::cout << "NumberDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
-    };
-    auto printFloatResult = [&](const GenericResult& res) {
-      indenter();
-      std::cout << "FloatDump: Str: '" << res.String << "'; Start: '" << res.StartPos << "'; end: '"<< res.EndPos <<".'\n";
-    };
 
-    std::string endStr = ", hurray!\n";
-    std::vector<JSON_Object> ASTCop(H);
-    if(function_hook != nullptr)
-    {
-      // @TODO Functor! Filters for example!
-      (*function_hook)(ASTCop);
-    }
-    size_t i = 0;
-    for(JSON_Object &c: ASTCop)
-    {
-      ++i;
-      switch(c.Sym)
-      {
-        case JSON_SYM::value_string:
-          printStringResult(*(c).value);
-          break;
-        case JSON_SYM::value_number:
-          printNumberResult(*(c).value);
-          break;
-        case JSON_SYM::value_float:
-          printFloatResult(*(c).value);
-          break;
-        case JSON_SYM::literal_true:
-          indenter();
-          std::cout << "literal_true at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::literal_false:
-          indenter();
-          std::cout << "literal_false at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::literal_null:
-          indenter();
-          std::cout << "literal_null at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::begin_object:
-          indenter();
-          ++indent;
-          std::cout << "begin_object at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::begin_array:
-          indenter();
-          ++indent;
-          std::cout << "begin_array at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::end_array:
-          --indent;
-          indenter();
-          std::cout << "end_array at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::end_object:
-          --indent;
-          indenter();
-          std::cout << "end_object at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::value_separator:
-          indenter();
-          std::cout << "name_seperator at " << c.Pos << ": ";
-          break;
-        case JSON_SYM::member_seperator:
-          indenter();
-          std::cout << "member_seperator at " << c.Pos << ",\n";
-          break;
-        case JSON_SYM::parse_error:
-        case JSON_SYM::Unknown:
-          indenter();
-          std::cout << "UNKNOWN at " << c.Pos << ". \n";
-          break;
-        case JSON_SYM::end_of_input:
-          if(indent!=0)
-            std::cout << "huh....\n";
-          std::cout << "End at "<< c.Pos << ".\n";
-          break;
-      }
-    }
-    std::cout << "Saw " << i << " objects " << std::endl;
-  }
+  void parse();
+  void PrintAST(void (*)(std::vector<JSON_Object>&) = nullptr);
+  size_t turn(std::vector<JSON_Object>, std::vector<JSON_Object>, size_t = 0, size_t = 0);
   virtual ~simpleparserv2();
 };
 
