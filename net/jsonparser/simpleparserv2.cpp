@@ -103,10 +103,9 @@ void simpleparserv2::PrintAST(void (*function_hook)(std::vector<JSON_Object>&))
 
 void simpleparserv2::parse()
 {
-  auto emit = [&](auto Type,  JSON_Object::Typename T = JSON_Object::Typename::None)
+  auto emit = [&](auto Type)
   {
     JSON_Object tmp;
-    tmp.Type = T;
     tmp.Sym = Type;
     tmp.Pos = static_cast<int>(tok.getPos());
     H.emplace_back(tmp);
@@ -151,19 +150,19 @@ void simpleparserv2::parse()
     }
     if(cur == 'f' && tok.peek("alse"))
     {
-      emit(JSON_SYM::literal_false, JSON_Object::Typename::Boolean);
+      emit(JSON_SYM::literal_false);
       tok.setPos(tok.getPos()+4);
       continue;
     }
     if(cur == 't' && tok.peek("rue"))
     {
-      emit(JSON_SYM::literal_true, JSON_Object::Typename::Boolean);
+      emit(JSON_SYM::literal_true);
       tok.setPos(tok.getPos()+3);
       continue;
     }
     if(cur == 'n' && tok.peek("ull"))
     {
-      emit(JSON_SYM::literal_null, JSON_Object::Typename::Null);
+      emit(JSON_SYM::literal_null);
       tok.setPos(tok.getPos()+3);
       continue;
     }
@@ -174,7 +173,6 @@ void simpleparserv2::parse()
       found_str.Pos = static_cast<int>(tok.getPos()-1);
       found_str.Sym = JSON_SYM::value_string;
       found_str.value = tmp;
-      found_str.Type = JSON_Object::Typename::String;
       H.emplace_back(found_str);
       tok.setPos(tok.getPos()+tmp->String.size()+1); // we didnt include the quotes - so size is already(due to being not null-indexed) +1 off, but we need +1 for the second one
       continue;
@@ -185,7 +183,6 @@ void simpleparserv2::parse()
       struct JSON_Object found_num;
       num = new NumberResult(tok.getNumber());
       assert(!num->String.empty() && "How is this empty?");
-      found_num.Type = JSON_Object::Typename::Number;
       if(num->hasDot)
       {
         found_num.Sym = JSON_SYM::value_float;
@@ -209,12 +206,12 @@ simpleparserv2::~simpleparserv2()
   for(size_t i = 0; i <= H.size()-1; ++i)
   {
 
-    if(H[i].Type == JSON_Object::Typename::String)
+    if(H[i].Sym == JSON_SYM::value_string)
     {
       assert(H[i].value != nullptr && "This CANT be the case! Just use that when you allocate something bro!");
       delete H[i].value;
     }
-    if(H[i].Type == JSON_Object::Typename::Number)
+    if(H[i].Sym == JSON_SYM::value_number || H[i].Sym == JSON_SYM::value_float )
     {
       assert(H[i].value != nullptr && "This CANT Be the case! Just use that when you allocate something bro!");
       delete H[i].value;
@@ -243,12 +240,16 @@ void Functor(std::vector<JSON_Object>& s)
 */
 bool isValidValue(JSON_Object p)
 {
-  return (p.Type != JSON_Object::Typename::None);
+  return (p.Sym == JSON_SYM::value_string ||
+          p.Sym == JSON_SYM::value_number ||
+          p.Sym == JSON_SYM::literal_null ||
+          p.Sym == JSON_SYM::literal_true ||
+          p.Sym == JSON_SYM::literal_false);
 }
 
 bool isString(JSON_Object p)
 {
-  return(p.Type == JSON_Object::Typename::String);
+  return(p.Sym == JSON_SYM::value_string);
 }
 
 size_t simpleparserv2::turn(std::vector<JSON_Object> Head, std::vector<JSON_Object> Dest, size_t p, size_t destp)
@@ -301,6 +302,6 @@ int main()
   Test.parse();
   Test.PrintAST(); // Functor
   std::vector<JSON_Object> tmp;
-  Test.turn(Test.H, tmp);
+  //Test.turn(Test.H, tmp);
   return 0;
 }

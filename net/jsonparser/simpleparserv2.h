@@ -114,17 +114,8 @@ public:
     std::string str;
     int i;
   } Key;
-  enum class Typename
-  {
-    Number,
-    String,
-    Boolean,
-    Null,
-    None
-  };
   GenericResult *value = {nullptr};
   int Pos;
-  Typename Type;
   JSON_SYM Sym;
   std::vector<JSON_Object> ArryObj;
 };
