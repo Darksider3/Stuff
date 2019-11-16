@@ -20,4 +20,4 @@ __pycache__/
 *.includes
 *.creator.user
 *.cxxflags
-
+*.o
