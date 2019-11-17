@@ -116,9 +116,9 @@ int main()
 {
   sf::RenderWindow window(sf::VideoMode(1024, 1024), "BMP View");
   DBG << "here";
-  sf::RectangleShape shape(sf::Vector2(500.f, 500.f));
+  sf::RectangleShape shape(sf::Vector2(513.f, 513.f));
   sf::Image img;
-  std::string fname = "./w3ctest.bmp";
+  std::string fname = "./zelda.bmp";
   bmp::Impl T = bmp::Impl(fname);
   T.readData();
   auto data = T.legacyUint8RGBA();
