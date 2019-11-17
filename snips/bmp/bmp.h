@@ -6,6 +6,12 @@
 #include <byteswap.h>
 #include <vector>
 
+struct X {
+  ~X() { std::cout << std::endl; }
+};
+
+#define DBG (X(), std::cout << __FILE__ << ":"  << __LINE__ << ": " <<  __PRETTY_FUNCTION__ << ": ")
+
 namespace bmp {
 //packing needed because we cant allow alignment at Size
 #pragma pack(push, 1)
@@ -60,15 +66,17 @@ class Impl
 protected:
   uint8_t paddingBytes; // Each "row"(x-coordinate) must be a multiple of 4, thus max 3 bytes padding
   std::ifstream f;
-  BitmapFileHeader header;
-  std::vector<BGR_8> values;
+  std::vector<BGR_8> DATA;
   inline bool exist(std::string &FN){return std::filesystem::exists(FN);}
 public:
+  BitmapFileHeader header;
   Impl(std::string&);
   void readHeader();
   bool check_header();
   void readData();
 
+  std::shared_ptr<uint8_t[]> getDataSmartUint8RGBA();
+  uint8_t *legacyUint8RGBA();
   virtual ~Impl();
 };
 }
