@@ -24,6 +24,9 @@ struct BitmapFileHeader
   uint16_t Reserved2; // unused(spec)
   uint32_t Offset; // offset to image data in bytes from beginning of file(54 bytes v5)
   uint32_t dib_header_size; // DIB Header in bytes. NT 3.1 => 40, V2->52, V3->56, V4=>108, V5 => 124
+};
+struct DIBHeader
+{
   int32_t width_px; // width of the image
   int32_t height_px; // height of the image
   uint16_t num_planes; // number of color planes
@@ -35,30 +38,71 @@ struct BitmapFileHeader
   uint32_t num_colors; // number of colors;
   uint32_t important_colors; // important colors
 };
+
+
+
 #pragma pack(pop)
-struct BGR_8
+struct Generic
+{};
+struct Pixel_BGR24 : Generic
 {
   uint8_t B;
   uint8_t G;
   uint8_t R;
 };
 
-struct BGRA_8 : public BGR_8
+struct Pixel_BGRA32 : Generic
 {
+  uint8_t B;
+  uint8_t G;
+  uint8_t R;
   uint8_t A;
 };
 
-struct BGR_4
+struct Pixel_BGR12 : Generic
 {
   unsigned B: 4;
   unsigned G: 4;
   unsigned R: 4;
 };
 
-struct Black_White
+struct Pixel_BGR4_Indexed : Generic
+{
+  unsigned B: 1;
+  unsigned G: 1;
+  unsigned R: 1;
+  unsigned trashbyte: 1; // get's set to 0
+};
+
+struct Pixel_BlackWhite : Generic
 {
   bool W;
   bool B;
+};
+
+class ReadHeader
+{
+
+};
+
+template<typename T = Generic>
+class GenericProcessor {
+public:
+  std::vector<T> DATA;
+  virtual ~GenericProcessor();
+};
+
+class BGR_12Process : GenericProcessor<Pixel_BGR12>
+{
+
+};
+class BGR_24Process : GenericProcessor<Pixel_BGR24>
+{
+
+};
+
+class BW_Process : GenericProcessor<Pixel_BlackWhite>
+{
 };
 
 class Impl
@@ -66,12 +110,13 @@ class Impl
 protected:
   uint8_t paddingBytes; // Each "row"(x-coordinate) must be a multiple of 4, thus max 3 bytes padding
   std::ifstream f;
-  std::vector<BGR_8> DATA;
   inline bool exist(std::string &FN){return std::filesystem::exists(FN);}
 public:
+  std::vector<Pixel_BGR24> DATA;
   BitmapFileHeader header;
+  DIBHeader dib;
   Impl(std::string&);
-  void readHeader();
+  void readHeaders();
   bool check_header();
   void readData();
 
@@ -79,5 +124,5 @@ public:
   uint8_t *legacyUint8RGBA();
   virtual ~Impl();
 };
-}
+};
 #endif // BMP_H

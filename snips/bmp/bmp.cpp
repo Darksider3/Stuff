@@ -18,7 +18,7 @@ bmp::Impl::Impl(std::string &FN)
     abort();
   }
   f.open(FN, std::ios::binary);
-  readHeader();
+  readHeaders();
   if(!check_header())
   {
     std::cout << "something went wrong! Not a BMP-File";
@@ -28,23 +28,24 @@ bmp::Impl::Impl(std::string &FN)
   {
     DBG << "it's a BMP, be happy!";
   }
-  paddingBytes = header.width_px % 4;
+  paddingBytes = dib.width_px % 4;
 }
 
-void bmp::Impl::readHeader()
+void bmp::Impl::readHeaders()
 {
   f.read(reinterpret_cast<char*>(&header), sizeof(BitmapFileHeader));
+  f.read(reinterpret_cast<char*>(&dib), sizeof(DIBHeader));
 }
 void bmp::Impl::readData()
 {
-  BGR_8 tmp;
+  Pixel_BGR24 tmp;
   char trash;
   f.seekg(header.Offset);
-  for(long long int i = 0; i != header.height_px; ++i )
+  for(long long int i = 0; i != dib.height_px; ++i)
   {
-    for(long long int y = 0; y != header.width_px; ++y)
+    for(long long int y = 0; y != dib.width_px; ++y)
     {
-      f.read(reinterpret_cast<char*>(&tmp), sizeof(BGR_8));
+      f.read(reinterpret_cast<char*>(&tmp), sizeof(tmp));
       DATA.push_back(tmp);
     }
     if(!(paddingBytes == 0))
@@ -72,9 +73,9 @@ bool bmp::Impl::check_header()
 }
 std::shared_ptr<uint8_t[]> bmp::Impl::getDataSmartUint8RGBA()
 {
-  std::shared_ptr<uint8_t[]> returner = std::make_shared<uint8_t[]>((DATA.size())*32);
+  std::shared_ptr<uint8_t[]> returner = std::make_shared<uint8_t[]>((DATA.size())*4);
   std::ptrdiff_t i = 0;
-  for(size_t y = 0; y != DATA.size()-1; ++y)
+  for(size_t y = 0; y != DATA.size(); ++y)
   {
     returner[i] = DATA[y].R;
     ++i;
@@ -90,8 +91,11 @@ std::shared_ptr<uint8_t[]> bmp::Impl::getDataSmartUint8RGBA()
 
 uint8_t *bmp::Impl::legacyUint8RGBA()
 {
-  uint8_t *returner = new uint8_t[(DATA.size())*32];
-  for(size_t i = 0, y=0; y != DATA.size(); ++y)
+  DBG << "Data:  " << DATA.size()*4;
+  uint8_t *returner = new uint8_t[(DATA.size()+1)*4];
+  size_t i = 0;
+  size_t y = 0;
+  for(; y < DATA.size(); ++y)
   {
     returner[i] = DATA[y].R;
     ++i;
@@ -102,6 +106,8 @@ uint8_t *bmp::Impl::legacyUint8RGBA()
     returner[i] = 255; // A
     ++i;
   }
+  DBG << "Data: " << i;
+  DBG << "Data: " << y*4;
   return returner;
 
   //return getDataSmartUint8RGBA().get();
@@ -114,19 +120,24 @@ bmp::Impl::~Impl()
 }
 int main()
 {
-  sf::RenderWindow window(sf::VideoMode(1024, 1024), "BMP View");
   DBG << "here";
-  sf::RectangleShape shape(sf::Vector2(513.f, 513.f));
-  sf::Image img;
   std::string fname = "./zelda.bmp";
   bmp::Impl T = bmp::Impl(fname);
   T.readData();
   auto data = T.legacyUint8RGBA();
-  img.create(static_cast<unsigned int>(T.header.width_px), static_cast<unsigned int>(T.header.height_px), data);
+  unsigned int widthpx=static_cast<unsigned int>(T.dib.width_px);
+  unsigned int heightpx=static_cast<unsigned int>(T.dib.height_px);
+  sf::RenderWindow window(sf::VideoMode(128*5, 128*5), "BMP View");
+  sf::RectangleShape shape(sf::Vector2(static_cast<float>(widthpx)*5, static_cast<float>(heightpx)*5));
+  sf::Image img;
+  DBG << widthpx << "x" << heightpx <<":"<<T.DATA.size();
+  img.create(widthpx, heightpx, data);
   DBG << img.getSize().x << "x" << img.getSize().y;
   img.flipVertically();
+  img.saveToFile("./TESTER.bmp");
   sf::Texture texture;
   texture.loadFromImage(img);
+  DBG << "Texture: " << texture.getSize().x << "x" << texture.getSize().y;
   shape.setTexture(&texture);
   while (window.isOpen())
   {
@@ -141,5 +152,6 @@ int main()
       window.draw(shape);
       window.display();
   }
+  delete[] data;
 }
 
