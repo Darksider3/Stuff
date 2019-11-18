@@ -39,7 +39,7 @@ void bmp::Impl::readHeaders()
 void bmp::Impl::readData()
 {
   Pixel_BGR24 tmp;
-  char trash;
+  uint8_t trash;
   f.seekg(header.Offset);
   for(long long int i = 0; i != dib.height_px; ++i)
   {
@@ -50,7 +50,8 @@ void bmp::Impl::readData()
     }
     if(!(paddingBytes == 0))
     {
-      f.read(&trash, paddingBytes);
+      for(int x = paddingBytes; x != 0; --x)
+        f.read(reinterpret_cast<char*>(&trash), paddingBytes);
       DBG << "trashing " << paddingBytes << " padding bytes";
     }
   }
@@ -121,7 +122,7 @@ bmp::Impl::~Impl()
 int main()
 {
   DBG << "here";
-  std::string fname = "./zelda.bmp";
+  std::string fname = "./w3ctest.bmp";
   bmp::Impl T = bmp::Impl(fname);
   T.readData();
   auto data = T.legacyUint8RGBA();

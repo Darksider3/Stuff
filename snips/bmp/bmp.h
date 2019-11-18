@@ -42,16 +42,16 @@ struct DIB_BITMAPINFOHEADER
 
 
 #pragma pack(pop)
-struct Generic
+struct GenericPixel
 {};
-struct Pixel_BGR24 : Generic
+struct Pixel_BGR24 : GenericPixel
 {
   uint8_t B;
   uint8_t G;
   uint8_t R;
 };
 
-struct Pixel_BGRA32 : Generic
+struct Pixel_BGRA32 : GenericPixel
 {
   uint8_t B;
   uint8_t G;
@@ -59,14 +59,14 @@ struct Pixel_BGRA32 : Generic
   uint8_t A;
 };
 
-struct Pixel_BGR12 : Generic
+struct Pixel_BGR12 : GenericPixel
 {
   unsigned B: 4;
   unsigned G: 4;
   unsigned R: 4;
 };
 
-struct Pixel_BGR4_Indexed : Generic
+struct Pixel_BGR4_Indexed : GenericPixel
 {
   unsigned B: 1;
   unsigned G: 1;
@@ -74,7 +74,7 @@ struct Pixel_BGR4_Indexed : Generic
   unsigned trashbyte: 1; // get's set to 0
 };
 
-struct Pixel_BlackWhite : Generic
+struct Pixel_BlackWhite : GenericPixel
 {
   bool W;
   bool B;
@@ -85,15 +85,15 @@ class ReadHeader
 
 };
 
-template<typename T = Generic>
+template<typename T = GenericPixel>
 class GenericProcessor {
 public:
   std::ifstream f;
   inline bool exist(std::string &FN){return std::filesystem::exists(FN);}
   std::vector<T> DATA;
 
-  int mode = std::ios::binary;
   BitmapFileHeader header;
+  DIB_BITMAPINFOHEADER dib;
 
   GenericProcessor(std::string &FN)
   {
@@ -107,15 +107,66 @@ public:
       std::cout << "The file " << FN << " is not a valid BMP file.\n";
       abort();
     }
-    f.open(FN, mode);
+    f.open(FN, std::ios::binary);
+    init();
   }
+
+  void init();
 
   void readBMPHeader()
   {
     f.read(reinterpret_cast<char*>(&header), sizeof(BitmapFileHeader));
+    f.read(reinterpret_cast<char*>(&dib), sizeof(DIB_BITMAPINFOHEADER));
   }
   void readDIBHeader();
-  virtual ~GenericProcessor();
+};
+
+class BW_Process : public GenericProcessor<Pixel_BlackWhite>
+{
+  struct COLORARRAY
+  {
+    uint8_t R;
+    uint8_t G;
+    uint8_t B;
+    uint8_t A;
+  };
+public:
+  COLORARRAY *colorArray;
+  virtual void init()
+  {
+    colorArray = new COLORARRAY[dib.num_colors];
+
+    if(dib.compression != 0)
+    {
+      std::cout << "BI_RGB-Compression isnt currently supported.\n";
+      abort();
+    }
+  }
+
+  void readColorTable()
+  {
+    COLORARRAY tmp;
+    f.seekg(14+header.dib_header_size);
+    for(long long int i = 0; i != dib.num_colors; ++i)
+    {
+      f.read(reinterpret_cast<char*>(&tmp), sizeof(COLORARRAY));
+      colorArray[i].R = tmp.R;
+      colorArray[i].G = tmp.G;
+      colorArray[i].B = tmp.B;
+      colorArray[i].A = tmp.A;
+    }
+  }
+  void readData()
+  {/*
+    COLORARRAY tmp;
+    uint8_t trash;
+
+    f.seekg(header.Offset);
+  */}
+  virtual ~BW_Process()
+  {
+    delete[] colorArray;
+  }
 };
 class Impl
 {
@@ -144,10 +195,6 @@ class BGR_12Process : public GenericProcessor<Pixel_BGR12>
 class BGR_24Process : public GenericProcessor<Pixel_BGR24>
 {
 
-};
-
-class BW_Process : public GenericProcessor<Pixel_BlackWhite>
-{
 };
 
 };
