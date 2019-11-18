@@ -34,7 +34,7 @@ bmp::Impl::Impl(std::string &FN)
 void bmp::Impl::readHeaders()
 {
   f.read(reinterpret_cast<char*>(&header), sizeof(BitmapFileHeader));
-  f.read(reinterpret_cast<char*>(&dib), sizeof(DIBHeader));
+  f.read(reinterpret_cast<char*>(&dib), sizeof(DIB_BITMAPINFOHEADER));
 }
 void bmp::Impl::readData()
 {

@@ -25,7 +25,8 @@ struct BitmapFileHeader
   uint32_t Offset; // offset to image data in bytes from beginning of file(54 bytes v5)
   uint32_t dib_header_size; // DIB Header in bytes. NT 3.1 => 40, V2->52, V3->56, V4=>108, V5 => 124
 };
-struct DIBHeader
+
+struct DIB_BITMAPINFOHEADER
 {
   int32_t width_px; // width of the image
   int32_t height_px; // height of the image
@@ -38,7 +39,6 @@ struct DIBHeader
   uint32_t num_colors; // number of colors;
   uint32_t important_colors; // important colors
 };
-
 
 
 #pragma pack(pop)
@@ -88,23 +88,35 @@ class ReadHeader
 template<typename T = Generic>
 class GenericProcessor {
 public:
+  std::ifstream f;
+  inline bool exist(std::string &FN){return std::filesystem::exists(FN);}
   std::vector<T> DATA;
+
+  int mode = std::ios::binary;
+  BitmapFileHeader header;
+
+  GenericProcessor(std::string &FN)
+  {
+    if(!exist(FN))
+    {
+      std::cout << "The file " << FN <<" doesn't exist.\n";
+      abort();
+    }
+    if(std::filesystem::file_size(FN) < 54)
+    {
+      std::cout << "The file " << FN << " is not a valid BMP file.\n";
+      abort();
+    }
+    f.open(FN, mode);
+  }
+
+  void readBMPHeader()
+  {
+    f.read(reinterpret_cast<char*>(&header), sizeof(BitmapFileHeader));
+  }
+  void readDIBHeader();
   virtual ~GenericProcessor();
 };
-
-class BGR_12Process : GenericProcessor<Pixel_BGR12>
-{
-
-};
-class BGR_24Process : GenericProcessor<Pixel_BGR24>
-{
-
-};
-
-class BW_Process : GenericProcessor<Pixel_BlackWhite>
-{
-};
-
 class Impl
 {
 protected:
@@ -114,7 +126,7 @@ protected:
 public:
   std::vector<Pixel_BGR24> DATA;
   BitmapFileHeader header;
-  DIBHeader dib;
+  DIB_BITMAPINFOHEADER dib;
   Impl(std::string&);
   void readHeaders();
   bool check_header();
@@ -124,5 +136,19 @@ public:
   uint8_t *legacyUint8RGBA();
   virtual ~Impl();
 };
+
+class BGR_12Process : public GenericProcessor<Pixel_BGR12>
+{
+
+};
+class BGR_24Process : public GenericProcessor<Pixel_BGR24>
+{
+
+};
+
+class BW_Process : public GenericProcessor<Pixel_BlackWhite>
+{
+};
+
 };
 #endif // BMP_H
