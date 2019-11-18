@@ -130,7 +130,7 @@ int main()
   unsigned int widthpx=static_cast<unsigned int>(T.dib.width_px);
   unsigned int heightpx=static_cast<unsigned int>(T.dib.height_px);
   sf::RenderWindow window(sf::VideoMode(520, 520), "BMP View");
-  sf::RectangleShape shape(sf::Vector2(static_cast<float>(window.getSize().x)/2, static_cast<float>(window.getSize().y)/2));
+  sf::RectangleShape shape(sf::Vector2f(static_cast<float>(window.getSize().x)/2, static_cast<float>(window.getSize().y)/2));
   sf::Image img;
   DBG << widthpx << "x" << heightpx <<":"<<T.DATA.size();
   img.create(widthpx, heightpx, data);
@@ -150,18 +150,17 @@ int main()
         window.close();
       if (event.type == sf::Event::MouseWheelScrolled)
       {
-        shape.setSize(sf::Vector2(shape.getSize().x+event.mouseWheelScroll.delta*SCROLLFACTOR, shape.getSize().y+event.mouseWheelScroll.delta*SCROLLFACTOR));
+        shape.setSize(sf::Vector2f(shape.getSize().x+event.mouseWheelScroll.delta*SCROLLFACTOR, shape.getSize().y+event.mouseWheelScroll.delta*SCROLLFACTOR));
       }
       if(event.type == sf::Event::KeyPressed)
       {
         switch(event.key.code)
         {
           case sf::Keyboard::Escape:
-            shape.setSize(sf::Vector2(static_cast<float>(window.getSize().x)/2, static_cast<float>(window.getSize().y)/2));
+            shape.setSize(sf::Vector2f(static_cast<float>(window.getSize().x)/2, static_cast<float>(window.getSize().y)/2));
             break;
           case sf::Keyboard::Q:
             return EXIT_SUCCESS;
-            break;
           default:
             break;
         }
