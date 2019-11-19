@@ -10,7 +10,7 @@
 int main()
 {
   DBG << "here";
-  std::string fname = "./w3ctest.bmp";
+  std::string fname = "./zelda.bmp";
   bmp::Impl T = bmp::Impl(fname);
   T.readData();
   auto data = T.legacyUint8RGBA();
@@ -38,6 +38,8 @@ int main()
       if (event.type == sf::Event::MouseWheelScrolled)
       {
         shape.setSize(sf::Vector2f(shape.getSize().x+event.mouseWheelScroll.delta*SCROLLFACTOR, shape.getSize().y+event.mouseWheelScroll.delta*SCROLLFACTOR));
+        DBG << window.getSize().x << "x" << window.getSize().y;
+        shape.setPosition((window.getSize().x - shape.getSize().x)/2, (window.getSize().y - shape.getSize().y)/2);
       }
       if(event.type == sf::Event::KeyPressed)
       {
@@ -56,7 +58,6 @@ int main()
         }
       }
     }
-    shape.setPosition((window.getSize().x - shape.getSize().x)/2, (window.getSize().y - shape.getSize().y)/2);
     window.clear();
     window.draw(shape);
     window.display();

@@ -3,6 +3,13 @@
 #include <memory>
 #include <typeinfo>
 #include <SFML/Graphics.hpp>
+struct COLORTABLE
+{
+  uint8_t B;
+  uint8_t R;
+  uint8_t G;
+  uint8_t padding;
+};
 
 bmp::Impl::Impl(std::string &FN)
 {
@@ -39,6 +46,40 @@ void bmp::Impl::readData()
 {
   Pixel_BGR24 tmp;
   uint8_t trash;
+  uint8_t index;
+  COLORTABLE *table = new COLORTABLE[256];
+  COLORTABLE tabletmp;
+  if(dib.num_colors==256)
+  {
+    f.seekg(14+header.dib_header_size);
+    for(size_t i = 0; i < 256; ++i)
+    {
+      f.read(reinterpret_cast<char*>(&tabletmp), sizeof(COLORTABLE));
+      table[i] = tabletmp;
+    }
+    if(f.tellg() != header.Offset)
+    {
+      std::cout << "Mismatch between header offset and color table... o_o \n";
+      abort();
+    }
+    for(long long int i = 0; i != dib.height_px; ++i)
+    {
+      for(long long int j = 0; j != dib.width_px; ++j)
+      {
+        f.read(reinterpret_cast<char*>(&index), sizeof(index));
+        tmp.B = table[index].B;
+        tmp.G = table[index].G;
+        tmp.R = table[index].R;
+        DATA.push_back(tmp);
+      }
+      if(paddingBytes > 0)
+      {
+        for(int x = paddingBytes; x != 0; --x)
+          f.read(reinterpret_cast<char*>(&trash), 1);
+      }
+    }
+    return;
+  }
   f.seekg(header.Offset);
   for(long long int i = 0; i != dib.height_px; ++i)
   {
@@ -50,7 +91,7 @@ void bmp::Impl::readData()
     if(!(paddingBytes == 0))
     {
       for(int x = paddingBytes; x != 0; --x)
-        f.read(reinterpret_cast<char*>(&trash), paddingBytes);
+        f.read(reinterpret_cast<char*>(&trash), 1);
       DBG << "trashing " << paddingBytes << " padding bytes";
     }
   }
