@@ -11,6 +11,7 @@ int main()
 {
   DBG << "here";
   std::string fname = "./zelda.bmp";
+  bmp::Headers t(fname);
   bmp::Impl T = bmp::Impl(fname);
   T.readData();
   auto data = T.legacyUint8RGBA();
