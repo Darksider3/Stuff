@@ -1,5 +1,6 @@
 #ifndef BMP_H
 #define BMP_H
+#define DEBUG 1
 #include <fstream>
 #include <filesystem>
 #include <iostream>
@@ -9,9 +10,9 @@
 struct X {
   ~X() { std::cout << std::endl; }
 };
-
+#ifdef DEBUG
 #define DBG (X(), std::cout << __FILE__ << ":"  << __LINE__ << ": " <<  __PRETTY_FUNCTION__ << ": ")
-
+#endif
 namespace bmp {
 //packing needed because we cant allow alignment at Size
 #pragma pack(push, 1)
@@ -42,131 +43,141 @@ struct DIB_BITMAPINFOHEADER
 
 
 #pragma pack(pop)
-struct GenericPixel
-{};
-struct Pixel_BGR24 : GenericPixel
-{
-  uint8_t B;
-  uint8_t G;
-  uint8_t R;
-};
 
-struct Pixel_BGRA32 : GenericPixel
-{
+struct Pixel {};
+
+struct COLOR_TABLE_ENTRY : Pixel {};
+
+struct Pixel_BGRA : Pixel {
   uint8_t B;
   uint8_t G;
   uint8_t R;
   uint8_t A;
 };
 
-struct Pixel_BGR12 : GenericPixel
-{
-  unsigned B: 4;
-  unsigned G: 4;
-  unsigned R: 4;
+struct Pixel_BGR24 : Pixel {
+  uint8_t B;
+  uint8_t G;
+  uint8_t R;
 };
 
-struct Pixel_BGR4_Indexed : GenericPixel
+struct COLOR_TABLE_ENTRY_BGRA : public COLOR_TABLE_ENTRY, public Pixel_BGRA {};
+
+class Headers
 {
-  unsigned B: 1;
-  unsigned G: 1;
-  unsigned R: 1;
-  unsigned trashbyte: 1; // get's set to 0
-};
-
-struct Pixel_BlackWhite : GenericPixel
-{
-  bool W;
-  bool B;
-};
-
-class ReadHeader
-{
-
-};
-
-template<typename T = GenericPixel>
-class GenericProcessor {
 public:
-  std::ifstream f;
-  inline bool exist(std::string &FN){return std::filesystem::exists(FN);}
-  std::vector<T> DATA;
+  std::unique_ptr<COLOR_TABLE_ENTRY_BGRA[]> colortable = nullptr;
+  std::ifstream *f = nullptr;
+  BitmapFileHeader bmp_header;
+  DIB_BITMAPINFOHEADER dib_header;
 
-  BitmapFileHeader header;
-  DIB_BITMAPINFOHEADER dib;
-
-  GenericProcessor(std::string &FN)
+  explicit Headers(std::string &FN)
   {
-    if(!exist(FN))
-    {
-      std::cout << "The file " << FN <<" doesn't exist.\n";
-      abort();
-    }
-    if(std::filesystem::file_size(FN) < 54)
-    {
-      std::cout << "The file " << FN << " is not a valid BMP file.\n";
-      abort();
-    }
-    f.open(FN, std::ios::binary);
-    init();
+    f = new std::ifstream(FN);
+    read();
   }
 
-  void init();
-
-  void readBMPHeader()
+  void read()
   {
-    f.read(reinterpret_cast<char*>(&header), sizeof(BitmapFileHeader));
-    f.read(reinterpret_cast<char*>(&dib), sizeof(DIB_BITMAPINFOHEADER));
-  }
-  void readDIBHeader();
-};
-
-class BW_Process : public GenericProcessor<Pixel_BlackWhite>
-{
-  struct COLORARRAY
-  {
-    uint8_t R;
-    uint8_t G;
-    uint8_t B;
-    uint8_t A;
-  };
-public:
-  COLORARRAY *colorArray;
-  virtual void init()
-  {
-    colorArray = new COLORARRAY[dib.num_colors];
-
-    if(dib.compression != 0)
+    f->read(reinterpret_cast<char*>(&bmp_header), sizeof(BitmapFileHeader));
+    if(bmp_header.dib_header_size != 40)
     {
-      std::cout << "BI_RGB-Compression isnt currently supported.\n";
+      std::cout << "currently just supporting 40-byte-header-bmps...\n";
       abort();
     }
+    f->read(reinterpret_cast<char*>(&dib_header), sizeof(DIB_BITMAPINFOHEADER));
+
+    if(dib_header.num_colors == 0)
+    {
+      return;
+    }
+    // 14 + 40 => 54, 256*4 => 1024, +=> 1078
+    size_t correctOffset = 14+bmp_header.dib_header_size+(dib_header.num_colors*4);
+    if(correctOffset != bmp_header.Offset)
+    {
+      std::cout << "Offset missmatch: Header said " << bmp_header.Offset << ", but we calculated " << correctOffset << "\n";
+      abort();
+    }
+
+    colortable = std::make_unique<COLOR_TABLE_ENTRY_BGRA[]>(dib_header.num_colors);
+    readColorTable();
+    return;
   }
 
   void readColorTable()
   {
-    COLORARRAY tmp;
-    f.seekg(14+header.dib_header_size);
-    for(long long int i = 0; i != dib.num_colors; ++i)
-    {
-      f.read(reinterpret_cast<char*>(&tmp), sizeof(COLORARRAY));
-      colorArray[i].R = tmp.R;
-      colorArray[i].G = tmp.G;
-      colorArray[i].B = tmp.B;
-      colorArray[i].A = tmp.A;
+    COLOR_TABLE_ENTRY_BGRA tmp;
+    for(size_t i = 0; i < dib_header.num_colors; ++i){
+      f->read(reinterpret_cast<char*>(&tmp), sizeof(COLOR_TABLE_ENTRY_BGRA));
+      copy(tmp, colortable[i]);
     }
   }
-  void readData()
-  {/*
-    COLORARRAY tmp;
-    uint8_t trash;
-
-    f.seekg(header.Offset);
-  */}
-  virtual ~BW_Process()
+  void copy(COLOR_TABLE_ENTRY_BGRA from, COLOR_TABLE_ENTRY_BGRA &to)
   {
-    delete[] colorArray;
+    to.B = from.B;
+    to.G = from.G;
+    to.R = from.R;
   }
+
+  uint16_t BitPerPixel()
+  {
+    return dib_header.bits_per_pixel;
+  }
+
+  uint32_t NumColors()
+  {
+    return dib_header.num_colors;
+  }
+
+  uint32_t Offset()
+  {
+    return bmp_header.Offset;
+  }
+
+  bool ColorTable()
+  {
+    if(colortable == nullptr)
+      return false;
+    else
+      return true;
+  }
+  COLOR_TABLE_ENTRY_BGRA operator[](size_t b)
+  {
+    COLOR_TABLE_ENTRY_BGRA tmp;
+    tmp.B = 0;
+    tmp.G = 0;
+    tmp.R = 0;
+
+    if(b < dib_header.num_colors)
+      if(colortable != nullptr)
+        return colortable[b];
+    return tmp;
+  }
+  ~Headers()
+  {
+    if(f->is_open())
+    {
+      f->close();
+      delete f;
+    }
+  }
+};
+
+template<typename T = Pixel>
+class GenericProcessor {
+public:
+};
+
+class BW_Process : public GenericProcessor<>
+{
+};
+class BGR_12Process : public GenericProcessor<>
+{
+
+};
+class BGR_24Process : public GenericProcessor<>
+{
+
 };
 class Impl
 {
@@ -187,15 +198,5 @@ public:
   uint8_t *legacyUint8RGBA();
   virtual ~Impl();
 };
-
-class BGR_12Process : public GenericProcessor<Pixel_BGR12>
-{
-
-};
-class BGR_24Process : public GenericProcessor<Pixel_BGR24>
-{
-
-};
-
 };
 #endif // BMP_H
