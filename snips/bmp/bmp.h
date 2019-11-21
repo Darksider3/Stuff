@@ -67,25 +67,26 @@ class Headers
 {
 public:
   std::unique_ptr<COLOR_TABLE_ENTRY_BGRA[]> colortable = nullptr;
-  std::ifstream *f = nullptr;
+  std::ifstream f;
   BitmapFileHeader bmp_header;
   DIB_BITMAPINFOHEADER dib_header;
 
   explicit Headers(std::string &FN)
   {
-    f = new std::ifstream(FN);
-    read();
+    f = std::ifstream(FN);
+    Read();
+    f.close();
   }
 
-  void read()
+  void Read()
   {
-    f->read(reinterpret_cast<char*>(&bmp_header), sizeof(BitmapFileHeader));
+    f.read(reinterpret_cast<char*>(&bmp_header), sizeof(BitmapFileHeader));
     if(bmp_header.dib_header_size != 40)
     {
       std::cout << "currently just supporting 40-byte-header-bmps...\n";
       abort();
     }
-    f->read(reinterpret_cast<char*>(&dib_header), sizeof(DIB_BITMAPINFOHEADER));
+    f.read(reinterpret_cast<char*>(&dib_header), sizeof(DIB_BITMAPINFOHEADER));
 
     if(dib_header.num_colors == 0)
     {
@@ -108,7 +109,7 @@ public:
   {
     COLOR_TABLE_ENTRY_BGRA tmp;
     for(size_t i = 0; i < dib_header.num_colors; ++i){
-      f->read(reinterpret_cast<char*>(&tmp), sizeof(COLOR_TABLE_ENTRY_BGRA));
+      f.read(reinterpret_cast<char*>(&tmp), sizeof(COLOR_TABLE_ENTRY_BGRA));
       copy(tmp, colortable[i]);
     }
   }
@@ -153,19 +154,30 @@ public:
         return colortable[b];
     return tmp;
   }
+  void writeColortable()
+  {
+    if(colortable == nullptr)
+      return;
+    std::fstream writer("./test.dump");
+    for(size_t i = 0; i < dib_header.num_colors; ++i)
+    {
+    }
+
+  }
   ~Headers()
   {
-    if(f->is_open())
+    if(f.is_open())
     {
-      f->close();
-      delete f;
+      f.close();
     }
   }
 };
 
+
 template<typename T = Pixel>
 class GenericProcessor {
 public:
+
 };
 
 class BW_Process : public GenericProcessor<>
