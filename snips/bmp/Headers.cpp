@@ -1,11 +1,32 @@
 #include "bmp.h"
-using namespace bmp;
-
+namespace bmp
+{
 Headers::Headers(std::string &FN)
 {
   f = std::ifstream(FN);
   Read();
   f.close();
+}
+
+Headers::~Headers()
+{
+  if(f.is_open())
+  {
+    f.close();
+  }
+}
+
+COLOR_TABLE_ENTRY_BGRA Headers::operator[](size_t b)
+{
+  COLOR_TABLE_ENTRY_BGRA tmp;
+  tmp.B = 0;
+  tmp.G = 0;
+  tmp.R = 0;
+
+  if(b < dib_header.num_colors)
+    if(colortable != nullptr)
+      return colortable[b];
+  return tmp;
 }
 
 void Headers::Read()
@@ -62,16 +83,4 @@ void Headers::writeColortable()
   }
 
 }
-
-COLOR_TABLE_ENTRY_BGRA Headers::operator[](size_t b)
-{
-  COLOR_TABLE_ENTRY_BGRA tmp;
-  tmp.B = 0;
-  tmp.G = 0;
-  tmp.R = 0;
-
-  if(b < dib_header.num_colors)
-    if(colortable != nullptr)
-      return colortable[b];
-  return tmp;
-}
+};

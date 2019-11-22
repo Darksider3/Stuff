@@ -76,20 +76,13 @@ public:
   DIB_BITMAPINFOHEADER dib_header;
 
   explicit Headers(std::string &FN);
+  ~Headers();
 
   void Read();
   void readColorTable();
   bool ColorTable();
   COLOR_TABLE_ENTRY_BGRA operator[](size_t b);
   void writeColortable();
-
-  ~Headers()
-  {
-    if(f.is_open())
-    {
-      f.close();
-    }
-  }
 
   void copy(COLOR_TABLE_ENTRY_BGRA from, COLOR_TABLE_ENTRY_BGRA &to)
   {
@@ -115,30 +108,33 @@ public:
 };
 
 
-template<typename T = Pixel>
+template<typename Struct = Pixel_BGR24, typename COMMONPTR = Struct>
 class GenericProcessor {
 public:
+  Headers Header;
+  std::unique_ptr<Struct> DATA;
+
+  GenericProcessor(std::string &FN)
+  {
+    Header = Headers(FN);
+  }
+
+  void Process();
+  std::shared_ptr<COMMONPTR> getPtr();
+  virtual ~GenericProcessor() = default;
 
 };
-
-class BW_Process : public GenericProcessor<>
+class BGR_24Process : public GenericProcessor<Pixel_BGR24, Pixel_BGR24>
 {
-};
-class BGR_12Process : public GenericProcessor<>
-{
-
-};
-class BGR_24Process : public GenericProcessor<>
-{
-
+public:
 };
 class Impl
 {
 protected:
   uint8_t paddingBytes; // Each "row"(x-coordinate) must be a multiple of 4, thus max 3 bytes padding
   std::ifstream f;
-  inline bool exist(std::string &FN){return std::filesystem::exists(FN);}
 public:
+  static bool exists(std::string &FN){return std::filesystem::exists(FN);}
   std::vector<Pixel_BGR24> DATA;
   BitmapFileHeader header;
   DIB_BITMAPINFOHEADER dib;
