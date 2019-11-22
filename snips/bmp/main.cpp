@@ -7,10 +7,19 @@
 #define SCROLLFACTOR 4
 
 
-int main()
+int main(int argc, char**argv)
 {
   DBG << "here";
-  std::string fname = "./zelda.bmp";
+  std::string fname;
+  if(argc > 1)
+    fname = argv[1];
+  else
+    fname = "./zelda.bmp";
+  if(!bmp::Impl::exists(fname))
+  {
+    std::cout << "The file " << fname << " doesn't exist.\n";
+    abort();
+  }
   bmp::Headers t(fname);
   bmp::Impl T = bmp::Impl(fname);
   T.readData();
@@ -45,7 +54,8 @@ int main()
         window.close();
       if (event.type == sf::Event::MouseWheelScrolled)
       {
-        shape.setSize(sf::Vector2f(shape.getSize().x+event.mouseWheelScroll.delta*SCROLLFACTOR, shape.getSize().y+event.mouseWheelScroll.delta*SCROLLFACTOR));
+        shape.setSize(sf::Vector2f(shape.getSize().x+event.mouseWheelScroll.delta*SCROLLFACTOR,
+                                   shape.getSize().y+event.mouseWheelScroll.delta*SCROLLFACTOR));
         shape.setPosition(shapeMid());
       }
       if(event.type == sf::Event::Resized)
