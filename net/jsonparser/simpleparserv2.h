@@ -52,13 +52,15 @@ struct GenericResult
 {
   long StartPos=-1, EndPos=-1;
   std::string String = {""};
+
+  virtual ~GenericResult() = default;
 };
 
 struct NumberResult : public GenericResult
 {
+  double Number = {0};
   bool hasDot = {false};
   bool hasE = {false};
-  double Number = {0};
 
   NumberResult()
   {
@@ -82,6 +84,7 @@ struct NumberResult : public GenericResult
     Number = p.Number;
     String = p.String;
   }
+
 };
 
 
@@ -327,8 +330,9 @@ public:
   simpleparserv2(const std::string&);
 
   void parse();
-  void PrintAST(void (*)(std::vector<JSON_Object>&) = nullptr);
-  size_t turn(std::vector<JSON_Object>, std::vector<JSON_Object>, size_t = 0, size_t = 0);
+  std::string writeBack(bool=false);
+  void PrintDebugAST(void (*)(std::vector<JSON_Object>&) = nullptr);
+  //size_t turn(std::vector<JSON_Object>, std::vector<JSON_Object>, size_t = 0, size_t = 0);
   virtual ~simpleparserv2();
 };
 
