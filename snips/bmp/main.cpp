@@ -17,18 +17,18 @@ int main()
   auto data = T.legacyUint8RGBA();
   unsigned int widthpx=static_cast<unsigned int>(T.dib.width_px);
   unsigned int heightpx=static_cast<unsigned int>(T.dib.height_px);
-  sf::Vector2u static Windowpx=sf::Vector2u(520, 520);;
+  sf::Vector2u static Windowpx=sf::Vector2u(520, 520);
   sf::RenderWindow window(sf::VideoMode(Windowpx.x, Windowpx.y), "BMP View");
-  sf::Vector2f Oldshape = sf::Vector2f(static_cast<float>(window.getSize().x)/2, static_cast<float>(window.getSize().y)/2);
+  sf::Vector2f Oldshape = sf::Vector2f(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y));
   sf::RectangleShape shape(Oldshape);
   sf::Image img;
-  DBG << widthpx << "x" << heightpx <<":"<<T.DATA.size();
   img.create(widthpx, heightpx, data);
-  DBG << img.getSize().x << "x" << img.getSize().y;
   img.flipVertically();
   sf::Texture texture;
   texture.loadFromImage(img);
-  DBG << "Texture: " << texture.getSize().x << "x" << texture.getSize().y;
+  DBG << "Data.size.Byte -> " << T.DATA.size();
+  DBG << "ImageX:ImageY -> " << img.getSize().x << "x" << img.getSize().y;
+  DBG << "Texturesize: " << texture.getSize().x << "x" << texture.getSize().y;
   shape.setTexture(&texture);
   auto shapeMid = [&]()
   {
@@ -46,9 +46,6 @@ int main()
       if (event.type == sf::Event::MouseWheelScrolled)
       {
         shape.setSize(sf::Vector2f(shape.getSize().x+event.mouseWheelScroll.delta*SCROLLFACTOR, shape.getSize().y+event.mouseWheelScroll.delta*SCROLLFACTOR));
-        DBG << "Window: " << window.getSize().x << "x" << window.getSize().y;
-        DBG << "Shape Size: " << shape.getSize().x << "x" << shape.getSize().y;
-        DBG << "Shape Position: "<< shape.getPosition().x << "x" << shape.getPosition().y;
         shape.setPosition(shapeMid());
       }
       if(event.type == sf::Event::Resized)
@@ -66,6 +63,7 @@ int main()
             window.setView(sf::View(sf::FloatRect(0, 0, Windowpx.x, Windowpx.y)));
             shape.setSize(Oldshape);
             shape.setPosition(shapeMid());
+            window.requestFocus();
             break;
           case sf::Keyboard::Q:
             return EXIT_SUCCESS;
