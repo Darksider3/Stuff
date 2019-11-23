@@ -3,13 +3,12 @@
 #include <memory>
 #include <typeinfo>
 #include <SFML/Graphics.hpp>
+#include <thread>
 
 #define SCROLLFACTOR 4
-
-
+sf::Mutex Lock;
 int main(int argc, char**argv)
 {
-  DBG << "here";
   std::string fname;
   if(argc > 1)
     fname = argv[1];
@@ -26,18 +25,21 @@ int main(int argc, char**argv)
   auto data = T.legacyUint8RGBA();
   unsigned int widthpx=static_cast<unsigned int>(T.dib.width_px);
   unsigned int heightpx=static_cast<unsigned int>(T.dib.height_px);
-  sf::Vector2u static Windowpx=sf::Vector2u(520, 520);
+  sf::Vector2u static Windowpx=sf::Vector2u(1024, 1024);
   sf::RenderWindow window(sf::VideoMode(Windowpx.x, Windowpx.y), "BMP View");
-  sf::Vector2f Oldshape = sf::Vector2f(static_cast<float>(window.getSize().x), static_cast<float>(window.getSize().y));
+  sf::Vector2f Oldshape = sf::Vector2f(static_cast<float>(window.getSize().x/2), static_cast<float>(window.getSize().y/2));
   sf::RectangleShape shape(Oldshape);
   sf::Image img;
   img.create(widthpx, heightpx, data);
   img.flipVertically();
   sf::Texture texture;
   texture.loadFromImage(img);
+  window.setFramerateLimit(60);
+#ifdef DEBUG
   DBG << "Data.size.Byte -> " << T.DATA.size();
   DBG << "ImageX:ImageY -> " << img.getSize().x << "x" << img.getSize().y;
   DBG << "Texturesize: " << texture.getSize().x << "x" << texture.getSize().y;
+#endif
   shape.setTexture(&texture);
   auto shapeMid = [&]()
   {
@@ -85,9 +87,11 @@ int main(int argc, char**argv)
         }
       }
     }
+    Lock.lock();
     window.clear();
     window.draw(shape);
     window.display();
+    Lock.unlock();
   }
   delete[] data;
 }
