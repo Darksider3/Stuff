@@ -6,9 +6,42 @@
 #include <thread>
 
 #define SCROLLFACTOR 4
+#define ROTATEFACTOR 0.25
+#define ROTATE
 sf::Mutex Lock;
+
+#ifdef ROTATE
+
+void AnimateClockWiseRotation(sf::RenderWindow &n)
+{
+  sf::View changer;
+  sf::Time T = sf::milliseconds(25);
+  while(true)
+  {
+    Lock.lock();
+    changer = n.getView();
+    changer.rotate(-ROTATEFACTOR);
+    n.setView(changer);
+    Lock.unlock();
+    sf::sleep(T);
+  }
+}
+#endif
 int main(int argc, char**argv)
 {
+  auto RotateLeft = [](sf::RenderWindow &n)
+  {
+    sf::View change = n.getView();
+    change.rotate(ROTATEFACTOR);
+    n.setView(change);
+  };
+
+  auto RotateRight = [](sf::RenderWindow &n)
+  {
+    sf::View change = n.getView();
+    change.rotate(-ROTATEFACTOR);
+    n.setView(change);
+  };
   std::string fname;
   if(argc > 1)
     fname = argv[1];
@@ -25,11 +58,12 @@ int main(int argc, char**argv)
   auto data = T.legacyUint8RGBA();
   unsigned int widthpx=static_cast<unsigned int>(T.dib.width_px);
   unsigned int heightpx=static_cast<unsigned int>(T.dib.height_px);
-  sf::Vector2u static Windowpx=sf::Vector2u(1024, 1024);
+  sf::Vector2u static Windowpx=sf::Vector2u(520, 420);
   sf::RenderWindow window(sf::VideoMode(Windowpx.x, Windowpx.y), "BMP View");
   sf::Vector2f Oldshape = sf::Vector2f(static_cast<float>(window.getSize().x/2), static_cast<float>(window.getSize().y/2));
   sf::RectangleShape shape(Oldshape);
   sf::Image img;
+
   img.create(widthpx, heightpx, data);
   img.flipVertically();
   sf::Texture texture;
@@ -45,10 +79,13 @@ int main(int argc, char**argv)
   {
     return sf::Vector2f((window.getSize().x - shape.getSize().x)/2, (window.getSize().y - shape.getSize().y)/2);
   };
-  shape.setPosition(shapeMid());
+  //shape.setPosition(shapeMid());
+#ifdef ROTATE
+  sf::Thread Threader(&AnimateClockWiseRotation, std::ref(window));
+  Threader.launch();
+#endif
   while (window.isOpen())
   {
-    shape.scale(1,1);
     sf::Event event;
     while (window.pollEvent(event))
     {
@@ -63,8 +100,9 @@ int main(int argc, char**argv)
       if(event.type == sf::Event::Resized)
       {
         // when the window is resized, the mappings get out of scope. Remap them to our current X,Y coords
-        window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
+        window.setView(sf::View(sf::FloatRect(0,0, event.size.width, event.size.height)));
         shape.setPosition(shapeMid());
+        shape.setOrigin(5,5);
       }
       if(event.type == sf::Event::KeyPressed)
       {
@@ -80,7 +118,15 @@ int main(int argc, char**argv)
           case sf::Keyboard::Q:
             return EXIT_SUCCESS;
           case sf::Keyboard::Space:
-            shape.setSize(sf::Vector2f(img.getSize().x, img.getSize().y));
+            shape.setSize(sf::Vector2f(img.getSize().x/2, img.getSize().y/2));
+            shape.setPosition(shapeMid());
+            shape.setOrigin(5,5);
+            break;
+          case sf::Keyboard::Left:
+            RotateLeft(window);
+            break;
+          case sf::Keyboard::Right:
+            RotateRight(window);
             break;
           default:
             break;
@@ -93,5 +139,8 @@ int main(int argc, char**argv)
     window.display();
     Lock.unlock();
   }
+#ifdef ROTATE
+  Threader.terminate();
+#endif
   delete[] data;
 }
