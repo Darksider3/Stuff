@@ -8,7 +8,33 @@
 #define SCROLLFACTOR 4
 #define ROTATEFACTOR 0.25
 #define ROTATE
+#undef ROTATE
+#undef DEBUG
 sf::Mutex Lock;
+
+
+class TextInBox : public sf::Drawable, public sf::Transformable
+{
+public:
+  TextInBox create(sf::Text text, sf::Vector2f position, sf::Color RectColor)
+  {
+    m_text = text;
+    m_text.setFillColor(sf::Color::Black);
+    m_box = sf::RectangleShape(sf::Vector2f(text.getLocalBounds().width+15, text.getLocalBounds().height+15));
+    m_box.setFillColor(RectColor);
+    m_box.setPosition(position);
+    m_text.setPosition(position);
+    return *this;
+  }
+private:
+  sf::Text m_text;
+  sf::RectangleShape m_box;
+  virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const
+  {
+    target.draw(m_box, states);
+    target.draw(m_text, states);
+  }
+};
 
 #ifdef ROTATE
 
@@ -55,6 +81,12 @@ int main(int argc, char**argv)
   bmp::Headers t(fname);
   bmp::Impl T = bmp::Impl(fname);
   T.readData();
+  std::string StatText = "";
+  if(t.ColorTable())
+  {
+    StatText+="Colors in Table: "+ std::to_string(t.NumColors()) + "\n";
+  }
+  StatText += "BPP: " + std::to_string(t.BitPerPixel()) + "\nSize: " + std::to_string(static_cast<int>(t.bmp_header.Size));
   auto data = T.legacyUint8RGBA();
   unsigned int widthpx=static_cast<unsigned int>(T.dib.width_px);
   unsigned int heightpx=static_cast<unsigned int>(T.dib.height_px);
@@ -70,6 +102,23 @@ int main(int argc, char**argv)
   texture.loadFromImage(img);
   window.setFramerateLimit(60);
 #ifdef DEBUG
+
+  sf::Text StatisticalThingy;
+  StatisticalThingy.setCharacterSize(15);
+  StatisticalThingy.setFillColor(sf::Color::White);
+  sf::Font Trara;
+  if(!Trara.loadFromFile("/usr/share/fonts/TTF/arial.ttf"))
+  {
+    DBG << "Couldn't load arial.TTF from /usr/share/fonts/TTF!";
+    abort();
+  }
+  StatisticalThingy.setFont(Trara);
+  StatisticalThingy.setPosition(Windowpx.x*0.05f, Windowpx.y*0.9f);
+  StatisticalThingy.setString(StatText);
+
+  TextInBox Tester;
+  sf::Color Grey;
+  Tester.create(StatisticalThingy, sf::Vector2f(0,0), sf::Color(156, 140, 140, 120));
   DBG << "Data.size.Byte -> " << T.DATA.size();
   DBG << "ImageX:ImageY -> " << img.getSize().x << "x" << img.getSize().y;
   DBG << "Texturesize: " << texture.getSize().x << "x" << texture.getSize().y;
@@ -136,6 +185,9 @@ int main(int argc, char**argv)
     Lock.lock();
     window.clear();
     window.draw(shape);
+#ifdef DEBUG
+    window.draw(Tester);
+#endif
     window.display();
     Lock.unlock();
   }
