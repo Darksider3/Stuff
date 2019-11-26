@@ -1,40 +1,19 @@
-#include "bmp.h"
 #include <iostream>
 #include <memory>
 #include <typeinfo>
 #include <SFML/Graphics.hpp>
 #include <thread>
+#include "bmp.h"
+#include "textbox.h"
+
 
 #define SCROLLFACTOR 4
 #define ROTATEFACTOR 0.25
 #define ROTATE
 #undef ROTATE
-#undef DEBUG
+
+
 sf::Mutex Lock;
-
-
-class TextInBox : public sf::Drawable, public sf::Transformable
-{
-public:
-  TextInBox create(sf::Text text, sf::Vector2f position, sf::Color RectColor)
-  {
-    m_text = text;
-    m_text.setFillColor(sf::Color::Black);
-    m_box = sf::RectangleShape(sf::Vector2f(text.getLocalBounds().width+15, text.getLocalBounds().height+15));
-    m_box.setFillColor(RectColor);
-    m_box.setPosition(position);
-    m_text.setPosition(position);
-    return *this;
-  }
-private:
-  sf::Text m_text;
-  sf::RectangleShape m_box;
-  virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const
-  {
-    target.draw(m_box, states);
-    target.draw(m_text, states);
-  }
-};
 
 #ifdef ROTATE
 
@@ -116,7 +95,7 @@ int main(int argc, char**argv)
   StatisticalThingy.setPosition(Windowpx.x*0.05f, Windowpx.y*0.9f);
   StatisticalThingy.setString(StatText);
 
-  TextInBox Tester;
+  TextBox Tester;
   sf::Color Grey;
   Tester.create(StatisticalThingy, sf::Vector2f(0,0), sf::Color(156, 140, 140, 120));
   DBG << "Data.size.Byte -> " << T.DATA.size();
