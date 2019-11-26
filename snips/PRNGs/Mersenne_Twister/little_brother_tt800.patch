@@ -1,0 +1,80 @@
+diff --git a/Libraries/LibC/stdlib.cpp b/Libraries/LibC/stdlib.cpp
+index d0dc63e9..b284507d 100644
+--- a/Libraries/LibC/stdlib.cpp
++++ b/Libraries/LibC/stdlib.cpp
+@@ -392,6 +392,58 @@ int ptsname_r(int fd, char* buffer, size_t size)
+     __RETURN_WITH_ERRNO(rc, rc, -1);
+ }
+ 
++void TT800_vec_init(uint32_t* const p, const int length)
++{
++    const uint32_t multi = 509845221ul;
++    const uint32_t adder = 3ul;
++    uint32_t seed1 = 9;
++    uint32_t seed2 = 3402;
++    for(int i = 0; i < length; ++i)
++    {
++        seed1 = seed1 * multi + adder;
++        seed2 *= seed2 + 1;
++        p[i] = seed2 + (seed1 >> 10);
++    }
++}
++
++void TT800_vec_update(uint32_t* const p)
++{
++    static const uint32_t A[2] = {0, 0x8ebfd028};
++    int i = 0;
++    for(; i < TT800N - TT800M; ++i)
++    {
++        p[i] = p[i+(TT800M)] ^ (p[i] >> 1) ^ A[p[i] & 1];
++    }
++    for(; i < TT800N; ++i)
++    {
++        p[i] = p[i+(TT800M-TT800N)] ^ (p[i] >> 1) ^ A[p[i] & 1];
++    }
++}
++
++uint32_t TT800()
++{
++    static uint32_t vector[TT800N];
++    static int idx = TT800N+1;
++
++    uint32_t e;
++
++    if(idx >= TT800N)
++    {
++        if(idx > TT800N)
++        {
++            TT800_vec_init(vector, TT800N);
++        }
++        TT800_vec_update(vector);
++        idx = 0;
++    }
++
++    e = vector[idx++];
++    e ^= (e << 7)  & 0x2b5b2500; 
++    e ^= (e << 15) & 0xdb8b0000;
++    e ^= (e >> 16);
++    return e;
++}
++
+ static unsigned long s_next_rand = 1;
+ 
+ int rand()
+diff --git a/Libraries/LibC/stdlib.h b/Libraries/LibC/stdlib.h
+index 75236362..da5e99a8 100644
+--- a/Libraries/LibC/stdlib.h
++++ b/Libraries/LibC/stdlib.h
+@@ -50,6 +50,12 @@ int wctomb(char*, wchar_t);
+ size_t wcstombs(char*, const wchar_t*, size_t);
+ char* realpath(const char* pathname, char* buffer);
+ 
++#define TT800N 25
++#define TT800M 7
++void TT800_vec_update(uint32_t* const p);
++void TT800_vec_init(uint32_t* const p, const int length);
++uint32_t TT800();
++
+ #define RAND_MAX 32767
+ int rand();
+ void srand(unsigned seed);
