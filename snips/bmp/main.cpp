@@ -13,7 +13,7 @@
 #undef ROTATE
 
 
-sf::Mutex Lock;
+static sf::Mutex Lock;
 
 #ifdef ROTATE
 
