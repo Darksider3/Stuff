@@ -12,11 +12,11 @@ TextBox TextBox::create(sf::Text text, sf::Vector2f position, sf::Color RectColo
   m_box.setFillColor(RectColor);
   m_box.setPosition(position);
   m_text.setPosition(position);
-  complementary_color(m_text.getFillColor());
+  complementary_color_fast_approx(m_text.getFillColor());
   return *this;
 }
 
-void TextBox::complementary_color(const sf::Color &t)
+void TextBox::complementary_color_fast_approx(const sf::Color &t)
 {
   sf::Color tmp(t);
   tmp.r ^= 0xfff;

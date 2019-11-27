@@ -6,7 +6,7 @@ class TextBox : public sf::Drawable, public sf::Transformable
 {
 public:
   TextBox create(sf::Text text, sf::Vector2f position, sf::Color RectColor);
-  void complementary_color(sf::Color const &);
+  void complementary_color_fast_approx(sf::Color const &);
 
   void setTextColor(sf::Color const &color)
   {
