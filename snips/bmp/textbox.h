@@ -6,9 +6,17 @@ class TextBox : public sf::Drawable, public sf::Transformable
 {
 public:
   TextBox create(sf::Text text, sf::Vector2f position, sf::Color RectColor);
-private:
-  sf::Text m_text;
+  void complementary_color(sf::Color const &);
+
+  void setTextColor(sf::Color const &color)
+  {
+    m_text.setFillColor(color);
+  }
+
+protected:
   sf::RectangleShape m_box;
+  sf::Text m_text;
+
   virtual void draw(sf::RenderTarget &target, sf::RenderStates states) const
   {
     target.draw(m_box, states);

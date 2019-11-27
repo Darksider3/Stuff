@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <iostream>
 #include "textbox.h"
 TextBox TextBox::create(sf::Text text, sf::Vector2f position, sf::Color RectColor)
 {
@@ -11,5 +12,16 @@ TextBox TextBox::create(sf::Text text, sf::Vector2f position, sf::Color RectColo
   m_box.setFillColor(RectColor);
   m_box.setPosition(position);
   m_text.setPosition(position);
+  complementary_color(m_text.getFillColor());
   return *this;
+}
+
+void TextBox::complementary_color(const sf::Color &t)
+{
+  sf::Color tmp(t);
+  tmp.r ^= 0xfff;
+  tmp.g ^= 0xfff;
+  tmp.b ^= 0xfff;
+  std::cout << std::to_string(tmp.a) << " " << std::to_string(tmp.r) << " " << std::to_string(tmp.g) << " " << std::to_string(tmp.b) << " " << "\n";
+  m_text.setFillColor(tmp);
 }
