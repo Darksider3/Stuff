@@ -59,7 +59,7 @@ struct Pixel_BGRA : Pixel {
   uint8_t A;
 };
 
-struct Pixel_BGR24 : Pixel {
+struct Pixel_BGR : Pixel {
   uint8_t B;
   uint8_t G;
   uint8_t R;
@@ -108,7 +108,7 @@ public:
 };
 
 
-template<typename Struct = Pixel_BGR24, typename COMMONPTR = Struct>
+template<typename Struct = Pixel_BGR, typename COMMONPTR = Struct>
 class GenericProcessor {
 public:
   Headers Header;
@@ -124,7 +124,7 @@ public:
   virtual ~GenericProcessor() = default;
 
 };
-class BGR_24Process : public GenericProcessor<Pixel_BGR24, Pixel_BGR24>
+class BGR_24Process : public GenericProcessor<Pixel_BGR, Pixel_BGR>
 {
 public:
 };
@@ -135,7 +135,7 @@ protected:
   std::ifstream f;
 public:
   static bool exists(std::string &FN){return std::filesystem::exists(FN);}
-  std::vector<Pixel_BGR24> DATA;
+  std::vector<Pixel_BGR> DATA;
   BitmapFileHeader header;
   DIB_BITMAPINFOHEADER dib;
   Impl(std::string&);

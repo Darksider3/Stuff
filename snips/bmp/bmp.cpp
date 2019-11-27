@@ -44,7 +44,7 @@ void bmp::Impl::readHeaders()
 }
 void bmp::Impl::readData()
 {
-  Pixel_BGR24 tmp;
+  Pixel_BGR tmp;
   uint8_t trash;
 #ifdef DEBUG
   size_t trashed=0;
