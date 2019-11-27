@@ -6,7 +6,7 @@ struct TT800Seeds
 {
 	uint32_t seed1 = 9;
 	uint32_t seed2 = 3402;
-}TT800_SEEDS;
+} TT800_SEEDS;
 
 uint32_t TT800_SEED1;
 uint32_t TT800_SEED2;
