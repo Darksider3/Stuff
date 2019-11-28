@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include "textbox.h"
+
 TextBox TextBox::create(sf::Text text, sf::Vector2f position, sf::Color RectColor)
 {
   sf::FloatRect Boundings;

@@ -1,4 +1,6 @@
 #include "bmp.h"
+
+
 namespace bmp
 {
 Headers::Headers(std::string &FN)
