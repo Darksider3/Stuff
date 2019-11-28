@@ -3,12 +3,11 @@
 template<class T>
 void CRTP01<T>::someInterface()
 {
-  static_cast<T*>(this)->someInterfaceImpl();
+  under().someInterfaceImpl();
 }
 
 
 int main()
 {
-  CRTP01<CRTP01impl> B;
-  B.someInterface();
+  CRTP01impl B;
 }

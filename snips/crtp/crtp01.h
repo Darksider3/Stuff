@@ -8,6 +8,7 @@ class CRTP01
 public:
   CRTP01()
   {
+    someInterface();
     under().blabla();
   }
   void someInterface();
