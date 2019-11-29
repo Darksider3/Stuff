@@ -51,7 +51,7 @@ int main(int argc, char**argv)
   if(argc > 1)
     fname = argv[1];
   else
-    fname = "./zelda.bmp";
+    fname = "./pics/zelda.bmp";
   if(!bmp::Impl::exists(fname))
   {
     std::cout << "The file " << fname << " doesn't exist.\n";

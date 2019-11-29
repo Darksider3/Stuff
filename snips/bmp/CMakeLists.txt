@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 3.14)
+project(bmp_sfml)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -g -Werror -Wextra -Wall -Wundef -Wcast-qual -Wwrite-strings -Wimplicit-fallthrough -Wno-expansion-to-defined -g -fasynchronous-unwind-tables -fpie -Wl,-pie -g -pipe -Wl,-z,defs -Wl,-z,now -Wl,-z,relro")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Werror -Wextra -Wall -Wundef -Wcast-qual -Wwrite-strings -Wimplicit-fallthrough -Wno-expansion-to-defined -g -fasynchronous-unwind-tables -fpie -Wl,-pie -g -pipe -Wl,-z,defs -Wl,-z,now -Wl,-z,relro")
+include_directories(include/)
+add_library(bmpH STATIC include/bmp.h include/bmp.cpp include/Headers.cpp include/textbox.h include/textbox.cpp)
+add_executable(sfml_bmp main.cpp)
+target_link_libraries(sfml_bmp bmpH m  sfml-system sfml-window sfml-graphics pthread)
