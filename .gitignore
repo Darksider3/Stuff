@@ -21,3 +21,6 @@ __pycache__/
 *.creator.user
 *.cxxflags
 *.o
+*CMake*
+!CMakeLists.txt
+build/
