@@ -9,18 +9,44 @@ struct OptionFlag
   std::string FlagName;
   std::string LongName;
   std::string description;
+  static bool cmpr(OptionFlag *f, OptionFlag *w)
+  {
+    return (f->FlagName.compare(w->FlagName) < 0);
+  }
 };
 
 struct BoolFlag : public OptionFlag
 {
-  bool standard;
+  bool value;
+
+  static bool cmpr(BoolFlag *f, BoolFlag *w)
+  {
+    return OptionFlag::cmpr(f, w);
+  }
+  void set_opposite()
+  {
+    value = !value;
+  }
 };
 
-template <typename T>
+struct StringFlag : public OptionFlag
+{
+  std::string value;
+  static bool cmpr(BoolFlag *f, BoolFlag *w)
+  {
+    return OptionFlag::cmpr(f, w);
+  }
+  void set_opposite()
+  {
+    value.clear();
+  }
+
+};
+
 class optionalPP
 {
 public:
-  std::vector<T*> m_options;
+  std::vector<BoolFlag*> m_options;
   char **m_argv;
   int m_len;
 
@@ -29,21 +55,22 @@ public:
 
   void add_flag(std::string name, bool standard, std::string desc)
   {
-    T tmp;
+    BoolFlag tmp;
     tmp.FlagName = name;
-    tmp.standard = standard;
+    tmp.value = standard;
     tmp.description = desc;
     m_options.emplace_back(new BoolFlag(tmp));
   }
   void add_flag(std::string name, std::string Longname, bool standard, std::string desc)
   {
-    T tmp;
+    BoolFlag tmp;
     tmp.FlagName = name;
     tmp.LongName = Longname;
-    tmp.standard = standard;
+    tmp.value = standard;
     tmp.description = desc;
     m_options.emplace_back(new BoolFlag(tmp));
   }
+
   // processes argv
   bool process()
   {
@@ -54,25 +81,26 @@ public:
       {
         if(m_options[j]->FlagName.compare(m_argv[i]) == 0)
         {
-          set_opposite(j);
+          m_options[j]->set_opposite();
         }
         else if(!m_options[j]->LongName.empty())
         {
           if(m_options[j]->LongName.compare(m_argv[i]) == 0)
-            set_opposite(j);
+            m_options[j]->set_opposite();
         }
       }
     }
     return true;
   }
 
+  // FIXME: decltype(T)
   bool isOn(std::string name)
   {
     for(auto ele: m_options)
     {
       if(name.compare(ele->FlagName) == 0)
       {
-        return ele->standard;
+        return ele->value;
       }
     }
     return false;
@@ -86,14 +114,14 @@ public:
 
   void set_opposite(size_t at)
   {
-    m_options.at(at)->standard = !m_options.at(at)->standard;
+    m_options.at(at)->value = !m_options.at(at)->value;
   }
 
   void sort()
   {
-    std::sort(m_options.begin(), m_options.end(), cmpr);
+    std::sort(m_options.begin(), m_options.end(), m_options.at(0)->cmpr);
   }
-  static bool cmpr(T *f, T *w) // this one get's actually used by std::sort
+  static bool cmpr(OptionFlag *f, OptionFlag *w) // this one get's actually used by std::sort
   {
     return (f->FlagName.compare(w->FlagName) < 0);
   }
@@ -117,7 +145,7 @@ std::stringstream print_intake(int argc, char **argv)
 }
 int main(int argc, char **argv)
 {
-  optionalPP<BoolFlag> avb(argv, argc);
+  optionalPP avb(argv, argc);
   avb.add_flag("-h", "--help", false, "Say hello");
   avb.add_flag("-H", "--Hell", false, "Say hello");
   avb.process();
