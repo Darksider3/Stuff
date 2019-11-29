@@ -8,8 +8,8 @@ struct OptionFlag
 {
   std::string FlagName;
   std::string LongName;
-  bool standard;
   std::string description;
+  bool standard;
 };
 
 class optionalPP
@@ -49,12 +49,28 @@ public:
       {
         if(m_options[j].FlagName.compare(m_argv[i]) == 0)
         {
-          std::cout << "HEEERE \n";
           set_opposite(j);
+        }
+        else if(!m_options[j].LongName.empty())
+        {
+          if(m_options[j].LongName.compare(m_argv[i]) == 0)
+            set_opposite(j);
         }
       }
     }
     return true;
+  }
+
+  bool isOn(std::string name)
+  {
+    for(auto ele: m_options)
+    {
+      if(name.compare(ele.FlagName) == 0)
+      {
+        return ele.standard;
+      }
+    }
+    return false;
   }
   /*bool flag_is_on(std::string flagname)
   {
@@ -94,7 +110,15 @@ std::stringstream print_intake(int argc, char **argv)
 int main(int argc, char **argv)
 {
   optionalPP avb(argv, argc);
-  avb.add_flag("-h", "--help",true, "Say hello");
+  avb.add_flag("-h", "--help", false, "Say hello");
+  avb.add_flag("-H", "--Hell", false, "Say hello");
   avb.process();
+
+  if(avb.isOn("-h"))
+    std::cout << "IM ON HURRAY\n";
+  if(avb.isOn("-H"))
+  {
+    std::cout << "THE HELL MAY DOMINATE YOU \n";
+  }
   std::cout.flush();
 }
