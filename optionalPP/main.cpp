@@ -9,13 +9,17 @@ struct OptionFlag
   std::string FlagName;
   std::string LongName;
   std::string description;
+};
+
+struct BoolFlag : public OptionFlag
+{
   bool standard;
 };
 
 class optionalPP
 {
 public:
-  std::vector<OptionFlag> m_options;
+  std::vector<BoolFlag> m_options;
   char **m_argv;
   int m_len;
 
@@ -24,7 +28,7 @@ public:
 
   void add_flag(std::string name, bool standard, std::string desc)
   {
-    OptionFlag tmp;
+    BoolFlag tmp;
     tmp.FlagName = name;
     tmp.standard = standard;
     tmp.description = desc;
@@ -32,7 +36,7 @@ public:
   }
   void add_flag(std::string name, std::string Longname, bool standard, std::string desc)
   {
-    OptionFlag tmp;
+    BoolFlag tmp;
     tmp.FlagName = name;
     tmp.LongName = Longname;
     tmp.standard = standard;
