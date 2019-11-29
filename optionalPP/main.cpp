@@ -16,10 +16,11 @@ struct BoolFlag : public OptionFlag
   bool standard;
 };
 
+template <typename T>
 class optionalPP
 {
 public:
-  std::vector<BoolFlag> m_options;
+  std::vector<T*> m_options;
   char **m_argv;
   int m_len;
 
@@ -28,20 +29,20 @@ public:
 
   void add_flag(std::string name, bool standard, std::string desc)
   {
-    BoolFlag tmp;
+    T tmp;
     tmp.FlagName = name;
     tmp.standard = standard;
     tmp.description = desc;
-    m_options.emplace_back(tmp);
+    m_options.emplace_back(new BoolFlag(tmp));
   }
   void add_flag(std::string name, std::string Longname, bool standard, std::string desc)
   {
-    BoolFlag tmp;
+    T tmp;
     tmp.FlagName = name;
     tmp.LongName = Longname;
     tmp.standard = standard;
     tmp.description = desc;
-    m_options.emplace_back(tmp);
+    m_options.emplace_back(new BoolFlag(tmp));
   }
   // processes argv
   bool process()
@@ -51,13 +52,13 @@ public:
     {
       for(size_t j = 0; j != m_options.size(); ++j)
       {
-        if(m_options[j].FlagName.compare(m_argv[i]) == 0)
+        if(m_options[j]->FlagName.compare(m_argv[i]) == 0)
         {
           set_opposite(j);
         }
-        else if(!m_options[j].LongName.empty())
+        else if(!m_options[j]->LongName.empty())
         {
-          if(m_options[j].LongName.compare(m_argv[i]) == 0)
+          if(m_options[j]->LongName.compare(m_argv[i]) == 0)
             set_opposite(j);
         }
       }
@@ -69,9 +70,9 @@ public:
   {
     for(auto ele: m_options)
     {
-      if(name.compare(ele.FlagName) == 0)
+      if(name.compare(ele->FlagName) == 0)
       {
-        return ele.standard;
+        return ele->standard;
       }
     }
     return false;
@@ -85,20 +86,23 @@ public:
 
   void set_opposite(size_t at)
   {
-    m_options.at(at).standard = !m_options.at(at).standard;
+    m_options.at(at)->standard = !m_options.at(at)->standard;
   }
 
   void sort()
   {
     std::sort(m_options.begin(), m_options.end(), cmpr);
   }
-  static bool cmpr(OptionFlag f, OptionFlag w) // this one get's actually used by std::sort
+  static bool cmpr(T *f, T *w) // this one get's actually used by std::sort
   {
-    return (f.FlagName.compare(w.FlagName) < 0);
+    return (f->FlagName.compare(w->FlagName) < 0);
   }
   virtual ~optionalPP()
   {
-
+    for(auto el: m_options)
+    {
+      delete el;
+    }
   }
 };
 
@@ -113,7 +117,7 @@ std::stringstream print_intake(int argc, char **argv)
 }
 int main(int argc, char **argv)
 {
-  optionalPP avb(argv, argc);
+  optionalPP<BoolFlag> avb(argv, argc);
   avb.add_flag("-h", "--help", false, "Say hello");
   avb.add_flag("-H", "--Hell", false, "Say hello");
   avb.process();
