@@ -70,7 +70,7 @@ int main(int argc, char**argv)
   unsigned int widthpx=static_cast<unsigned int>(T.dib.width_px);
   unsigned int heightpx=static_cast<unsigned int>(T.dib.height_px);
   sf::Vector2u static Windowpx=sf::Vector2u(520, 420);
-  sf::RenderWindow window(sf::VideoMode(Windowpx.x, Windowpx.y), "BMP View");
+  sf::RenderWindow window(sf::VideoMode(Windowpx.x, Windowpx.y), "BMP Viewer");
   sf::Vector2f Oldshape = sf::Vector2f(static_cast<float>(window.getSize().x/2), static_cast<float>(window.getSize().y/2));
   sf::RectangleShape shape(Oldshape);
   sf::Image img;
