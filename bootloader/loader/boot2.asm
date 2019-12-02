@@ -58,7 +58,7 @@ boot2:
   lodsb ; ????
   or al,al ; al == 0?
   jz halt ; yes => Halt.
-  or eax, 0x0100 ; ORs 0x0100 on EAX
+  or eax, 0x0200 ; ORs 0x0100 on EAX
   mov word [ebx], ax ; move word(2 byte) from ax to ebx?
   add ebx, 2 ; add 2 to ebx
   jmp .loop ; jump back to beginning?
