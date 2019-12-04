@@ -25,14 +25,17 @@ public:
   {
     return static_cast<T*>(this)->m_next;
   }
+
   T* prev()
   {
     return static_cast<T*>(this)->m_prev;
   }
+
   bool comparer(T &other)
   {
     return static_cast<const T&>(*this)->cmpr(other);
   }
+
   void set_next(T* r)
   {
     static_cast<T*>(this)->m_next = r;
@@ -42,6 +45,7 @@ public:
   {
     static_cast<T*>(this)->m_prev = r;
   }
+
 public:
   void setnull()
   {
