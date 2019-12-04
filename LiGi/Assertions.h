@@ -16,6 +16,6 @@ __attribute__((noreturn)) void __assertion_failed(const char* msg, const char* f
 __attribute__((noreturn)) void __assertion_failed(const char* msg, const char* file, unsigned line, const char* func)
 {
   std::printf("%s:%s:%d; %s\n", file, func, line, msg);
-  std::fflush(0); // 0 => stdout
+  std::fflush(stdout); // 0 => stdout
   std::abort();
 }
