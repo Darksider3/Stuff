@@ -199,7 +199,7 @@ public:
      * Use Node<T>->comparer delivered by the struct
     */
   }
-  ~LinkedList()
+  virtual ~LinkedList()
   {
     m_tail = nullptr;
     m_head = nullptr;
