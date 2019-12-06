@@ -136,6 +136,19 @@ public:
   {
     return LLIterator<T>(m_tail);
   }
+
+  void append(std::unique_ptr<T> Node)
+  {
+    T* ins = Node.get();
+    append(ins);
+  }
+
+  void prepend(std::unique_ptr<T> Node)
+  {
+    T* ins = Node.get();
+    prepend(ins);
+  }
+
   void append(T* Node)
   {
     assert(Node);
