@@ -54,29 +54,28 @@ private:
   T* m_prev;
 };
 
-// FIXME: Not working right, somehow misses the start but goes directly to the end. Will see how that works later
+
 template<typename T>
 class LLIterator
 {
 public:
   LLIterator(T* ptr)
   {
-    m_current = ptr;
+    current = ptr;
   }
 
   LLIterator& operator=(LLNode<T> *ptr)
   {
     assert(ptr);
-    m_current = static_cast<LLNode<T*>>(ptr);
+    current = static_cast<LLNode<T*>>(ptr);
     return *this;
   }
 
   LLIterator& operator++()
   {
-    assert(m_current->next());
-    if(m_current)
+    if(current)
     {
-      m_current = m_current->next();
+      current = current->next();
     }
     return *this;
   }
@@ -90,17 +89,16 @@ public:
 
   bool operator!=(const LLIterator<T> &it)
   {
-    return m_current != it.m_current;
+    return current != it.current;
   }
 
   int operator*()
   {
-    return m_current;
+    return current;
   }
 
-  const T* m_current;
+  T* current;
 };
-
 
 template<typename T>
 class LinkedList
@@ -110,6 +108,7 @@ public:
   {
   }
 
+  friend class LLIterator<T>;
   bool empty()
   {
     return (m_head == nullptr);
@@ -128,14 +127,14 @@ public:
   T* head() { return m_head; }
   T* tail() { return m_tail; }
 
-  T* begin()
+  LLIterator<T> begin()
   {
-    return m_head;
+    return LLIterator<T>(m_head);
   }
 
-  T* end()
+  LLIterator<T> end()
   {
-    return m_tail;
+    return LLIterator<T>(m_tail);
   }
   void append(T* Node)
   {
