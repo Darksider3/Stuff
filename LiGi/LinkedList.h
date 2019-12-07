@@ -114,16 +114,6 @@ public:
     return (m_head == nullptr);
   }
 
-  void count(bool t)
-  {
-    m_store=t;
-    if(m_store)
-    {
-      m_counter = 0;
-      m_counter = size();
-    }
-  }
-
   T* head() { return m_head; }
   T* tail() { return m_tail; }
 
@@ -152,8 +142,6 @@ public:
   void append(T* Node)
   {
     assert(Node);
-    if(m_store)
-      ++m_counter;
     if(m_head == nullptr)
     {
       m_head = Node;
@@ -173,8 +161,6 @@ public:
   void prepend(T* Node)
   {
     assert(Node);
-    if(m_store)
-      ++m_counter;
     if(!m_head)
     {
       m_head = Node;
@@ -200,12 +186,6 @@ public:
     return count;
   }
 
-  size_t counter()
-  {
-    if(!m_store)
-      return size();
-    return m_counter;
-  }
   void sort()
   {
     /*
@@ -225,8 +205,6 @@ public:
 private:
   T* m_tail { nullptr };
   T* m_head { nullptr };
-  bool m_store{false};
-  size_t m_counter{0};
 
 };
 
