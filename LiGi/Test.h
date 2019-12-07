@@ -5,24 +5,25 @@
 #include "LinkedList.h"
 #include <string>
 #include <memory>
+#include <iostream>
 
 namespace Li
 {
 
 struct ErrorCase
 {
-  int errorCode;
+  int errorCode = 0; // 0 -> not yet done
   std::string errorDesc;
 };
 
 struct TestCase : public Li::LLNode<TestCase>
 {
-  bool (*foo)();
+  bool (*foo)(ErrorCase *);
   std::string descr;
   std::string category {"default"};
-  short success {false}; // true, false, 2->forced true
+  bool success {false}; // true, false, 2->forced true
   bool run {false};
-  ErrorCase *error {nullptr};
+  ErrorCase error;
 };
 
 //@todo: Test suite!
@@ -32,11 +33,19 @@ class Tests : public Li::LinkedList<TestCase>
 {
 
 public:
-  void run_all()
+  void exec()
   {
+    if(head() == tail())
+    {
+      head()->foo(&head()->error);
+    }
     for(auto it = begin(); it != end(); ++it)
     {
-      bool ret { it.current->foo() };
+      bool ret = it.current->foo(&it.current->error);
+      if(ret)
+        it.current->success = true;
+      else
+        it.current->success = false;
     }
   }
   void mark_runned(TestCase *m)
@@ -47,13 +56,13 @@ public:
 
   bool on_all(bool(*foo)(TestCase *p))
   {
+    if(head() == tail())
+    {
+      foo(head());
+    }
     for( auto it = begin(); it != end(); ++it)
     {
-      bool ret = foo(it.current);
-      if(!ret)
-      {
-        return false;
-      }
+      foo(it.current);
     }
     return true;
   }
