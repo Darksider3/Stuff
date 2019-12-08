@@ -105,7 +105,7 @@ bool Test::on_all(bool(*foo)(TestCase *p))
   }
   for( auto it = begin(); it != end(); ++it)
   {
-    foo(it.cur());
+    foo(&*it);
   }
   return true;
 }

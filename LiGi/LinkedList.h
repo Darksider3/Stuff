@@ -67,11 +67,6 @@ public:
     current = ptr;
   }
 
-  T* cur()
-  {
-    return current;
-  }
-
   LLIterator& operator=(LLNode<T> *ptr)
   {
     current = static_cast<LLNode<T*>>(ptr);
