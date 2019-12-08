@@ -58,25 +58,33 @@ public:
 std::string Test::errors()
 {
   std::string ret {""};
-  size_t i = 0;
+  std::string sizestr = std::to_string(size());
+  size_t failed = 0;
+
   for(auto b: *this)
   {
     if(!b.success)
     {
-      ++i;
+      ++failed;
       ret.append("TEST CASE: ");
       ret.append(b.name);
       ret.append("\nError Code: ");
       ret.append(std::to_string(b.error));
       ret.append(", Description: ");
       ret.append(b.errorDesc);
-      ret.append("\n-----\n");
+      ret.append("\n-----\n\n");
     }
   }
-  if(i > 0)
+
+  if(failed > 0)
   {
-    ret = "Results: " + std::to_string(i) + "/" + std::to_string(size()) + " failed\n" + ret;
+    ret = "Results: " + std::to_string(failed) + "/" + sizestr + " failed\n" + ret;
   }
+  else if (failed == 0)
+  {
+    ret = sizestr + "/" + sizestr + " succeeded, no errors!\n\n";
+  }
+
   return ret;
 }
 
