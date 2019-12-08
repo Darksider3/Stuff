@@ -30,13 +30,17 @@ struct TestCase : public Li::LLNode<TestCase>
   }
 };
 
-//@todo: Test suite!
-// It should be able to run every test, and produce a result-screen out of it
-// nothing heavy, probably something with the Assertion.h
+
 class Test : public Li::LinkedList<TestCase>
 {
-
 public:
+  // Singleton pattern:
+  // Ensures one(static) instance. Desireable!
+  static Test& instance()
+  {
+    static Test _instance;
+    return _instance;
+  }
   inline void exec()
   {
     if(head() == tail())
@@ -59,8 +63,14 @@ public:
     m->run = true;
   }
 
+  virtual bool on_all(bool(*foo)(TestCase *p));
   std::string errors();
-  bool on_all(bool(*foo)(TestCase *p));
+
+private:
+  // Singleton pattern: Disables any relevant constructor
+  Test() {}
+  Test(const Test&);
+  Test &operator=(const Test&);
 };
 
 
