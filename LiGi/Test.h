@@ -10,14 +10,24 @@ namespace Li
 
 struct TestCase : public Li::LLNode<TestCase>
 {
-  bool (*foo)(TestCase *);
   std::string name;
   std::string descr;
+  std::string errorDesc;
   std::string category {"default"};
+  bool (*func)(TestCase *);
   bool run {false};
   bool success {false};
   short error;
-  std::string errorDesc;
+
+  void setFunc(bool(*function)(TestCase *))
+  {
+    func = function;
+  }
+
+  bool exec()
+  {
+    return func(this);
+  }
 };
 
 //@todo: Test suite!
@@ -31,11 +41,11 @@ public:
   {
     if(head() == tail())
     {
-      head()->foo(head());
+      head()->exec();
     }
     for(auto node = head(); node != nullptr; node=node->next())
     {
-      bool ret = node->foo(node);
+      bool ret = node->exec();
       if(ret)
         node->success = true;
       else
@@ -50,7 +60,6 @@ public:
   }
 
   std::string errors();
-
   bool on_all(bool(*foo)(TestCase *p));
 };
 
