@@ -4,68 +4,94 @@
 #include "Assertions.h"
 #include "LinkedList.h"
 #include <string>
-#include <memory>
-#include <iostream>
 
 namespace Li
 {
 
-struct ErrorCase
-{
-  int errorCode = 0; // 0 -> not yet done
-  std::string errorDesc;
-};
-
 struct TestCase : public Li::LLNode<TestCase>
 {
-  bool (*foo)(ErrorCase *);
+  bool (*foo)(TestCase *);
+  std::string name;
   std::string descr;
   std::string category {"default"};
-  bool success {false}; // true, false, 2->forced true
   bool run {false};
-  ErrorCase error;
+  bool success {false};
+  short error;
+  std::string errorDesc;
 };
 
 //@todo: Test suite!
 // It should be able to run every test, and produce a result-screen out of it
 // nothing heavy, probably something with the Assertion.h
-class Tests : public Li::LinkedList<TestCase>
+class Test : public Li::LinkedList<TestCase>
 {
 
 public:
-  void exec()
+  inline void exec()
   {
     if(head() == tail())
     {
-      head()->foo(&head()->error);
+      head()->foo(head());
     }
     for(auto node = head(); node != nullptr; node=node->next())
     {
-      bool ret = node->foo(&node->error);
+      bool ret = node->foo(node);
       if(ret)
         node->success = true;
       else
         node->success = false;
     }
   }
-  void mark_runned(TestCase *m)
+
+  inline void mark_runned(TestCase *m)
   {
-    m->success = 2;
+    m->success = true;
     m->run = true;
   }
 
-  bool on_all(bool(*foo)(TestCase *p))
-  {
-    if(head() == tail())
-    {
-      foo(head());
-    }
-    for( auto it = begin(); it != end(); ++it)
-    {
-      foo(it.cur());
-    }
-    return true;
-  }
+  std::string errors();
+
+  bool on_all(bool(*foo)(TestCase *p));
 };
+
+
+std::string Test::errors()
+{
+  std::string ret {""};
+  size_t i = 0;
+  for(auto b: *this)
+  {
+    if(!b.success)
+    {
+      ++i;
+      ret.append("TEST CASE: ");
+      ret.append(b.name);
+      ret.append("\nError Code: ");
+      ret.append(std::to_string(b.error));
+      ret.append(", Description: ");
+      ret.append(b.errorDesc);
+      ret.append("\n-----\n");
+    }
+  }
+  if(i > 0)
+  {
+    ret = "Results: " + std::to_string(i) + "/" + std::to_string(size()) + " failed\n" + ret;
+  }
+  return ret;
+}
+
+bool Test::on_all(bool(*foo)(TestCase *p))
+{
+  if(head() == tail())
+  {
+    foo(head());
+  }
+  for( auto it = begin(); it != end(); ++it)
+  {
+    foo(it.cur());
+  }
+  return true;
+}
+
 }
 #endif // TEST_H
