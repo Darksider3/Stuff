@@ -39,13 +39,13 @@ public:
     {
       head()->foo(&head()->error);
     }
-    for(auto it = begin(); it != end(); ++it)
+    for(auto node = head(); node != nullptr; node=node->next())
     {
-      bool ret = it.current->foo(&it.current->error);
+      bool ret = node->foo(&node->error);
       if(ret)
-        it.current->success = true;
+        node->success = true;
       else
-        it.current->success = false;
+        node->success = false;
     }
   }
   void mark_runned(TestCase *m)
@@ -62,7 +62,7 @@ public:
     }
     for( auto it = begin(); it != end(); ++it)
     {
-      foo(it.current);
+      foo(it.cur());
     }
     return true;
   }
