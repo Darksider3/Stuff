@@ -6,6 +6,9 @@
 namespace Li
 {
 template<typename T>
+class LinkedList;
+
+template<typename T>
 class LLNode
 {
 public:
@@ -64,9 +67,13 @@ public:
     current = ptr;
   }
 
+  T* cur()
+  {
+    return current;
+  }
+
   LLIterator& operator=(LLNode<T> *ptr)
   {
-    assert(ptr);
     current = static_cast<LLNode<T*>>(ptr);
     return *this;
   }
@@ -82,9 +89,8 @@ public:
 
   LLIterator& operator++(int) // postfix?
   {
-    LLIterator<T> it = *this;
-    ++*this;
-    return it;
+    operator++();
+    return *this;
   }
 
   bool operator!=(const LLIterator<T> &it)
@@ -92,10 +98,18 @@ public:
     return current != it.current;
   }
 
-  int operator*()
+  T& operator*()
+  {
+    return *current;
+  }
+
+  T* operator->()
   {
     return current;
   }
+
+private:
+  friend LinkedList<T>;
 
   T* current;
 };
@@ -104,11 +118,6 @@ template<typename T>
 class LinkedList
 {
 public:
-  LinkedList()
-  {
-  }
-
-  friend class LLIterator<T>;
   bool empty()
   {
     return (m_head == nullptr);
@@ -117,15 +126,33 @@ public:
   T* head() { return m_head; }
   T* tail() { return m_tail; }
 
-  LLIterator<T> begin()
+  using Iterator = LLIterator<T>;
+  friend Iterator;
+
+  Iterator begin()
   {
-    return LLIterator<T>(m_head);
+    return Iterator(m_head);
   }
 
-  LLIterator<T> end()
+  Iterator end()
   {
-    return LLIterator<T>(m_tail);
+    return Iterator(nullptr);
   }
+
+  using ConstIt = LLIterator<const T>;
+  friend ConstIt;
+
+  ConstIt begin() const
+  {
+    return ConstIt(m_head);
+  }
+
+  ConstIt end() const
+  {
+    return ConstIt(nullptr);
+  }
+
+
 
   void append(std::unique_ptr<T> Node)
   {
@@ -141,7 +168,6 @@ public:
 
   void append(T* Node)
   {
-    assert(Node);
     if(m_head == nullptr)
     {
       m_head = Node;
@@ -149,7 +175,6 @@ public:
       m_head->setnull();
       return ;
     }
-
     assert(m_tail);
     m_tail->set_next(Node);
     Node->set_prev(m_tail);
@@ -160,7 +185,6 @@ public:
 
   void prepend(T* Node)
   {
-    assert(Node);
     if(!m_head)
     {
       m_head = Node;
@@ -197,10 +221,6 @@ public:
     m_tail = nullptr;
     m_head = nullptr;
   }
-
-
-  // FIXME: Just a tester.
-  std::unique_ptr<T> m_tester;
 
 private:
   T* m_tail { nullptr };
