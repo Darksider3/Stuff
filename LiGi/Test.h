@@ -79,7 +79,7 @@ std::string Test::errors()
       ret.append(b.name);
       ret.append("\nError Code: ");
       ret.append(std::to_string(b.error));
-      ret.append(", Description: ");
+      ret.append(";\nDescription: ");
       ret.append(b.errorDesc);
       ret.append("\n-----\n\n");
     }
