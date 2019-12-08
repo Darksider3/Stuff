@@ -4,6 +4,7 @@
 #include "Assertions.h"
 #include "LinkedList.h"
 #include <string>
+#include "Singleton.h"
 
 namespace Li
 {
@@ -31,16 +32,10 @@ struct TestCase : public Li::LLNode<TestCase>
 };
 
 
-class Test : public Li::LinkedList<TestCase>
+class Test : public Li::LinkedList<TestCase>, public Li::Singleton<Test>
 {
+  friend Li::Singleton<Test>;
 public:
-  // Singleton pattern:
-  // Ensures one(static) instance. Desireable!
-  static Test& instance()
-  {
-    static Test _instance;
-    return _instance;
-  }
   inline void exec()
   {
     if(head() == tail())
@@ -68,7 +63,9 @@ public:
 
 private:
   // Singleton pattern: Disables any relevant constructor
-  Test() {}
+  // already through  Singleton-Class
+  //Test() {}
+  // FIXME: Need this because i hesitate yet to declare it in there in singleton
   Test(const Test&);
   Test &operator=(const Test&);
 };
