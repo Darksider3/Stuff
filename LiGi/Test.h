@@ -34,23 +34,8 @@ struct TestCase : public Li::LLNode<TestCase>
 
 class Test : public Li::LinkedList<TestCase>, public Li::Singleton<Test>
 {
-  friend Li::Singleton<Test>;
+  friend Li::Singleton<Test>; // REQUIRED
 public:
-  inline void exec()
-  {
-    if(head() == tail())
-    {
-      head()->exec();
-    }
-    for(auto node = head(); node != nullptr; node=node->next())
-    {
-      bool ret = node->exec();
-      if(ret)
-        node->success = true;
-      else
-        node->success = false;
-    }
-  }
 
   inline void mark_runned(TestCase *m)
   {
@@ -58,18 +43,33 @@ public:
     m->run = true;
   }
 
+  virtual inline void exec();
   virtual bool on_all(bool(*foo)(TestCase *p));
-  std::string errors();
-
+  virtual std::string errors();
 private:
   // Singleton pattern: Disables any relevant constructor
   // already through  Singleton-Class
   //Test() {}
   // FIXME: Need this because i hesitate yet to declare it in there in singleton
-  Test(const Test&);
-  Test &operator=(const Test&);
+  //Test(const Test&);
+  //Test &operator=(const Test&);
 };
 
+void Test::exec()
+{
+  if(head() == tail())
+  {
+    head()->exec();
+  }
+  for(auto node = head(); node != nullptr; node=node->next())
+  {
+    bool ret = node->exec();
+    if(ret)
+      node->success = true;
+    else
+      node->success = false;
+  }
+}
 
 std::string Test::errors()
 {
