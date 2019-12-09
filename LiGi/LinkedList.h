@@ -64,20 +64,20 @@ class LLIterator
 public:
   LLIterator(T* ptr)
   {
-    current = ptr;
+    m_current = ptr;
   }
 
   LLIterator& operator=(LLNode<T> *ptr)
   {
-    current = static_cast<LLNode<T*>>(ptr);
+    m_current = static_cast<LLNode<T*>>(ptr);
     return *this;
   }
 
   LLIterator& operator++()
   {
-    if(current)
+    if(m_current)
     {
-      current = current->next();
+      m_current = m_current->next();
     }
     return *this;
   }
@@ -90,23 +90,23 @@ public:
 
   bool operator!=(const LLIterator<T> &it)
   {
-    return current != it.current;
+    return m_current != it.m_current;
   }
 
   T& operator*()
   {
-    return *current;
+    return *m_current;
   }
 
   T* operator->()
   {
-    return current;
+    return m_current;
   }
 
 private:
   friend LinkedList<T>;
 
-  T* current;
+  T* m_current;
 };
 
 template<typename T>
