@@ -3,6 +3,7 @@
 #define LIGILL_H
 #include <memory>
 #include "Assertions.h"
+
 namespace Li
 {
 template<typename T>
@@ -211,12 +212,6 @@ public:
      * Use Node<T>->comparer delivered by the struct
     */
   }
-  virtual ~LinkedList()
-  {
-    m_tail = nullptr;
-    m_head = nullptr;
-  }
-
 private:
   T* m_tail { nullptr };
   T* m_head { nullptr };

@@ -2,7 +2,6 @@
 #define SINGLYLINKEDLIST_H
 #include <memory>
 
-
 namespace Li
 {
 template<typename T>
@@ -139,7 +138,6 @@ public:
     m_tail->set_next(Node);
     Node->set_next(nullptr);
     m_tail = Node;
-    return;
   }
 
   void prepend(T* Node)
@@ -165,12 +163,6 @@ public:
       ++i;
     }
     return i;
-  }
-
-  virtual ~SinglyLinkedList()
-  {
-    m_tail = nullptr;
-    m_head = nullptr;
   }
 private:
   T* m_head;
