@@ -7,3 +7,4 @@ It isn't worth it yet lol. Had a lot of work put into the json parser that can r
 
 But besides that i found it very nice to have just a repository to dump anything in i can. 
 
+In LiGi is a pretty useful Makefile right now :)
