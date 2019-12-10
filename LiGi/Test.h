@@ -6,6 +6,8 @@
 #include <string>
 #include "Singleton.h"
 
+#include <functional>
+
 namespace Li
 {
 
@@ -15,19 +17,14 @@ struct TestCase : public Li::LLNode<TestCase>
   std::string descr;
   std::string errorDesc;
   std::string category {"default"};
-  bool (*func)(TestCase *);
+  bool(*func)(TestCase*);
   bool run {false};
   bool success {false};
   short error;
 
   void setFunc(bool(*function)(TestCase *))
   {
-    func = function;
-  }
-
-  bool exec()
-  {
-    return func(this);
+    func = *function;
   }
 };
 
@@ -37,13 +34,13 @@ class Test : public Li::LinkedList<TestCase>, public Li::Singleton<Test>
   friend Li::Singleton<Test>; // REQUIRED
 public:
 
-  inline void mark_runned(TestCase *m)
+  inline static void mark_runned(TestCase *m)
   {
     m->success = true;
     m->run = true;
   }
 
-  virtual inline void exec();
+  void exec();
   virtual bool on_all(bool(*foo)(TestCase *p));
   virtual std::string errors();
 private:
@@ -54,68 +51,5 @@ private:
   //Test(const Test&);
   //Test &operator=(const Test&);
 };
-
-void Test::exec()
-{
-  if(head() == tail())
-  {
-    head()->exec();
-  }
-  for(auto node = head(); node != nullptr; node=node->next())
-  {
-    bool ret = node->exec();
-    if(ret)
-      node->success = true;
-    else
-      node->success = false;
-  }
-}
-
-std::string Test::errors()
-{
-  std::string ret {""};
-  std::string sizestr = std::to_string(size());
-  size_t failed = 0;
-
-  for(auto b: *this)
-  {
-    if(!b.success)
-    {
-      ++failed;
-      ret.append("TEST CASE: ");
-      ret.append(b.name);
-      ret.append("\nError Code: ");
-      ret.append(std::to_string(b.error));
-      ret.append(";\nDescription: ");
-      ret.append(b.errorDesc);
-      ret.append("\n-----\n\n");
-    }
-  }
-
-  if(failed > 0)
-  {
-    ret = "Results: " + std::to_string(failed) + "/" + sizestr + " failed\n" + ret;
-  }
-  else if (failed == 0)
-  {
-    ret = sizestr + "/" + sizestr + " succeeded, no errors!\n\n";
-  }
-
-  return ret;
-}
-
-bool Test::on_all(bool(*foo)(TestCase *p))
-{
-  if(head() == tail())
-  {
-    foo(head());
-  }
-  for( auto it = begin(); it != end(); ++it)
-  {
-    foo(&*it);
-  }
-  return true;
-}
-
 }
 #endif // TEST_H
