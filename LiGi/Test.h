@@ -3,10 +3,8 @@
 #define TEST_H
 #include "Assertions.h"
 #include "LinkedList.h"
-#include <string>
 #include "Singleton.h"
-
-#include <functional>
+#include <string>
 
 namespace Li
 {
