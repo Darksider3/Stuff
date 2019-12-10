@@ -23,9 +23,12 @@ private:
   static std::shared_ptr<T> m_instance;
 
 protected:
-  Singleton(){}
-  Singleton(const Singleton&){}
-  Singleton &operator=(const Singleton&);
+  Singleton() noexcept {}
+  Singleton(const Singleton&) noexcept {}
+  Singleton(Singleton &&) noexcept {}
+  Singleton &operator=(Singleton const&) noexcept;
+  Singleton &operator=(Singleton) noexcept;
+  Singleton &operator=(Singleton&&) noexcept;
 };
 template <typename T> std::shared_ptr<T>Singleton<T>::m_instance = nullptr;
 }
