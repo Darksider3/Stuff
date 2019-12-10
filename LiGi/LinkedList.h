@@ -176,7 +176,6 @@ public:
     Node->set_prev(m_tail);
     Node->set_next(nullptr);
     m_tail = Node;
-    return ;
   }
 
   void prepend(T* Node)
