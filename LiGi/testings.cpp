@@ -4,7 +4,7 @@
 #include "Test.h"
 #include <cstring>
 
-#define LISTSIZES 50
+constexpr int LISTSIZES = 50;
 
 int lltester(int argc, char **argv);
 
@@ -49,8 +49,9 @@ bool testTheTest(Li::TestCase *me)
 
 bool testList(Li::TestCase *me)
 {
+  bool returner = true;
   me->name = "ListTest";
-  std::unique_ptr<ExampleNode[]> Nodes(new ExampleNode[50]);
+  std::unique_ptr<ExampleNode[]> Nodes(new ExampleNode[LISTSIZES]);
   Li::LinkedList<ExampleNode> L;
   for(size_t i = 0; i != LISTSIZES; ++i)
   {
@@ -58,16 +59,14 @@ bool testList(Li::TestCase *me)
     L.append(&Nodes[i]);
   }
 
-  if(L.size() == LISTSIZES)
-  {
-    return true;
-  }
-  else
+  if(L.size() != LISTSIZES)
   {
     me->error = 2;
     me->errorDesc = "Sizes don't match!";
-    return false;
+    returner = false;
   }
+
+  return returner;
 }
 
 bool testFrankenstein(Li::TestCase *me)
