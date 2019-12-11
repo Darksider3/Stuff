@@ -1,68 +1,94 @@
-#ifndef SINGLYLINKEDLIST_H
-#define SINGLYLINKEDLIST_H
+#pragma once
+#ifndef LIGISINGLYLIST_H
+#define LIGISINGLYLIST_H
 #include <memory>
+#include "Assertions.h"
 
 namespace Li
 {
 template<typename T>
-class SinglyLinkedList;
-
-template<typename T>
-class SinglyNode
+class SingleNode
 {
 public:
-  SinglyNode()
-  {
-    static_cast<T*>(this)->setnull();
-  }
 
+  SingleNode()
+  {
+    setnull();
+  }
   T* next()
   {
     return static_cast<T*>(this)->m_next;
   }
 
-  void set_next(T* n)
+  T* prev()
   {
-    static_cast<T*>(this)->m_next = n;
+    return static_cast<T*>(this)->m_prev;
   }
 
+  bool comparer(T &other)
+  {
+    return static_cast<const T&>(*this)->cmpr(other);
+  }
+
+  void set_next(T* r)
+  {
+    static_cast<T*>(this)->m_next = r;
+  }
+
+  void set_prev(T *r)
+  {
+    static_cast<T*>(this)->m_prev = r;
+  }
+
+public:
   void setnull()
   {
-    static_cast<T*>(this)->m_next = nullptr;
+    static_cast<T*>(this)->set_next(nullptr);
+    static_cast<T*>(this)->set_prev(nullptr);
   }
-
+  static std::unique_ptr<T> newPtr(T &data)
+  {
+    return std::make_unique(data);
+  }
 private:
   T* m_next;
+  T* m_prev;
 };
 
-template <typename T>
-class SinglyLinkedIterator
+template<typename T>
+class SinglyLinkedList;
+
+template<typename T>
+class SinglyLinkedListIterator
 {
-  SinglyLinkedIterator(T* ptr)
+public:
+  SinglyLinkedListIterator(T* ptr)
   {
     m_current = ptr;
   }
 
-  SinglyLinkedIterator& operator=(SinglyLinkedIterator<T> *ptr)
+  SinglyLinkedListIterator& operator=(SingleNode<T> *ptr)
   {
-    m_current = static_cast<SinglyLinkedIterator<T*>>(ptr);
+    m_current = static_cast<SingleNode<T*>>(ptr);
     return *this;
   }
 
-  SinglyLinkedIterator& operator++()
+  SinglyLinkedListIterator& operator++()
   {
     if(m_current)
+    {
       m_current = m_current->next();
+    }
     return *this;
   }
 
-  SinglyLinkedIterator& operator++(int)
+  SinglyLinkedListIterator& operator++(int) // postfix?
   {
     operator++();
     return *this;
   }
 
-  bool operator!=(const SinglyLinkedIterator<T> &it)
+  bool operator!=(const SinglyLinkedListIterator<T> &it)
   {
     return m_current != it.m_current;
   }
@@ -78,12 +104,12 @@ class SinglyLinkedIterator
   }
 
 private:
-  T* m_current;
-
   friend SinglyLinkedList<T>;
+
+  T* m_current;
 };
 
-template <typename T>
+template<typename T>
 class SinglyLinkedList
 {
 public:
@@ -92,10 +118,10 @@ public:
     return (m_head == nullptr);
   }
 
-  T* head(){return m_head;}
-  T* tail(){return m_tail;}
+  T* head() { return m_head; }
+  T* tail() { return m_tail; }
 
-  using Iterator = SinglyLinkedIterator<T>;
+  using Iterator = SinglyLinkedListIterator<T>;
   friend Iterator;
 
   Iterator begin()
@@ -108,22 +134,32 @@ public:
     return Iterator(nullptr);
   }
 
+  using ConstIt = SinglyLinkedListIterator<const T>;
+  friend ConstIt;
 
-  using ConstIterator = SinglyLinkedIterator<T>;
-  friend ConstIterator;
-
-  ConstIterator begin() const
+  ConstIt begin() const
   {
-    return ConstIterator(m_head);
+    return ConstIt(m_head);
   }
 
-  ConstIterator end() const
+  ConstIt end() const
   {
-    return ConstIterator(nullptr);
+    return ConstIt(nullptr);
   }
 
-  void append(std::unique_ptr<T> Node);
-  void prepend(std::unique_ptr<T> Node);
+
+
+  void append(std::unique_ptr<T> Node)
+  {
+    T* ins = Node.get();
+    append(ins);
+  }
+
+  void prepend(std::unique_ptr<T> Node)
+  {
+    T* ins = Node.get();
+    prepend(ins);
+  }
 
   void append(T* Node)
   {
@@ -132,7 +168,7 @@ public:
       m_head = Node;
       m_tail = Node;
       m_head->setnull();
-      return;
+      return ;
     }
     assert(m_tail);
     m_tail->set_next(Node);
@@ -157,16 +193,27 @@ public:
 
   virtual size_t size()
   {
-    size_t i = 0;
-    for(T* n = m_head; n; n = n->next())
+    size_t count = 0;
+    for(T* p = m_head; p; p = p->next())
     {
-      ++i;
+      ++count;
     }
-    return i;
+    return count;
+  }
+
+  void sort()
+  {
+    /*
+     * Use Node<T>->comparer delivered by the struct
+    */
   }
 private:
-  T* m_head;
-  T* m_tail;
+  T* m_tail { nullptr };
+  T* m_head { nullptr };
+
 };
+
+
 }
-#endif // SINGLYLINKEDLIST_H
+
+#endif
