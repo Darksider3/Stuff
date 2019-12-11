@@ -15,7 +15,7 @@ struct TestCase : public Li::LLNode<TestCase>
   std::string descr;
   std::string errorDesc;
   std::string category {"default"};
-  bool(*func)(TestCase*);
+  bool(*func)(TestCase*) = nullptr;
   bool run {false};
   bool success {false};
   short error;
