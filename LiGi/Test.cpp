@@ -1,5 +1,7 @@
 #include "Test.h"
 
+#include <iostream>
+
 namespace Li
 {
 void Test::exec()
@@ -8,10 +10,10 @@ void Test::exec()
   {
     head()->func(head());
   }
-  for(auto node = head(); node != nullptr; node=node->next())
+  for(auto &node: *this)
   {
-    bool ret = node->func(node);
-    node->success = ret;
+    bool ret = node.func(&node);
+    node.success = ret;
   }
 }
 
