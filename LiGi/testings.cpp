@@ -2,6 +2,7 @@
 #include "LinkedList.h"
 #include "SinglyLinkedList.h"
 #include "Test.h"
+#include "stack.h"
 #include <cstring>
 
 constexpr int LISTSIZES = 50;
@@ -17,6 +18,37 @@ struct ExampleNode : Li::LLNode<ExampleNode>
 {
   int data = 0;
 };
+
+bool testStack(Li::TestCase *mua)
+{
+  bool returner = true;
+  mua->name = "StackTest";
+  std::unique_ptr<ExampleNode[]> Nodes(new ExampleNode[LISTSIZES]);
+  Li::Stack<ExampleNode> La{};
+
+  std::cout << "was here" << std::endl;
+  for(size_t i = 0; i != LISTSIZES; ++i)
+  {
+    Nodes[i].data = static_cast<int>(i);
+    La.pushd(&Nodes[i]);
+  }
+  if(La.height() != LISTSIZES)
+  {
+    mua->error = 2;
+    mua->errorDesc = "Stack heights doesn't match! Height: " + std::to_string(La.height());
+    returner = false;
+  }
+
+  ExampleNode B = *La.top();
+
+  if(B.data != LISTSIZES-1)
+  {
+    mua->error = 4;
+    mua->errorDesc = "Stacks inner doesn't match! Data: " + std::to_string(B.data);
+    returner = false;
+  }
+  return returner;
+}
 
 bool testList(Li::TestCase *me)
 {
@@ -91,10 +123,12 @@ int main(int argc, char** argv)
   std::shared_ptr<Li::TestCase> test2 = std::make_shared<Li::TestCase>();
   std::shared_ptr<Li::TestCase> test3 = std::make_shared<Li::TestCase>();
   std::shared_ptr<Li::TestCase> test4 = std::make_shared<Li::TestCase>();
+  std::shared_ptr<Li::TestCase> test5 = std::make_shared<Li::TestCase>();
   test1->func = *testTheTest;
   test2->func = *testList;
   test3->func = *testFrankenstein;
   test4->func = *testSingly;
+  test5->func = *testStack;
   hu->append(test1.get());
   hu->append(test4.get());
   hu->append(test2.get());
@@ -102,6 +136,7 @@ int main(int argc, char** argv)
   test3->category = "hi";
 #endif
   hu->append(test3.get());
+  hu->append(test5.get());
   hu->exec();
   std::cout << hu->errors();
 #endif
