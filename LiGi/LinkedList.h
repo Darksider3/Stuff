@@ -216,23 +216,23 @@ public:
   {
     if (Node->prev())
     {
-        ASSERT(Node != m_head);
+        assert(Node != m_head);
         Node->prev()->set_next(Node->next());
     }
     else
     {
-        ASSERT(Node == m_head);
+        assert(Node == m_head);
         m_head = Node->next();
     }
 
     if (Node->next())
     {
-        ASSERT(Node != m_tail);
+        assert(Node != m_tail);
         Node->next()->set_prev(Node->prev());
     }
     else
     {
-        ASSERT(Node == m_tail);
+        assert(Node == m_tail);
         m_tail = Node->prev();
     }
   }
