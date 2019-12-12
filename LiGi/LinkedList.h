@@ -211,6 +211,53 @@ public:
      * Use Node<T>->comparer delivered by the struct
     */
   }
+
+  void remove(T* Node)
+  {
+    if (Node->prev())
+    {
+        ASSERT(Node != m_head);
+        Node->prev()->set_next(Node->next());
+    }
+    else
+    {
+        ASSERT(Node == m_head);
+        m_head = Node->next();
+    }
+
+    if (Node->next())
+    {
+        ASSERT(Node != m_tail);
+        Node->next()->set_prev(Node->prev());
+    }
+    else
+    {
+        ASSERT(Node == m_tail);
+        m_tail = Node->prev();
+    }
+  }
+
+  T* remove_head()
+  {
+    T* Node = head();
+    if(Node != nullptr)
+    {
+      remove(Node);
+    }
+
+    return Node;
+  }
+
+  T* remove_tail()
+  {
+    T* Node = tail();
+    if(Node != nullptr)
+    {
+      remove(Node);
+    }
+    return Node;
+  }
+
 private:
   T* m_tail { nullptr };
   T* m_head { nullptr };
