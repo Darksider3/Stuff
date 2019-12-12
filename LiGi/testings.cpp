@@ -26,7 +26,6 @@ bool testStack(Li::TestCase *mua)
   std::unique_ptr<ExampleNode[]> Nodes(new ExampleNode[LISTSIZES]);
   Li::Stack<ExampleNode> La{};
 
-  std::cout << "was here" << std::endl;
   for(size_t i = 0; i != LISTSIZES; ++i)
   {
     Nodes[i].data = static_cast<int>(i);
@@ -42,6 +41,15 @@ bool testStack(Li::TestCase *mua)
   ExampleNode B = *La.top();
 
   if(B.data != LISTSIZES-1)
+  {
+    mua->error = 4;
+    mua->errorDesc = "Stacks inner doesn't match! Data: " + std::to_string(B.data);
+    returner = false;
+  }
+  La.popd();
+  B = *La.top();
+
+  if(B.data != LISTSIZES-2)
   {
     mua->error = 4;
     mua->errorDesc = "Stacks inner doesn't match! Data: " + std::to_string(B.data);
