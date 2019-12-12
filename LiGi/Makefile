@@ -1,5 +1,6 @@
 OBJS = \
 	Assertions.o \
+	stack.o \
 	Test.o \
 	testings.o
 APP = a.out
