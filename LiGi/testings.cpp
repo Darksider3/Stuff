@@ -8,7 +8,7 @@ constexpr int LISTSIZES = 50;
 
 int lltester(int argc, char **argv);
 
-struct ExampleSingly : Li::SinglyNode<ExampleSingly>
+struct ExampleSingly : Li::SingleNode<ExampleSingly>
 {
   int data = 1;
 };
@@ -17,35 +17,6 @@ struct ExampleNode : Li::LLNode<ExampleNode>
 {
   int data = 0;
 };
-
-bool testSingly(Li::TestCase *me)
-{
-  bool returner = true;
-  me->name = "SinglyLinkedListTest";
-  std::unique_ptr<ExampleSingly[]> Nodes(new ExampleSingly[LISTSIZES]);
-  Li::SinglyLinkedList<ExampleSingly> L;
-  for(size_t i = 0; i != LISTSIZES; ++i)
-  {
-    Nodes[i].data = static_cast<int>(i);
-    L.append(&Nodes[i]);
-  }
-
-  if(L.size() != LISTSIZES)
-  {
-    me->error = 2;
-    me->errorDesc = "Sadly the fucking sizes didnt match!";
-    returner = false;
-  }
-  return returner;
-}
-
-bool testTheTest(Li::TestCase *me)
-{
-  me->name = "Tests the tests. Fails intentionally";
-  me->error = 2;
-  me->errorDesc = "Just a fucking example";
-  return false;
-}
 
 bool testList(Li::TestCase *me)
 {
@@ -69,6 +40,36 @@ bool testList(Li::TestCase *me)
   return returner;
 }
 
+bool testSingly(Li::TestCase *me)
+{
+  bool returner = true;
+  me->name = "ListTest";
+  std::unique_ptr<ExampleSingly[]> Nodes(new ExampleSingly[LISTSIZES]);
+  Li::SinglyLinkedList<ExampleSingly> L;
+  for(size_t i = 0; i != LISTSIZES; ++i)
+  {
+    Nodes[i].data = static_cast<int>(i);
+    L.append(&Nodes[i]);
+  }
+
+  if(L.size() != LISTSIZES)
+  {
+    me->error = 2;
+    me->errorDesc = "Sizes don't match!";
+    returner = false;
+  }
+
+  return returner;
+}
+
+bool testTheTest(Li::TestCase *me)
+{
+  me->name = "Tests the tests. Fails intentionally";
+  me->error = 2;
+  me->errorDesc = "Just a fucking example";
+  return false;
+}
+
 bool testFrankenstein(Li::TestCase *me)
 {
   me->name = std::string("Frankensteins monster! Fails intentionally");
@@ -84,27 +85,23 @@ bool testFrankenstein(Li::TestCase *me)
 int main(int argc, char** argv)
 {
 #ifdef TEST
-#ifndef __clang__
-  std::cout << "THIS WONT WORK ON GCC!!!\n";
-  abort();
-#endif
   std::cout << "THIS MUST BE RUN WITHOUT OPTIMIZATION FLAGS! \n";
   Li::Test *hu = Li::Test::instance();
-  std::unique_ptr<Li::TestCase> test1 = std::make_unique<Li::TestCase>();
-  std::unique_ptr<Li::TestCase> test2 = std::make_unique<Li::TestCase>();
-  std::unique_ptr<Li::TestCase> test3 = std::make_unique<Li::TestCase>();
-  std::unique_ptr<Li::TestCase> test4 = std::make_unique<Li::TestCase>();
-  test1->func = &testTheTest;
-  test2->func = &testList;
-  test3->func = &testFrankenstein;
-  test4->func = &testSingly;
-  hu->prepend(test1.get());
+  std::shared_ptr<Li::TestCase> test1 = std::make_shared<Li::TestCase>();
+  std::shared_ptr<Li::TestCase> test2 = std::make_shared<Li::TestCase>();
+  std::shared_ptr<Li::TestCase> test3 = std::make_shared<Li::TestCase>();
+  std::shared_ptr<Li::TestCase> test4 = std::make_shared<Li::TestCase>();
+  test1->func = *testTheTest;
+  test2->func = *testList;
+  test3->func = *testFrankenstein;
+  test4->func = *testSingly;
+  hu->append(test1.get());
+  hu->append(test4.get());
   hu->append(test2.get());
 #ifdef FRANKENSTEIN
   test3->category = "hi";
 #endif
   hu->append(test3.get());
-  hu->append(test4.get());
   hu->exec();
   std::cout << hu->errors();
 #endif

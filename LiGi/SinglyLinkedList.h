@@ -20,11 +20,6 @@ public:
     return static_cast<T*>(this)->m_next;
   }
 
-  T* prev()
-  {
-    return static_cast<T*>(this)->m_prev;
-  }
-
   bool comparer(T &other)
   {
     return static_cast<const T&>(*this)->cmpr(other);
@@ -35,16 +30,10 @@ public:
     static_cast<T*>(this)->m_next = r;
   }
 
-  void set_prev(T *r)
-  {
-    static_cast<T*>(this)->m_prev = r;
-  }
-
 public:
   void setnull()
   {
     static_cast<T*>(this)->set_next(nullptr);
-    static_cast<T*>(this)->set_prev(nullptr);
   }
   static std::unique_ptr<T> newPtr(T &data)
   {
@@ -52,7 +41,6 @@ public:
   }
 private:
   T* m_next;
-  T* m_prev;
 };
 
 template<typename T>
