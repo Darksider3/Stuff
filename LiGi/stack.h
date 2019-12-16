@@ -4,6 +4,8 @@
 
 namespace Li {
 
+struct StackEntry : LLNode<StackEntry>{};
+
 template<typename T>
 class Stack : private LinkedList<T>
 {
