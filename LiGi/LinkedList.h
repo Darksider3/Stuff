@@ -33,6 +33,11 @@ public:
     return static_cast<const T&>(*this)->cmpr(other);
   }
 
+  bool bigger(T &other)
+  {
+    return static_cast<const T&>(*this)->bigger(other);
+  }
+
   void set_next(T* r)
   {
     static_cast<T*>(this)->m_next = r;
