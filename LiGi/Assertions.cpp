@@ -5,3 +5,9 @@ __attribute__((noreturn)) void __assertion_failed(const char* msg, const char* f
   std::fflush(stdout); // 0 => stdout
   std::abort();
 }
+
+
+void nullfunc()
+{
+  return;
+}
