@@ -12,6 +12,16 @@ int lltester(int argc, char **argv);
 struct ExampleSingly : Li::SingleNode<ExampleSingly>
 {
   int data = 1;
+
+  bool cmpr(ExampleSingly &other)
+  {
+    return (other.data != data);
+  }
+
+  bool bigger(ExampleSingly &other)
+  {
+    return (other.data < data);
+  }
 };
 
 struct ExampleNode : Li::LLNode<ExampleNode>
