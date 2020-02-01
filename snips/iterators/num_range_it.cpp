@@ -12,7 +12,7 @@ public:
 
 	num_iterator& operator++()
 	{
-    i+=10;
+    i+=20;
 		return *this;
 	}
 	bool operator!=(const num_iterator &other){return i != other.i;}
