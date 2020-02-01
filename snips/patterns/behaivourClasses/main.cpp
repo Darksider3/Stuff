@@ -65,10 +65,18 @@ public:
 class Mallard : public Duck, MallardMove, MallardSound
 {
 public:
+  Mallard(MallardMove m = MallardMove(), MallardSound s = MallardSound()) : Duck(m, s)
+  {}
+
   void action()
   {
     this->Sound();
     std::cout << "Moved exactly " << this->Move() << " meters! \n";
+    std::cout << "Did we actually allocate? ";
+    if(responsible)
+      std::cout << "Yepp";
+    else
+      std::cout << "Nope.";
   }
 };
 
