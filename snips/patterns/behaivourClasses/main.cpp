@@ -5,14 +5,14 @@ class DuckMoveBase
 protected:
 public:
   virtual float Move(){return 0;}
-  virtual ~DuckMoveBase(){};
+  virtual ~DuckMoveBase()= default;;
 };
 
 class DuckSoundBase
 {
 public:
   virtual void Sound(){}
-  virtual ~DuckSoundBase(){};
+  virtual ~DuckSoundBase()= default;;
 };
 
 class Duck
@@ -21,6 +21,7 @@ protected:
   DuckMoveBase *move;
   DuckSoundBase *sound;
   bool responsible = false;
+
 public:
   Duck()
   {
@@ -28,10 +29,10 @@ public:
     sound = new DuckSoundBase();
     responsible = true;
   }
-  Duck(DuckMoveBase *m, DuckSoundBase *s)
+  Duck(DuckMoveBase &m, DuckSoundBase &s)
   {
-    move = m;
-    sound = s;
+    move = &m;
+    sound = &s;
   }
   ~Duck()
   {
@@ -46,7 +47,7 @@ public:
 class MallardSound : public DuckSoundBase
 {
 public:
-  void Sound()
+  void Sound() override
   {
     std::cout << "Wääähhwääähhwäääh" << std::endl;
   }
@@ -55,7 +56,7 @@ public:
 class MallardMove : public DuckMoveBase
 {
 public:
-  float Move()
+  float Move() override
   {
     return 0.01; // its SLOW
   }
@@ -64,7 +65,6 @@ public:
 class Mallard : public Duck, MallardMove, MallardSound
 {
 public:
-  Mallard(){}
   void action()
   {
     this->Sound();
