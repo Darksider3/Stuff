@@ -15,6 +15,12 @@ function GenericGrid(Rec, SVG, multiplier = 2, gridpxsize = 400) {
     Rec.adjust(16, 18.75);
     SVG.adjust(16, 400);
   }
+
+  function Thirty() {
+    Rec.clear();
+    Rec.adjust(32, 9.375);
+    SVG.adjust(32, 400);
+  }
   
   function fillFunc(element) {
     if(Rec.FloodFill)

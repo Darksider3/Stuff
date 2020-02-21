@@ -47,6 +47,10 @@ const SVGGrid = {
       16: {
         img: "svg/16x16.svg",
         scale: 3
+      },
+      32: {
+        img: "svg/32x32.svg",
+        scale: 3
       }
     };
     return this;
