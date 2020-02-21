@@ -23,6 +23,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */ -->
+
 <head>
   <meta charset="utf-8">
   <link rel="stylesheet" href="css/main.css">
@@ -34,30 +35,31 @@
     <h2>Pixel-Draw</h2>
   </header>
   <main>
-  <canvas id="canvas" width="300px" height="300px" style="background: #fff;"></canvas>
+    <canvas id="canvas" width="300px" height="300px" style="background: #fff;"></canvas>
   </main>
   <nav>
     <form>
       <p>Pick Color: </p> <input type="color" class="btn btn--stripe" id="kb_selected_color">
     </form>
     <button class="btn btn--stripe" onclick="CONFIG.customColor=false">Random Colors!</button>
-  <p>Set Grid Size: </p>
-  <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 1)" value="change size">8x8</button>
-  <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 2)" value="change size">16x16</button>
-  <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 4)" value="change size">32x32</button>
-  <p>Draw/Grid Functions: </p>
-  <button class="btn btn--stripe" id="fillToggle" onclick="fillFunc(document.getElementById('fillToggle'))" value="Flood Fill!">Flood Fill!</button>
-  <button class="btn btn--stripe" id="gridtoggle" onclick="SVG.toggle(toggleButton)">Hide grid!</button>
-  <button class="btn btn--stripe" onclick="Rec.clear()">Clear Grid</button>
-  <p>Download as... </p>
-  <a id="png" urL="#"><button class="btn btn--radius">PNG</button></a>
-  <a id="jpg" urL="#"><button class="btn btn--radius">JPG</button></a>
-  <a id="bmp" urL="#"><button class="btn btn--radius">BMP</button></a>
+    <p>Set Grid Size: </p>
+    <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 1)" value="change size">8x8</button>
+    <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 2)" value="change size">16x16</button>
+    <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 4)" value="change size">32x32</button>
+    <p>Draw/Grid Functions: </p>
+    <button class="btn btn--stripe" id="fillToggle" onclick="fillFunc(document.getElementById('fillToggle'))"
+      value="Flood Fill!">Flood Fill!</button>
+    <button class="btn btn--stripe" id="gridtoggle" onclick="SVG.toggle(toggleButton)">Hide grid!</button>
+    <button class="btn btn--stripe" onclick="Rec.clear()">Clear Grid</button>
+    <p>Download as... </p>
+    <a id="png" urL="#"><button class="btn btn--radius">PNG</button></a>
+    <a id="jpg" urL="#"><button class="btn btn--radius">JPG</button></a>
+    <a id="bmp" urL="#"><button class="btn btn--radius">BMP</button></a>
   </nav>
 </body>
 
 <script>
-var DEBUGVAR = false;
+  var DEBUGVAR = false;
 </script>
 
 <script src="js/helpers.js"></script>
