@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  /*
+ * MIT License
+ *
+ * Copyright (c) 2020 darksider3 < github@darksider3.de >
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
+ * Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+ * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
+ * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+-->
+<head>
+  <meta charset="utf-8">
+  <style>
+    body,
+    canvas {
+      margin: auto auto auto auto;
+      display: block;
+      background-color: #4f648b;
+    }
+    main {
+      padding-top: 5rem;
+      height: 30rem;
+      width: 50rem;
+      border: .1rem dotted;
+      background-color: #A2A6B2;
+    }
+    canvas {
+      background-color: #fff !important;
+      border: .1rem solid black;
+    }
+
+    nav {
+      background-color: #6369d1;
+      position: fixed;
+      right: 0rem;
+      border-left: .5rem solid #d8d2e1;
+      padding-left: 1rem;
+      padding-right: 1rem;
+
+      padding-top: 1.5rem;
+      height: 100%;
+      width: 10rem;
+    }
+
+    h1 {
+      color: white;
+    }
+
+    p {
+      color: #fff;
+
+      font-size: 0.8em !important;
+    }
+    button, .btn {
+      font-size: 0.8em !important;
+    }
+  </style>
+  <link rel="stylesheet" href="./buttons.css">
+</head>
+
+<body>
+  <header>
+    <h1>Pixel-Draw</h2>
+  </header>
+  <main>
+  <canvas id="canvas" width="300px" height="300px" style="background: #fff;"></canvas>
+  </main>
+  <nav>
+    <form>
+      <p>Pick Color: </p> <input type="color" class="btn btn--stripe" id="kb_selected_color">
+    </form>
+    <button class="btn btn--stripe" onclick="CONFIG.customColor=false">Random Colors!</button>
+  <p>Set Grid Size: </p>
+  <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 1)" value="change size">8x8</button>
+  <button class="btn btn--stripe" onclick="SixteenGrid()" value="change size">16x16</button>
+  <p>Draw/Grid Functions: </p>
+  <button class="btn btn--stripe" id="fillToggle" onclick="fillFunc(document.getElementById('fillToggle'))" value="Flood Fill!">Flood Fill!</button>
+  <button class="btn btn--stripe" id="gridtoggle" onclick="SVG.toggle(toggleButton)">Hide grid!</button>
+  <button class="btn btn--stripe" onclick="Rec.clear()">Clear Grid</button>
+  <p>Download as... </p>
+  <a id="png" urL="#"><button class="btn btn--radius">PNG</button></a>
+  <a id="jpg" urL="#"><button class="btn btn--radius">JPG</button></a>
+  <a id="bmp" urL="#"><button class="btn btn--radius">BMP</button></a>
+  </nav>
+</body>
+
+<script src="Rects.js"></script>
+<script src="SVGgrid.js"></script>
+<script src="main.js"></script>
+<script>canvasElem.addEventListener("mousedown", function (e) {
+    let coords = getMousePosition(canvasElem, e);
+    if(!CONFIG.customColor)
+      Rec.fillStyle = getRandomColorRGBA()
+    Rec.fillShape(coords.x, coords.y);
+    dragged = true;
+    Rec.setPrevious(coords.x, coords.y);
+    canvasElem.addEventListener("mousemove", draggedDraw);
+  });
+
+  canvasElem.addEventListener("mouseup", function (e) {
+    dragged = false;
+    canvasElem.removeEventListener("mousemove", draggedDraw);
+  });
+  var ColorPicker = document.getElementById("kb_selected_color");
+  ColorPicker.addEventListener("input", function() {
+
+// Farcode (Hex) schreiben
+document.getElementById("kb_selected_color").style.background = ColorPicker.value;
+CONFIG.customColor=ColorPicker.value;
+Rec.fillStyle = CONFIG.customColor;
+}, false);
+
+document.getElementById('png').addEventListener('click', function() {
+    downloadCanvas(this, canvasElem, 'art.png', "image/png");
+}, false);
+
+document.getElementById('jpg').addEventListener('click', function() {
+    downloadCanvas(this, canvasElem, 'art.jpg', "image/jpeg");
+}, false);
+
+
+document.getElementById('bmp').addEventListener('click', function() {
+    downloadCanvas(this, canvasElem, 'art.bmp', "image/bmp");
+}, false);
+  </script>
+
+</html>
