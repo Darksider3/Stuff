@@ -1,3 +1,5 @@
+// Draw
+
 canvasElem.addEventListener("mousedown", function (e) {
     let coords = getMousePosition(canvasElem, e);
     if (!CONFIG.customColor)
@@ -12,15 +14,8 @@ canvasElem.addEventListener("mouseup", function (e) {
     dragged = false;
     canvasElem.removeEventListener("mousemove", draggedDraw);
 });
-let ColorPicker = document.getElementById("kb_selected_color");
-ColorPicker.addEventListener("input", function () {
 
-    // Farcode (Hex) schreiben
-    document.getElementById("kb_selected_color").style.background = ColorPicker.value;
-    CONFIG.customColor = ColorPicker.value;
-    Rec.fillStyle = CONFIG.customColor;
-}, false);
-
+// Download buttons
 document.getElementById('png').addEventListener('click', function () {
     downloadCanvas(this, canvasElem, 'art.png', "image/png");
 }, false);
@@ -32,4 +27,13 @@ document.getElementById('jpg').addEventListener('click', function () {
 
 document.getElementById('bmp').addEventListener('click', function () {
     downloadCanvas(this, canvasElem, 'art.bmp', "image/bmp");
+}, false);
+
+// Color picker
+
+let ColorPicker = document.getElementById("kb_selected_color");
+ColorPicker.addEventListener("input", function () {
+    document.getElementById("kb_selected_color").style.background = ColorPicker.value;
+    CONFIG.customColor = ColorPicker.value;
+    Rec.fillStyle = CONFIG.customColor;
 }, false);
