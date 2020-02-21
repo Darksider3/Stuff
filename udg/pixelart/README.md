@@ -133,7 +133,3 @@ Aufgrund der größe des Projekts wurde kein Unit-Testing umgesetzt. Die Version
 Die Aufgabenstellung erforderte sich in Javascript, erneut, einuzarbeiten, was aber durch die Struktur der Aufgabe leicht möglich war und mir erlaubte neue Standards zu verwenden.
 
 Die Arbeit mit Canvas war interessant, da ich Rectangulars als Pixel reinterpretieren und daher die Abstraktionsebene erhöhen musste. Das erlaubte aber auch ein effizienteren Algorithmus zum Flood Filling der "Pixel".
-
-
-
-
