@@ -62,7 +62,7 @@ const SVGGrid = {
    * @param {number} count New rectangle count
    * @param {number} size New size in pixels of the element we draw our svg on
    */
-  adjust: function (count, size, scale=3) {
+  adjust: function (count, size, scale = 3) {
     this.RectCount = count;
     this.size = size;
     if (this.activated) {
@@ -101,8 +101,8 @@ const SVGGrid = {
    * Hide the SVG grid
    *
    */
-  hide: function() {
-      this.activated = false;
-      this.element.style.background = "";
-    }
-  };
+  hide: function () {
+    this.activated = false;
+    this.element.style.background = "";
+  }
+};

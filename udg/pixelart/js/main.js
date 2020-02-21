@@ -29,7 +29,7 @@ let dragged = false,
   toggleButton = document.querySelector('gridtoggle'),
   SVG = SVGGrid.init(canvasElem),
   Rec = Rects.init(context),
-  CONFIG ={customColor:  false};
+  CONFIG = { customColor: false };
 // set devicePixelRatio to a HiDi-specific value(better colors on good screens)
 window.devicePixelRatio = 2.5;
 

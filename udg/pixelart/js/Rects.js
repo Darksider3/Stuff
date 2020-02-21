@@ -55,7 +55,7 @@ const Rects = {
    * @param {string} [color="#29FF81"] Initial drawing color
    * @returns {Rects.Object} Object referencing this class/const object
    */
-  init: function(ctx, count = 8, RectSize = 37.5, PxSize = 300, color = "#29FF81") {
+  init: function (ctx, count = 8, RectSize = 37.5, PxSize = 300, color = "#29FF81") {
     /** @private */ this.px = PxSize;
     /** @private */ this.ctx = ctx;
     /** @private */ this.RectCount = count;
@@ -75,13 +75,13 @@ const Rects = {
     return this;
   },
 
-/**
- * Adjust the rectangle count and rectangle size drawn
- *
- * @param {number} count Count of the rectangles that are able to fit onto the grid
- * @param {number} RectSize Rectangle size in px
- */
-adjust: function(count, RectSize) {
+  /**
+   * Adjust the rectangle count and rectangle size drawn
+   *
+   * @param {number} count Count of the rectangles that are able to fit onto the grid
+   * @param {number} RectSize Rectangle size in px
+   */
+  adjust: function (count, RectSize) {
     this.RectCount = count;
     this.RectSize = RectSize;
     this.Rects = createArray(this.RectCount, this.RectCount);
@@ -95,42 +95,42 @@ adjust: function(count, RectSize) {
     }
   },
 
-/**
- * Flattens the given numbers down to the specific starting coordinates of a rectangle
- *
- * @param {number} x X-Coordinate
- * @param {number} y Y-Coordinate
- * @returns {Coordinates} Starting point of Rectangle by the given coordinates
- */
-flatten: function(x, y) {
+  /**
+   * Flattens the given numbers down to the specific starting coordinates of a rectangle
+   *
+   * @param {number} x X-Coordinate
+   * @param {number} y Y-Coordinate
+   * @returns {Coordinates} Starting point of Rectangle by the given coordinates
+   */
+  flatten: function (x, y) {
     return {
       x: Math.floor(x / this.RectSize) * this.RectSize,
       y: Math.floor(y / this.RectSize) * this.RectSize
     };
   },
 
-/**
- * Translates given coordinates to the actual array-index the supplied rectangle has
- *
- * @param {number} x X-Coordinate to translate
- * @param {number} y Y-Coordinate to translate
- * @returns {Indicies} The rectangles index  
- */
-translateToArray: function(x, y) {
+  /**
+   * Translates given coordinates to the actual array-index the supplied rectangle has
+   *
+   * @param {number} x X-Coordinate to translate
+   * @param {number} y Y-Coordinate to translate
+   * @returns {Indicies} The rectangles index  
+   */
+  translateToArray: function (x, y) {
     return {
       x: Math.floor(x / this.RectSize),
       y: Math.floor(y / this.RectSize)
     };
   },
 
-/**
- * Checks weither a rectangle is set or not currently
- *
- * @param {number} x X-Coordinate 
- * @param {number} y Y-Coordinate
- * @returns {boolean} True if set, false in case it isnt.
- */
-isRectSet: function(x, y) {
+  /**
+   * Checks weither a rectangle is set or not currently
+   *
+   * @param {number} x X-Coordinate 
+   * @param {number} y Y-Coordinate
+   * @returns {boolean} True if set, false in case it isnt.
+   */
+  isRectSet: function (x, y) {
     let flat = flatten(x, y);
     if (!isset(this.Rects[y][x]) || this.Rects[y][x] == null) {
       return false;
@@ -138,72 +138,72 @@ isRectSet: function(x, y) {
     return true;
   },
 
-/**
- * Sets a previous processed/visited rectangle
- *
- * @param {number} x X-Coordinate
- * @param {number} y Y-Coordinate
- */
-  setPrevious: function(x, y) {
+  /**
+   * Sets a previous processed/visited rectangle
+   *
+   * @param {number} x X-Coordinate
+   * @param {number} y Y-Coordinate
+   */
+  setPrevious: function (x, y) {
     let flat = this.flatten(x, y);
     this.previous = flat;
   },
 
-/**
- *
- *
- * @param {number} x
- * @param {number} y
- * @returns {boolean} If it is the same rectangle as before, returns true, otherwise false
- */
-  isSameRect: function(x, y) {
+  /**
+   *
+   *
+   * @param {number} x
+   * @param {number} y
+   * @returns {boolean} If it is the same rectangle as before, returns true, otherwise false
+   */
+  isSameRect: function (x, y) {
     let flat = this.flatten(x, y);
     if (flat.x == this.previous.x && flat.y == this.previous.y) return true;
     else return false;
   },
 
-/**
- *
- */
-clear: function() {
+  /**
+   *
+   */
+  clear: function () {
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);
     this.Rects = createArray(this.RectCount, this.RectCount);
   },
 
-/**
- * Compares `newcol` to `oldcolor` to check if `newcolor` is in specified range(`bound`).
- * Arguments are expected to be normal hex-rgb-values(e.g. #00FF00)
- * 
- * @param {string} oldcolor Old color to check against
- * @param {string} newcolor New color 
- * @param {number} bound Integer representing a range in which newcolor is allowed to be in range of oldcolor
- * @returns {boolean} When it is in specified range, returns true, otherwise false
- */
-  inBetween: function(oldcolor, newcolor, bound) {
+  /**
+   * Compares `newcol` to `oldcolor` to check if `newcolor` is in specified range(`bound`).
+   * Arguments are expected to be normal hex-rgb-values(e.g. #00FF00)
+   * 
+   * @param {string} oldcolor Old color to check against
+   * @param {string} newcolor New color 
+   * @param {number} bound Integer representing a range in which newcolor is allowed to be in range of oldcolor
+   * @returns {boolean} When it is in specified range, returns true, otherwise false
+   */
+  inBetween: function (oldcolor, newcolor, bound) {
     let oldColInt = Math.floor(parseInt(oldcolor.substring(1), 16) / 10000);
     let NewColInt = Math.floor(parseInt(newcolor.substring(1), 16) / 10000);
     return between(NewColInt, oldColInt - bound, oldColInt + bound);
   },
 
-/**
- * Fill specific rectangle at coordinates
- *
- * @param {number} x X-Coordinate of the rectangle to fill
- * @param {number} y Y-Coordinate of the rectangle to fill
- */
-fillShape: function(x, y) {
+  /**
+   * Fill specific rectangle at coordinates
+   *
+   * @param {number} x X-Coordinate of the rectangle to fill
+   * @param {number} y Y-Coordinate of the rectangle to fill
+   */
+  fillShape: function (x, y) {
     //floor it first so we get always the correct rectangle to work with
     let xArr = Math.floor(x / this.RectSize),
       yArr = Math.floor(y / this.RectSize);
 
     x = xArr * this.RectSize;
     y = yArr * this.RectSize;
-    
-    if (x > this.px - 1) 
+
+    if (x > this.px - 1)
       return;
-    if (y > this.px - 1) 
+    if (y > this.px - 1)
       return;
-    
+
     if (this.FloodFill) {
       let oldcolor = imgdataToRGB(
         this.ctx.getImageData(
@@ -219,16 +219,16 @@ fillShape: function(x, y) {
     this.ctx.fillRect(x, y, this.RectSize + 1, this.RectSize + 1);
   },
 
-/**
- * Flood-Filling algorithm, "stolen" from pseudocode, rewritten with a stack to be iterative, not recursive
- * reworked to fill rectangles instead of pixels
- *
- * @param {number} xcord
- * @param {number} ycord
- * @param {string} OldColor
- * @param {string} NewColor
- */
-fill: function(xcord, ycord, OldColor, NewColor) {
+  /**
+   * Flood-Filling algorithm, "stolen" from pseudocode, rewritten with a stack to be iterative, not recursive
+   * reworked to fill rectangles instead of pixels
+   *
+   * @param {number} xcord
+   * @param {number} ycord
+   * @param {string} OldColor
+   * @param {string} NewColor
+   */
+  fill: function (xcord, ycord, OldColor, NewColor) {
     let touched = createArray(this.RectCount + 1, this.RectCount + 1);
     let CoordStack = [];
     CoordStack.push({
@@ -259,8 +259,8 @@ fill: function(xcord, ycord, OldColor, NewColor) {
       let CurrentPixelColor = imgdataToRGB(
         this.ctx.getImageData(
           flattenedCoords.x + this.RectSize / 2,
-          flattenedCoords.y + this.RectSize / 2,1, 1).data).toUpperCase();
-      
+          flattenedCoords.y + this.RectSize / 2, 1, 1).data).toUpperCase();
+
       touched[SeenArray.y][SeenArray.x] = true; // Mark Rect as seen
       if (CurrentPixelColor == OldColor || this.inBetween(OldColor, CurrentPixelColor, 5)) {
 
@@ -278,16 +278,20 @@ fill: function(xcord, ycord, OldColor, NewColor) {
         // on your point of view)
         CoordStack.push({
           x: SeenArray.x * this.RectSize,
-          y: (SeenArray.y + 1) * this.RectSize});
+          y: (SeenArray.y + 1) * this.RectSize
+        });
         CoordStack.push({
           x: SeenArray.x * this.RectSize,
-          y: (SeenArray.y - 1) * this.RectSize});
+          y: (SeenArray.y - 1) * this.RectSize
+        });
         CoordStack.push({
           x: (SeenArray.x + 1) * this.RectSize,
-          y: SeenArray.y * this.RectSize});
+          y: SeenArray.y * this.RectSize
+        });
         CoordStack.push({
           x: (SeenArray.x - 1) * this.RectSize,
-          y: SeenArray.y * this.RectSize});
+          y: SeenArray.y * this.RectSize
+        });
       }
     }
     this.FloodFill = true;
