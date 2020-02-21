@@ -45,6 +45,7 @@
   <p>Set Grid Size: </p>
   <button class="btn btn--stripe" onclick="GenericGrid(Rec, SVG, 1)" value="change size">8x8</button>
   <button class="btn btn--stripe" onclick="SixteenGrid()" value="change size">16x16</button>
+  <button class="btn btn--stripe" onclick="Thirty()" value="change size">32x32</button>
   <p>Draw/Grid Functions: </p>
   <button class="btn btn--stripe" id="fillToggle" onclick="fillFunc(document.getElementById('fillToggle'))" value="Flood Fill!">Flood Fill!</button>
   <button class="btn btn--stripe" id="gridtoggle" onclick="SVG.toggle(toggleButton)">Hide grid!</button>
@@ -60,7 +61,7 @@
 var DEBUGVAR = false;
 </script>
 
-<script src="js/html.js"></script>
+<script src="js/helpers.js"></script>
 <script src="js/Rects.js"></script>
 <script src="js/SVGgrid.js"></script>
 <script src="js/main.js"></script>
