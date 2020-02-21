@@ -39,7 +39,6 @@
  */
 
 "use strict";
-var DEBUGVAR = false;
 /**
  * Rects manages the full behaivour of the drawn rectangles("pixels").
  */

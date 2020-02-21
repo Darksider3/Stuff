@@ -41,11 +41,11 @@ const SVGGrid = {
     this.activated = false;
     this.gridSVGs = {
       8: {
-        img: "8x8.svg",
+        img: "svg/8x8.svg",
         scale: 3
       },
       16: {
-        img: "16x16.svg",
+        img: "svg/16x16.svg",
         scale: 3
       }
     };

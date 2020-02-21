@@ -1,0 +1,43 @@
+body,
+canvas {
+  margin: auto auto auto auto;
+  display: block;
+  background-color: #4f648b;
+}
+main {
+  padding-top: 5rem;
+  height: 30rem;
+  width: 50rem;
+  border: .1rem dotted;
+  background-color: #A2A6B2;
+}
+canvas {
+  background-color: #fff !important;
+  border: .1rem solid black;
+}
+
+nav {
+  background-color: #6369d1;
+  position: fixed;
+  right: 0rem;
+  border-left: .5rem solid #d8d2e1;
+  padding-left: 1rem;
+  padding-right: 1rem;
+
+  padding-top: 1.5rem;
+  height: 100%;
+  width: 10rem;
+}
+
+h1 {
+  color: white;
+}
+
+p {
+  color: #fff;
+
+  font-size: 0.8em !important;
+}
+button, .btn {
+  font-size: 0.8em !important;
+}
