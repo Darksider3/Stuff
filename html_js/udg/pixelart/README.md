@@ -46,7 +46,7 @@ Folgende Komponenten müssen lokal installiert sein:
     * Projekt Startseite
     
   
-  - js
+  - js/
     * Javascript Klassen/Code
     
     - main.js
@@ -70,7 +70,7 @@ Folgende Komponenten müssen lokal installiert sein:
         Downloads der erstellten Grafiken(BMP, PNG, JPEG)
     
  
-  - css (Cascading style sheets, Styling)
+  - css/ (Cascading style sheets, Styling)
  
     - main.css
       * CSS für den Rest der Hauptseite (Navigation, main)
@@ -79,7 +79,7 @@ Folgende Komponenten müssen lokal installiert sein:
       * Button styles und Animationen
     
  
-   - svg (Grids in SVG)
+   - svg/ (Grids in SVG)
     
     - 8x8.svg (8x8 Grid)
     
