@@ -26,6 +26,7 @@ $ git clone <linktorepository> udg-probeaufgabe
 $ cd udg-probeaufgabe
 $ firefox ./index.html
 ```
+
 ---
 
 Folgende Komponenten müssen lokal installiert sein:
@@ -34,6 +35,7 @@ Folgende Komponenten müssen lokal installiert sein:
 ---
 
 #### Überblick der Programmstruktur
+
 ```
 
  - /
@@ -96,9 +98,9 @@ Der Arbeits- und Zeitaufwand gliedert sich wie folgt auf:
     * Auffrischen von den alten Javascript Kenntnissen
 
   
-  * Dokumentation: 3 Stunden
-    * 1 Stunde Code Documentation
-    * 2 Diese README
+  * Dokumentation: 4 Stunden
+    * 2 Stunde Code Documentation
+    * 2 Stunden Diese README
     
     
   * Testing: 30 Minuten
@@ -119,17 +121,25 @@ In diesem Projekt gibt es, wie in dem vorherigen auch, einige offensichtliche un
 Der größte Punkt, mit Abstand, ist die gewählte Form des Grids.
 
 Da das Grid per Javascript als Hintergrundbild des Canvas bestimmt wird, lassen sich die SVGs nicht mehr mit Javascript manipulieren/ansprechen, anders als bei `iframes` oder `objects`. Was dazu führt, dass ich mehrere Grid-Versionen vorliefern muss und diese nicht mehr dynamisch ändern kann. Auch wenn das Design der Grids/SVG-Dateien selbst genau darauf ausgelegt ist, was eines der Hauptmankos dieses Projektes ist.
+Eine weitere möglichkeit wäre natürlich, dynamisch eine Data-URL zu erzeugen, die alle nötigen Parameter enthält(z.B. `scale="5"` um dem User die möglichkeit zu geben das "Zeichenfeld" zu skalieren).
 
-Aufgrund der größe des Projekts wurde kein Unit-Testing umgesetzt. Die Version wurde aber Browserübergreifend getestet und extra Zeit für diesen Schritt in anspruch genommen. Auch ein offensichtlicher Verbesserungspunkt.
+
+Aufgrund der größe des Projekts wurde kein Unit-Testing umgesetzt. Die Version wurde aber Browserübergreifend getestet und extra Zeit für diesen Schritt in anspruch genommen. Auch ein offensichtlicher Verbesserungspunkt, wobei sich natürlich sowas wie Mocha als Testing-Framework anbietet.
+
+Das CSS könnte noch in SCSS/SASS umgeschrieben und dann konvertiert werden, wenn Änderungen gemacht wurden, allerdings hätte dies zu einer Dependency für dieses Projekt geführt, was es zu verhindern galt.
 
 ##### Verbesserungen
-* Unit-Testing sollte umgesetzt werden.
+* Unit-Testing!
 * Die Klassen/Objekte als Module exportierbar machen.
 * Die Debugging-Funktion ausweiten.
   *  so das sie optional auch die vorher angesprochenen Unit-Tests automatisch durchgeführt und dem Entwickler dabei die erforderlichen Rückmeldungen, mit wenig Arbeitsaufwand, geliefert werden können.
+* CSS zu SCSS/SASS migrieren
+* SVG als Data-URL erzeugen oder als `<object>` einbinden, ODER als Layer mit Canvas selbst zeichnen
+* Weitere Zeichentools(Linien, Rechteecke, "Kreise", Vierecke)
 
 ##### Fazit
 
 Die Aufgabenstellung erforderte sich in Javascript, erneut, einuzarbeiten, was aber durch die Struktur der Aufgabe leicht möglich war und mir erlaubte neue Standards zu verwenden.
 
 Die Arbeit mit Canvas war interessant, da ich Rectangulars als Pixel reinterpretieren und daher die Abstraktionsebene erhöhen musste. Das erlaubte aber auch ein effizienteren Algorithmus zum Flood Filling der "Pixel".
+Das Flood-Filling war mit abstand das herausfordernste. Auf GitHub hatte ich gesehen, das einige vorgefertigte Bibliotheken dafür verwendet hatte(PaperJS stach mir ins Auge), allerdings ist die Stack-Variante des Flood-Fillings(im Vergleich zur Rekursiven) etwas, was ich noch nicht umgesetzt hatte; Daraus konnte ich eine Menge ziehen!
