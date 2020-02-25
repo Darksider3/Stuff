@@ -39,6 +39,9 @@ Folgende Komponenten müssen lokal installiert sein:
 ```
 
  - /
+  - .editorconfig
+    * .Editorconfig für allgemeine Syntax-Einstellunge(2 Leerzeichen, UTF8, Spaces, LF)
+
   - index.html
     * Projekt Startseite
     
