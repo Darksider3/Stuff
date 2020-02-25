@@ -163,7 +163,7 @@ const Rects = {
   },
 
   /**
-   *
+   * Clears grid
    */
   clear: function () {
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);
