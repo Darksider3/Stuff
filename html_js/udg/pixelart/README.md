@@ -22,8 +22,9 @@ Keine eingesetzt.
 Man starte einen beliebigen Webbrowser, exemplarisch nehme ich Firefox an. Navigiere zu dem Projektverzeichnis.
 
 ```console
-$ git clone <linktorepository> udg-probeaufgabe
-$ cd udg-probeaufgabe
+$ wget -C https://github.com/Darksider3/Stuff/tree/master/html_js/udg/pixelart/pixelart.zip
+$ mkdir pixelart && cd pixelart
+$ unzip ../pixelart.zip
 $ firefox ./index.html
 ```
 
@@ -44,40 +45,31 @@ Folgende Komponenten müssen lokal installiert sein:
 
   - index.html
     * Projekt Startseite
-    
   
   - js/
     * Javascript Klassen/Code
-    
     - main.js
       * Eintrittspunkt (vgl. aus C z.B. die main()))
-    
     - SVGgrid.js
       * SVGGrid-Objekt
       * Togglen des SVG Hintergrundgrafik, Resizing
- 
     -  Rects.js
       * Rects-Objekt
       * Handling von Rechtecken als Pixel
       * Funktionen zum Zeichnen, Füllen, Resizing der Rects
         bei Grid-Umstellung z.B., etc.
-        
     - helpers.js
-      * HTML, Rects und SVG-Helper Funktionen
-      
+      * HTML, Rects und SVG-Helper Funktionen 
     - events.js
       * Event handler für GUI/Mouse handling
         Downloads der erstellten Grafiken(BMP, PNG, JPEG)
     
  
   - css/ (Cascading style sheets, Styling)
- 
     - main.css
       * CSS für den Rest der Hauptseite (Navigation, main)
-  
     - buttons.css
       * Button styles und Animationen
-    
  
    - svg/ (Grids in SVG)
     
