@@ -64,6 +64,7 @@ void terminal_initialize(void)
 	terminal_column = 0;
 	terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 	terminal_buffer = (uint16_t*) 0xB8000;
+  // clear VGA textmode screen
 	for (size_t y = 0; y < VGA_HEIGHT; y++) {
 		for (size_t x = 0; x < VGA_WIDTH; x++) {
 			const size_t index = y * VGA_WIDTH + x;
@@ -156,8 +157,9 @@ struct registers {
 
 void read_reg(char *name, intptr_t *dest)
 {
-  __asm__("movl %%%0, %0"
-          : "=r" (dest));
+  __asm__("movl %%%0, %1"
+          : "=r" (name)
+          : "r" (dest));
 }
 
 
@@ -177,12 +179,28 @@ void print_reg(intptr_t *Reg, char *name)
   terminal_writestring("\n");
 }
 
+void read_test()
+{
+  __asm__ volatile("movl $0x0101, %edx");
+  intptr_t edxtest;
+  __asm__("movl %%edx, %0":
+          "=rr" (edxtest));
+  print_reg(edxtest, "edxtest");
+  __asm__ ("movl %eax, %edx");
+  __asm__ ("movl %%edx, %0":
+          "=r" (GP_REGS.edx));
+  print_reg(GP_REGS.edx, "edx");
+}
+
 void kernel_main(void) 
 {
 	/* Initialize terminal interface */
 	terminal_initialize();
   terminal_setcolor(VGA_COLOR_RED);
   read_registers();
+
+  read_test();
+  GP_REGS.eax = 300;
 	/* Newline support is left as an exercise. */
   terminal_writestring("Hello, kernel World!\n");
   terminal_writestring("Not really a deal!\n");
@@ -191,4 +209,5 @@ void kernel_main(void)
   print_reg(&GP_REGS.ebx, "ebx");
   GP_REGS.ebx = 123;
   print_reg(&GP_REGS.ebx, "ebx");
+  GP_REGS.ebx = 0x001;
 }
