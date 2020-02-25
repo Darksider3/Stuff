@@ -22,7 +22,7 @@ Keine eingesetzt.
 Man starte einen beliebigen Webbrowser, exemplarisch nehme ich Firefox an. Navigiere zu dem Projektverzeichnis.
 
 ```console
-$ wget -C https://github.com/Darksider3/Stuff/tree/master/html_js/udg/pixelart/pixelart.zip
+$ wget -C https://github.com/Darksider3/Stuff/raw/master/html_js/udg/pixelart/pixelart.zip
 $ mkdir pixelart && cd pixelart
 $ unzip ../pixelart.zip
 $ firefox ./index.html
