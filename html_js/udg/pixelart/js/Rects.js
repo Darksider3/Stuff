@@ -48,7 +48,7 @@ const Rects = {
    * Initializes & sets all needed variables to draw the rectangles(constructor, but... without classes.) 
    *
    * @constructor
-   * @param {Object canvas} ctx Initialised Canvas context
+   * @param {CanvasRenderingContext2D} ctx Initialised Canvas context
    * @param {number} [count=8]  Count of rectangles that fit in x and y
    * @param {number} [RectSize=37.5] Real size of the rectangles/2
    * @param {number} [PxSize=300] Real size of the canvas element drawing on

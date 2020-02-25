@@ -27,10 +27,10 @@
  * This class is actually the view-manager and controller, in one, 
  * for the SVG in the background shown on the canvas
  *
- * @param {ElementContentEditable} ele Element to draw SVG on
+ * @param {Element} ele Element to draw SVG on
  * @param {number} [count=8]  Rectangle count on SVG
  * @param {number} [size=400] whole picture size in pixels
- * @returns
+ * @returns {Object SVGGrid} Initialised SVGGrid object
  */
 const SVGGrid = {
   init: function (ele, count = 8, size = 400) {
@@ -84,7 +84,7 @@ const SVGGrid = {
   /**
    * Toggles the svg on and off
    *
-   * @param {ElementContentEditable} element HTML element that acts as a toggle switch
+   * @param {Element} element HTML element that acts as a toggle switch
    */
   toggle: function (element) {
     if (this.activated) {

@@ -19,7 +19,7 @@ function GenericGrid(Rec, SVG, multiplier = 2, gridpxsize = 400) {
 /**
  * Handles pixel and/or flood filling toggle
  *
- * @param {Document} element Toggle-Button/Link DOM-Element
+ * @param {Element} element Toggle-Button/Link DOM-Element
  */
 function fillFunc(element) {
   if (Rec.FloodFill) {
@@ -35,7 +35,7 @@ function fillFunc(element) {
 /**
  * Returns current relative mouse position inside the canvas
  *
- * @param {Document} canvas Canvas element to look for
+ * @param {Element} canvas Canvas element to look for
  * @param {DocumentEvent} event DOM-Event which holds the mouse coordinates
  * @returns {Coordinates} Coordinates relative inside the canvas 
  */
