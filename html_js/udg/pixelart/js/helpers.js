@@ -53,7 +53,7 @@ function getMousePosition(canvas, event) {
 /**
  * Function to handle dragged drawing/filling events
  *
- * @param {DocumentEvent} e DOM-Event
+ * @param {DocumentEvent} e DOM-Event handed over by the listener on mouse moves
  */
 function draggedDraw(e) {
   if (dragged) {
@@ -69,6 +69,7 @@ function draggedDraw(e) {
  * Generates a random color
  *
  * @returns {string} Random Color in Hex-format(#000000)
+ * @example getRandomColor() // #129031
  */
 function getRandomColor() {
   let letters = "0123456789ABCDEF",
