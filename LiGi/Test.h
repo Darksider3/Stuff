@@ -45,7 +45,7 @@ private:
   // Singleton pattern: Disables any relevant constructor
   // already through  Singleton-Class
   //Test() {}
-  // FIXME: Need this because i hesitate yet to declare it in there in singleton
+  // fixed/done: Need this because i hesitate yet to declare it in there in singleton
   //Test(const Test&);
   //Test &operator=(const Test&);
 };
