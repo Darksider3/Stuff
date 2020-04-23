@@ -191,9 +191,9 @@ int lltester(int argc, char **argv)
   }
 
   std::cout << "Size: " << b.size() << "\n";
-  for( auto it = b.begin(); it != b.end(); ++it)
+  for( auto &it : b)
   {
-    std::cout << it->data << ", ";
+    std::cout << it.data << ", ";
   }
   //@TODO: Commit: LinkedList.h -> "Working iterator!!". main.cpp -> "implement tests"
   return 0;
