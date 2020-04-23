@@ -36,8 +36,15 @@ std::string Test::errors()
       ret.append(b.errorDesc);
       ret.append("\n-----\n\n");
     }
+#ifdef CONFIRM_SUCCESS
+    else
+    {
+      ret.append("TEST CASE: ");
+      ret.append(b.name);
+      ret.append(" success!\n");
+    }
+#endif
   }
-
   if(failed > 0)
   {
     ret = "Results: " + std::to_string(failed) + "/" + sizestr + " failed\n" + ret;
