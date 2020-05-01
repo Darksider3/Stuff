@@ -1,8 +1,9 @@
 import sys
+from config import *
+from dbg import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLineEdit
 from PyQt5.QtCore import Qt
 
-import SQL
 
 
 class MainWindow(QWidget):
@@ -15,13 +16,16 @@ class MainWindow(QWidget):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
-            print("Escape press, exiting...")
+            dbg("Escape press, exiting...")
             self.app.exit()
+        else:
+            dbg(f"irrelevant keypress gets passed through with key {event.key()}")
+            super().keyPressEvent(event)
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
+    dbg("Yo")
     window = MainWindow(app)
     window.show()
     app.exec_()
