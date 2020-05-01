@@ -1,0 +1,12 @@
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLineEdit
+app = QApplication([])
+InputBox = QLineEdit("Input")
+window = QWidget()
+layout = QVBoxLayout()
+layout.addWidget(QPushButton("Top"))
+layout.addWidget(QPushButton("Bottom"))
+layout.addWidget(InputBox)
+window.setLayout(layout)
+window.show()
+app.beep()
+app.exec_()
