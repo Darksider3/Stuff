@@ -36,7 +36,7 @@ class MainWindow(QWidget):
         self.Layout.addWidget(QPushButton("Push"))
         self.setLayout(self.Layout)
         self.SQLite = sqliteHandler()
-        self.SQLite.insert("testuser", "won")
+        #self.SQLite.insert("testuser", "won")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -49,7 +49,6 @@ class MainWindow(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    dbg("Yo")
     window = MainWindow(app)
     window.show()
     app.exec_()
