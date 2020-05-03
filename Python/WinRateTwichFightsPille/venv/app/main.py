@@ -1,10 +1,8 @@
 import sys
-from config import *
 from dbg import *
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLineEdit, QCompleter
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCompleter
 from PyQt5.QtCore import Qt, pyqtSlot
 import sqlite3
-import math
 
 
 class SqliteHandler:
@@ -17,7 +15,7 @@ class SqliteHandler:
             self.Curs = self.Con.cursor()
             self.Curs.row_factory = sqlite3.Row
         except sqlite3.Error as e:
-            print("Couldn't connect to database...")
+            print(f"Couldn't connect to database... {e}")
 
     def insert(self, against: str, outcome: str):
         insertion: str = "INSERT INTO WinRate (againstName, outcome) VALUES (?, ?);"
@@ -41,7 +39,7 @@ class SqliteHandler:
             self.Con.commit()
             self.Con.close()
         except sqlite3.Error as e:
-            print("Couldn't close DB")
+            print(f"Couldn't close DB {e}")
 
 
 class MainWindow(QWidget):
