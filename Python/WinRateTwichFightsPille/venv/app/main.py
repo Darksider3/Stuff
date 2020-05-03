@@ -5,11 +5,12 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLi
 from PyQt5.QtCore import Qt
 import sqlite3
 
-class sqliteHandler():
+
+class SqliteHandler:
     Con: sqlite3.Connection
     Curs: sqlite3.Cursor
 
-    def __init__(self, path: str=DB_PATH):
+    def __init__(self, path: str = DB_PATH):
         try:
             self.Con = sqlite3.connect(path)
             self.Curs = self.Con.cursor()
@@ -41,10 +42,11 @@ class sqliteHandler():
         except sqlite3.Error as e:
             print("Couldn't close DB")
 
+
 class MainWindow(QWidget):
     def __init__(self, app: QApplication):
         super().__init__()
-        self.SQLite = sqliteHandler()
+        self.SQLite = SqliteHandler()
         completer_list = self.SQLite.getNameCompleteList()
         dbg(completer_list)
 
@@ -72,6 +74,7 @@ class MainWindow(QWidget):
     def on_submitToDatabase(self):
         user=self.username.text()
         state=self.fight_state.text()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
