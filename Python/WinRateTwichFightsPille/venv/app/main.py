@@ -2,8 +2,9 @@ import sys
 from config import *
 from dbg import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLineEdit, QCompleter
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSlot
 import sqlite3
+import math
 
 
 class SqliteHandler:
@@ -46,22 +47,36 @@ class SqliteHandler:
 class MainWindow(QWidget):
     def __init__(self, app: QApplication):
         super().__init__()
+        self.setWindowTitle("PilleFightInterface")
+        self.setGeometry(10, 10, 300, 200)
+
         self.SQLite = SqliteHandler()
         completer_list = self.SQLite.getNameCompleteList()
         dbg(completer_list)
 
-        self.username = QLineEdit("Username....")
+        self.username = QLineEdit("Username....", self)
+        self.username.setFixedWidth(100)
+        self.username.move(0, 10)
         self.username.setCompleter(QCompleter(completer_list, self.username))
-        self.fight_state = QLineEdit("won") # @TODO: Validator. Just accept won/lost(or any other value set in cfg)
+        self.fight_state = QLineEdit("won", self) # @TODO: Validator. Just accept won/lost(or any other value set in cfg)
+        self.fight_state.setFixedWidth(100)
         self.fight_state.setCompleter(QCompleter(["won", "lost"], self.fight_state))
+        self.fight_state.move(0,40)
+
+        insert_button = QPushButton("Register", self)
+        insert_button.setFixedWidth(80)
+        insert_button.move(0, 80)
+        insert_button.clicked.connect(self.on_submitToDatabaseClick)
 
         self.app = app
+        """
         self.Layout = QVBoxLayout()
         self.Layout.addWidget(self.username)
         self.Layout.addWidget(self.fight_state)
-        self.Layout.addWidget(QPushButton("Register"))
+        self.Layout.addWidget(insert_button)
         self.setLayout(self.Layout)
-        #self.SQLite.insert("testuser", "won")
+        """
+        # self.SQLite.insert("testuser", "won")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
@@ -71,9 +86,12 @@ class MainWindow(QWidget):
             dbg(f"irrelevant keypress gets passed through with key {event.key()}")
             super().keyPressEvent(event)
 
-    def on_submitToDatabase(self):
-        user=self.username.text()
-        state=self.fight_state.text()
+    @pyqtSlot()
+    def on_submitToDatabaseClick(self):
+        user = self.username.text()
+        state = self.fight_state.text()
+
+        self.SQLite.insert(user, state)
 
 
 if __name__ == '__main__':
