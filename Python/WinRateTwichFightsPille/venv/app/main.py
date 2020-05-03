@@ -88,7 +88,7 @@ class MainWindow(QWidget):
     def on_submitToDatabaseClick(self):
         user = self.username.text()
         state = self.fight_state.text()
-
+        dbg(f"inserting user '{user}' with fightstate '{state}'")
         self.SQLite.insert(user, state)
 
 
