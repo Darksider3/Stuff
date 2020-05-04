@@ -6,7 +6,7 @@ from sqliteHandler import *
 
 
 class MainWindow(QWidget):
-    def __init__(self, app: QApplication):
+    def __init__(self, qt_app: QApplication):
         super().__init__()
 
         self.setWindowTitle("PilleFightInterface")
@@ -30,7 +30,7 @@ class MainWindow(QWidget):
         insert_button.move(0, 80)
         insert_button.clicked.connect(self.on_submitToDatabaseClick)
 
-        self.app = app
+        self.app = qt_app
         """
         self.Layout = QVBoxLayout()
         self.Layout.addWidget(self.username)
