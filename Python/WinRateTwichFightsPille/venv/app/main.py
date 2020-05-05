@@ -28,7 +28,7 @@ class QFightStateValidator(QValidator):
                 return LOST_STR
             else:
                 continue
-                
+
 
 class MainWindow(QWidget):
     def __init__(self, qt_app: QApplication):
@@ -44,7 +44,9 @@ class MainWindow(QWidget):
         self.username = QLineEdit("Username....", self)
         self.username.setFixedWidth(100)
         self.username.move(0, 10)
-        self.username.setCompleter(QCompleter(completer_list, self.username))
+        self.username_completer = QCompleter(completer_list, self.username)
+        self.username_completer.setCompletionMode(QCompleter.InlineCompletion)
+        self.username.setCompleter(self.username_completer)
         self.fight_state = QLineEdit("won", self)
         self.fight_state.setValidator(QFightStateValidator())
         # @TODO: Validator. Just accept won/lost(or any other value set in cfg)
