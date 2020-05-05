@@ -1,6 +1,7 @@
 import typing
 import sys
-from dbg import *
+from dbg import dbg
+from config import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCompleter
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QValidator
@@ -17,7 +18,7 @@ class QFightStateValidator(QValidator):
         else:
             return QValidator.Acceptable, input_str, position
 
-    def fixup(self, a0: str) -> str:
+    def fixup(self, fix_str: str) -> str:
         return ""
 
 
