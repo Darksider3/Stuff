@@ -1,8 +1,24 @@
+import typing
 import sys
 from dbg import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCompleter
 from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtGui import QValidator
 from sqliteHandler import *
+
+
+class QFightStateValidator(QValidator):
+    def __init__(self):
+        super().__init__()
+
+    def validate(self, input_str: str, position: int) -> typing.Tuple['QValidator.State', str, int]:
+        if input_str not in WIN_STR and input_str not in LOST_STR:
+            return QValidator.Invalid, input_str, position
+        else:
+            return QValidator.Acceptable, input_str, position
+
+    def fixup(self, a0: str) -> str:
+        return ""
 
 
 class MainWindow(QWidget):
@@ -20,7 +36,9 @@ class MainWindow(QWidget):
         self.username.setFixedWidth(100)
         self.username.move(0, 10)
         self.username.setCompleter(QCompleter(completer_list, self.username))
-        self.fight_state = QLineEdit("won", self) # @TODO: Validator. Just accept won/lost(or any other value set in cfg)
+        self.fight_state = QLineEdit("won", self)
+        self.fight_state.setValidator(QFightStateValidator())
+        # @TODO: Validator. Just accept won/lost(or any other value set in cfg)
         self.fight_state.setFixedWidth(100)
         self.fight_state.setCompleter(QCompleter(["won", "lost"], self.fight_state))
         self.fight_state.move(0,40)
