@@ -19,7 +19,13 @@ class QFightStateValidator(QValidator):
             return QValidator.Acceptable, input_str, position
 
     def fixup(self, fix_str: str) -> str:
-        return ""
+        for x in range(len(WIN_STR)):
+            if fix_str[x] in WIN_STR and fix_str[x] in LOST_STR:
+                continue
+            if fix_str[x] in WIN_STR:
+                return WIN_STR
+            if fix_str[x] in LOST_STR:
+                return LOST_STR
 
 
 class MainWindow(QWidget):
