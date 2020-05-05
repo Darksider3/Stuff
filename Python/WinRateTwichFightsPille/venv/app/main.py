@@ -22,11 +22,13 @@ class QFightStateValidator(QValidator):
         for x in range(len(WIN_STR)):
             if fix_str[x] in WIN_STR and fix_str[x] in LOST_STR:
                 continue
-            if fix_str[x] in WIN_STR:
+            elif fix_str[x] in WIN_STR:
                 return WIN_STR
-            if fix_str[x] in LOST_STR:
+            elif fix_str[x] in LOST_STR:
                 return LOST_STR
-
+            else:
+                continue
+                
 
 class MainWindow(QWidget):
     def __init__(self, qt_app: QApplication):
