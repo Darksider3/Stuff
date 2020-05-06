@@ -40,7 +40,7 @@ class MainWindow(QWidget):
         self.SQLite = SqliteHandler()
         completer_list = self.SQLite.getNameCompleteList()
         dbg(completer_list)
-
+        # @TODO: Evaluate if better done in a separate Module, inheriting QLineEdit
         self.username = QLineEdit("Username....", self)
         self.username.setFixedWidth(100)
         self.username.move(0, 10)
@@ -49,7 +49,6 @@ class MainWindow(QWidget):
         self.username.setCompleter(self.username_completer)
         self.fight_state = QLineEdit("won", self)
         self.fight_state.setValidator(QFightStateValidator())
-        # @TODO: Validator. Just accept won/lost(or any other value set in cfg)
         self.fight_state.setFixedWidth(100)
         self.fight_state.setCompleter(QCompleter(["won", "lost"], self.fight_state))
         self.fight_state.move(0,40)
@@ -59,6 +58,11 @@ class MainWindow(QWidget):
         insert_button.move(0, 80)
         insert_button.clicked.connect(self.on_submitToDatabaseClick)
 
+        # @TODO: On the right side of the window i'd like to have a textbox read-only there to allow printing stats
+
+        # @TODO: Write a little statistical output module as well. Incorporate it onto the window title bar.
+        # @TODO: Follow-up statistical: Show an HTML output an a QWebView of said statistics.
+        
         self.app = qt_app
         """
         self.Layout = QVBoxLayout()
