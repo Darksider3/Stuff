@@ -1,8 +1,7 @@
 import typing
 import sys
 from dbg import dbg
-from config import *
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCompleter, QMainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCompleter
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QValidator
 from sqliteHandler import *
@@ -65,9 +64,12 @@ class QFightStateValidator(QValidator):
 
 class StatisticsWindow(QWidget):
     def __init__(self, qt_app: QApplication, usernames, outcomes):
+        self.app = qt_app
         super(StatisticsWindow, self).__init__()
         plt.rcdefaults()
         fig, ax = plt.subplots()
+        fig.canvas.mpl_connect('key_press_event', self.keyPressEvent)
+        plt.gcf().canvas.set_window_title("name")
         y_pos = np.arange(len(usernames))
         performance = outcomes
         error = 0
@@ -79,7 +81,16 @@ class StatisticsWindow(QWidget):
         ax.set_xlabel('Win-Loss-Ratio(-1 by loose, +1 by win)')
         ax.set_title('Win/Loss-Ratio per User fought already')
 
+        plt.title = "PilleFightsFigure"
         plt.show()
+
+    def keyPressEvent(self, event: matplotlib.backend_bases.KeyEvent):
+        if event.key == "escape":
+            dbg("Escape pressed, exiting...")
+            self.app.exit(0)
+        else:
+            dbg(f"irrelevant keypress gets passed through with key {event.key()}")
+            super().keyPressEvent(event)
 
 
 class MainWindow(QWidget):
@@ -148,4 +159,3 @@ class MainWindow(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MainWindow(app)
-    app.exec_()
