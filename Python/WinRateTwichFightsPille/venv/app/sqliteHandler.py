@@ -31,6 +31,13 @@ class SqliteHandler:
 
         return return_list
 
+    def getCompleteList(self):
+        q: str = "SELECT * FROM WinRate"
+        q_result = self.Curs.execute(q)
+        q_result = q_result.fetchall()
+        self.Con.commit()
+        return q_result
+
     def __del__(self):
         try:
             self.Con.commit()
