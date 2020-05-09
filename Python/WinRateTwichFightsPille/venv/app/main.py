@@ -56,8 +56,11 @@ def outcomePerUser(ll):
     for key in outcome_dict:
         if percentage_dict[key]["wins"] == 0 or percentage_dict[key]["losses"] == 0:
             continue
+        # win/loss ratio => win/loss
+        # Win-Rate => Wins / ChancesTotal * 100
         percentage_dict[key]["win_loss_ratio"] = percentage_dict[key]["wins"] / percentage_dict[key]["losses"]
-        percentage_dict[key]["win_rate"] = percentage_dict[key]["wins"] / percentage_dict[key]["total"]
+        percentage_dict[key]["win_rate"] = round((percentage_dict[key]["wins"] / percentage_dict[key]["total"]) * 100,
+                                                 WIN_RATE_ROUND)
 
     return outcome_dict, key_list, value_list, percentage_dict
 
