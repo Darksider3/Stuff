@@ -1,10 +1,11 @@
 from config import *
 if DBG_ENABLED:
     from inspect import currentframe, getframeinfo
+    
     def dbg(*args, **kwargs):
         frameinfo = getframeinfo(currentframe().f_back)
         ret = f"{frameinfo.filename}:{frameinfo.lineno}:" + "".join(map(str, args))
-        if type(*args) == dict && DBG_PP_DICT == True:
+        if type(*args) == dict and DBG_PP_DICT:
             import pprint
             pp = pprint.PrettyPrinter(depth=4)
             pp.pprint(*args)
