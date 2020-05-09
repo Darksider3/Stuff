@@ -1,22 +1,17 @@
 import typing
 import sys
+import util
 from dbg import dbg
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLineEdit, QCompleter
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtGui import QValidator
 from sqliteHandler import *
-
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+
+
 matplotlib.use("Qt5Agg")
-
-
-def outcomeToNumber(outcome: str):
-    if outcome == WIN_STR:
-        return 1
-    else:
-        return -1
 
 
 # @TODO: rename ll -> dbDict
@@ -42,7 +37,7 @@ def outcomePerUser(ll):
 
     for key in ll:
         user = key["againstName"]
-        state = outcomeToNumber(key["outcome"])
+        state = util.outcomeToNumber(key["outcome"])
         outcome_dict[user] += state
         if state == -1:
             percentage_dict[user]["losses"] += 1
