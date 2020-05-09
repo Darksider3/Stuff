@@ -1,4 +1,5 @@
 DBG_ENABLED = True
+DBG_PP_DICT = True
 
 WIN_STR = "won"
 LOST_STR = "lost"
