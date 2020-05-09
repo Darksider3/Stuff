@@ -19,27 +19,50 @@ def outcomeToNumber(outcome: str):
         return -1
 
 
+# @TODO: rename ll -> dbDict
+# @TODO: overall to big function
 def outcomePerUser(ll):
+    # @TODO: outsource. key_list -> keylist() method
     key_list = list()
+    # @TODO: outsource as well, value_list = WinLoss -> WinLossSubtraction()
     value_list = list()
 
+    # @TODO: Evaluate other methods to gather a list of keynames
     for key in ll:
         if key["againstName"] not in key_list:
             key_list.append(key["againstName"])
 
-    outcome_dict = dict((el,0) for el in key_list)
+    outcome_dict = dict((el, 0) for el in key_list)
+
+    # @TODO: Extract and put into own method(percentage_dict)
+    percentage_dict = dict((el, 0) for el in key_list)
+    for key in key_list:
+        percentage_dict[key] = dict({"losses": 0, "wins": 0,"total": 0,
+                                    "win_rate": 0.00, "win_loss_ratio": 0.00})
 
     for key in ll:
         user = key["againstName"]
         state = outcomeToNumber(key["outcome"])
         outcome_dict[user] += state
+        if state == -1:
+            percentage_dict[user]["losses"] += 1
+        elif state == 1:
+            percentage_dict[user]["wins"] += 1
+        percentage_dict[user]["total"] += 1
 
     for key in outcome_dict:
         value_list.append(outcome_dict[key])
 
-    return outcome_dict, key_list, value_list
+    for key in outcome_dict:
+        if percentage_dict[key]["wins"] == 0 or percentage_dict[key]["losses"] == 0:
+            continue
+        percentage_dict[key]["win_loss_ratio"] = percentage_dict[key]["wins"] / percentage_dict[key]["losses"]
+        percentage_dict[key]["win_rate"] = percentage_dict[key]["wins"] / percentage_dict[key]["total"]
+
+    return outcome_dict, key_list, value_list, percentage_dict
 
 
+# @TODO: Put into own file
 class QFightStateValidator(QValidator):
     def __init__(self):
         super().__init__()
@@ -62,7 +85,9 @@ class QFightStateValidator(QValidator):
                 continue
 
 
+# @TODO: Put into own file
 class StatisticsWindow(QWidget):
+    # @TODO: Overall very spaghetti, evaluate.
     def __init__(self, qt_app: QApplication, usernames, outcomes):
         self.app = qt_app
         super(StatisticsWindow, self).__init__()
@@ -89,8 +114,7 @@ class StatisticsWindow(QWidget):
             dbg("Escape pressed, exiting...")
             self.app.exit(0)
         else:
-            dbg(f"irrelevant keypress gets passed through with key {event.key()}")
-            super().keyPressEvent(event)
+            dbg(f"irrelevant keypress with key {event.key}")
 
 
 class MainWindow(QWidget):
@@ -101,11 +125,13 @@ class MainWindow(QWidget):
         self.setGeometry(10, 10, 300, 200)
 
         self.SQLite = SqliteHandler()
-        outDict, userlist, valuelist = outcomePerUser(self.SQLite.getCompleteList())
+        outDict, userlist, valuelist, percentWin = outcomePerUser(self.SQLite.getCompleteList())
         dbg(outDict)
         dbg(valuelist)
         dbg(userlist)
+        dbg(percentWin)
         # @TODO: Evaluate if better done in a separate Module, inheriting QLineEdit
+        # @TODO: Spaghettifull
         self.username = QLineEdit("Username....", self)
         self.username.setFixedWidth(100)
         self.username.move(0, 10)
