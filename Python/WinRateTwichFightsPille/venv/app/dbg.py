@@ -4,7 +4,12 @@ if DBG_ENABLED:
     def dbg(*args, **kwargs):
         frameinfo = getframeinfo(currentframe().f_back)
         ret = f"{frameinfo.filename}:{frameinfo.lineno}:" + "".join(map(str, args))
-        print(ret, *kwargs)
+        if type(*args) == dict && DBG_PP_DICT == True:
+            import pprint
+            pp = pprint.PrettyPrinter(depth=4)
+            pp.pprint(*args)
+        else:
+            print(ret, *kwargs)
         return
 
 elif not DBG_ENABLED:
