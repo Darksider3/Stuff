@@ -118,6 +118,7 @@ class StatisticsWindow(QWidget):
 class MainWindow(QWidget):
     def __init__(self, qt_app: QApplication):
         super().__init__()
+        self.qt_app = qt_app
 
         self.setWindowTitle("PilleFightInterface")
         self.setGeometry(10, 10, 300, 200)
@@ -147,6 +148,11 @@ class MainWindow(QWidget):
         insert_button.move(0, 80)
         insert_button.clicked.connect(self.on_submitToDatabaseClick)
 
+        update_button = QPushButton("Update", self)
+        update_button.setFixedWidth(80)
+        update_button.move(80, 80)
+        update_button.clicked.connect(util.restart_program)
+
         # @TODO: On the right side of the window i'd like to have a textbox read-only there to allow printing stats
 
         # @TODO: Write a little statistical output module as well. Incorporate it onto the window title bar.
@@ -162,7 +168,7 @@ class MainWindow(QWidget):
         """
         # self.SQLite.insert("testuser", "won")
         self.show()
-        StatisticsWindow(qt_app, userlist, valuelist)
+        self.statistics = StatisticsWindow(qt_app, userlist, valuelist)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
