@@ -12,7 +12,6 @@ if DBG_ENABLED:
         else:
             print(ret, *kwargs)
         return
-
 elif not DBG_ENABLED:
     def dbg(*xargs):
         pass
