@@ -21,6 +21,58 @@ def outcomeToNumber(outcome: str):
         return -1
 
 
+def get_name_list(sql_dir):
+    name_list = list()
+    for key in sql_dir:
+        if key["againstName"] not in name_list:
+            name_list.append(key["againstName"])
+
+    return name_list
+
+
+def outcome_dict(sql_dir, name_list=0):
+    if type(name_list) is not list:
+        name_list = get_name_list(sql_dir)
+    outcome_ret = dict((element, 0) for element in name_list)
+
+    for key in sql_dir:
+        user = key["againstName"]
+        state = outcomeToNumber(key["outcome"])
+        outcome_ret[user] += state
+
+    return outcome_ret
+
+
+def percentageDict(sql_dir, name_list=0, outcomes=0):
+    if type(name_list) is not list:
+        name_list = get_name_list(sql_dir)
+    if type(outcomes) is not dict:
+        outcomes = outcome_dict(sql_dir, name_list)
+    percentage_ret = dict((element, 0) for element in name_list)
+    for key in name_list:
+        percentage_ret[key] = dict({"losses": 0, "wins": 0, "total": 0,
+                                    "win_rate": 0.00, "win_loss_ratio": 0.00})
+
+    for key in sql_dir:
+        user = key["againstName"]
+        state = outcomeToNumber(key["outcome"])
+        if state == -1:
+            percentage_ret[user]["losses"] += 1
+        if state == 1:
+            percentage_ret[user]["wins"] += 1
+        percentage_ret[user]["total"] += 1
+    
+    for key in outcomes:
+        if percentage_ret[key]["wins"] == 0 or percentage_ret[key]["losses"] == 0:
+            continue
+        # win/loss ratio => win/loss
+        # Win-Rate => Wins / ChancesTotal * 100
+        percentage_ret[key]["win_loss_ratio"] = percentage_ret[key]["wins"] / percentage_ret[key]["losses"]
+        percentage_ret[key]["win_rate"] = round((percentage_ret[key]["wins"] / percentage_ret[key]["total"]) * 100,
+                                                WIN_RATE_ROUND)
+    return percentage_ret
+
+
 def outcomePerUser(sql_dir):
     # @TODO: outsource. key_list -> keylist() method
     key_list = list()
@@ -32,34 +84,10 @@ def outcomePerUser(sql_dir):
         if key["againstName"] not in key_list:
             key_list.append(key["againstName"])
 
-    outcome_dict = dict((el, 0) for el in key_list)
+    outcome_dicts = outcome_dict(sql_dir)
+    percentage_dict = percentageDict(sql_dir)
 
-    # @TODO: Extract and put into own method(percentage_dict)
-    percentage_dict = dict((el, 0) for el in key_list)
-    for key in key_list:
-        percentage_dict[key] = dict({"losses": 0, "wins": 0,"total": 0,
-                                    "win_rate": 0.00, "win_loss_ratio": 0.00})
+    for key in outcome_dicts:
+        value_list.append(outcome_dicts[key])
 
-    for key in sql_dir:
-        user = key["againstName"]
-        state = outcomeToNumber(key["outcome"])
-        outcome_dict[user] += state
-        if state == -1:
-            percentage_dict[user]["losses"] += 1
-        elif state == 1:
-            percentage_dict[user]["wins"] += 1
-        percentage_dict[user]["total"] += 1
-
-    for key in outcome_dict:
-        value_list.append(outcome_dict[key])
-
-    for key in outcome_dict:
-        if percentage_dict[key]["wins"] == 0 or percentage_dict[key]["losses"] == 0:
-            continue
-        # win/loss ratio => win/loss
-        # Win-Rate => Wins / ChancesTotal * 100
-        percentage_dict[key]["win_loss_ratio"] = percentage_dict[key]["wins"] / percentage_dict[key]["losses"]
-        percentage_dict[key]["win_rate"] = round((percentage_dict[key]["wins"] / percentage_dict[key]["total"]) * 100,
-                                                 WIN_RATE_ROUND)
-
-    return outcome_dict, key_list, value_list, percentage_dict
+    return outcome_dicts, key_list, value_list, percentage_dict
