@@ -4,7 +4,7 @@ import os
 from config import *
 
 
-# @TODO: rename ll -> dbDict
+# @TODO: rename sql_dir -> dbDict
 # @TODO: overall to big function
 def restart_program():
     """Restarts the current program.
@@ -21,14 +21,14 @@ def outcomeToNumber(outcome: str):
         return -1
 
 
-def outcomePerUser(ll):
+def outcomePerUser(sql_dir):
     # @TODO: outsource. key_list -> keylist() method
     key_list = list()
     # @TODO: outsource as well, value_list = WinLoss -> WinLossSubtraction()
     value_list = list()
 
     # @TODO: Evaluate other methods to gather a list of keynames
-    for key in ll:
+    for key in sql_dir:
         if key["againstName"] not in key_list:
             key_list.append(key["againstName"])
 
@@ -40,7 +40,7 @@ def outcomePerUser(ll):
         percentage_dict[key] = dict({"losses": 0, "wins": 0,"total": 0,
                                     "win_rate": 0.00, "win_loss_ratio": 0.00})
 
-    for key in ll:
+    for key in sql_dir:
         user = key["againstName"]
         state = outcomeToNumber(key["outcome"])
         outcome_dict[user] += state
