@@ -6,6 +6,10 @@ from matplotlib import pyplot as plt
 from dbg import dbg
 
 
+# @TODO: https://stackoverflow.com/questions/12459811/how-to-embed-matplotlib-in-pyqt-for-dummies
+# Adding the widget with the toolbar and the following figure should be actually done in our main window, not in a
+# separate one. This is possible and not even that hard, but will take some time to grasp(probably), because
+# i've not yet as much experience with Qt as i'd like to.
 class StatisticsWindow(QWidget):
     # @TODO: Overall very spaghetti, evaluate.
     def __init__(self, qt_app: QApplication, usernames, outcomes):
