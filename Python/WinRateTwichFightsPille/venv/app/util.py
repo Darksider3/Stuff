@@ -4,8 +4,6 @@ import os
 from config import *
 
 
-# @TODO: rename sql_dir -> dbDict
-# @TODO: overall to big function
 def restart_program():
     """Restarts the current program.
     Note: this function does not return. Any cleanup action (like
@@ -74,15 +72,8 @@ def percentageDict(sql_dir, name_list=0, outcomes=0):
 
 
 def outcomePerUser(sql_dir):
-    # @TODO: outsource. key_list -> keylist() method
-    key_list = list()
-    # @TODO: outsource as well, value_list = WinLoss -> WinLossSubtraction()
     value_list = list()
-
-    # @TODO: Evaluate other methods to gather a list of keynames
-    for key in sql_dir:
-        if key["againstName"] not in key_list:
-            key_list.append(key["againstName"])
+    key_list = get_name_list(sql_dir)
 
     outcome_dicts = outcome_dict(sql_dir)
     percentage_dict = percentageDict(sql_dir)
