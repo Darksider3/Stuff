@@ -38,6 +38,10 @@ class SqliteHandler:
         self.Con.commit()
         return q_result
 
+    def filterUsernameStr(self):
+        self.Curs.execute("DELETE FROM WinRate WHERE againstName = ?", (USERNAME_PLACEHOLDER,))
+        self.Con.commit()
+
     def __del__(self):
         try:
             self.Con.commit()

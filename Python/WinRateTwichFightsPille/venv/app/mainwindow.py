@@ -67,6 +67,8 @@ class MainWindow(QWidget):
         if event.key() == Qt.Key_Escape:
             dbg("Escape pressed, exiting...")
             self.app.exit()
+        if event.key() == Qt.Key_Enter:
+            dbg("Pressed Enter, submitting")
         else:
             dbg(f"irrelevant keypress gets passed through with key {event.key()}")
             super().keyPressEvent(event)

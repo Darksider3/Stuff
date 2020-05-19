@@ -1,6 +1,7 @@
 DBG_ENABLED = True
 DBG_PP_DICT = True
 
+USERNAME_PLACEHOLDER: str = "Username...."
 WIN_RATE_ROUND = 4
 WIN_STR = "won"
 LOST_STR = "lost"
