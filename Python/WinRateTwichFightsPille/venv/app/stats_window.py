@@ -2,6 +2,7 @@ import matplotlib
 import numpy as np
 from PyQt5.QtWidgets import QWidget, QApplication
 from matplotlib import pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 from dbg import dbg
 
@@ -26,6 +27,7 @@ class StatisticsWindow(QWidget):
         ax.barh(y_pos, performance, align='center')
         ax.set_yticks(y_pos)
         ax.set_yticklabels(usernames)
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.invert_yaxis()  # labels read top-to-bottom
         ax.set_xlabel('Win-Loss-Ratio(-1 by loose, +1 by win)')
         ax.set_title('Win/Loss-Ratio per User fought already')
