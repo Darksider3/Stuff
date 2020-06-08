@@ -3,6 +3,12 @@
 #include "debug.h"
 #include "value.h"
 
+/**
+ * @brief disassembleChunk follows the specified chunk and prints out all available information about it
+ * @param chunk
+ * @param name
+ * @param offset
+ */
 void disassembleChunk(Chunk *chunk, const char *name, int offset = 0)
 {
   printf("== %s ==\n", name);
@@ -12,13 +18,19 @@ void disassembleChunk(Chunk *chunk, const char *name, int offset = 0)
     offset = disassembleInstruction(chunk, offset);
   }
 }
-
+/*
+ * Prints OP-Codes(which are effetivly 1-Byte, e.g. OP_RETURN)
+ */
 static int simpleInstruction(const char* name, int offset)
 {
   printf("%s\n", name);
   return offset + 1;
 }
 
+
+/*
+ * Print out constant instructions
+ */
 static int constantInstruction(const char* name, Chunk *chunk, int offset)
 {
   uint8_t constant = chunk->code[offset +1];
@@ -29,10 +41,17 @@ static int constantInstruction(const char* name, Chunk *chunk, int offset)
   return offset + 2;
 }
 
+/**
+ * @brief disassembleInstruction prints a chunk for debug information, at specific offset
+ * @param chunk
+ * @param offset
+ * @return
+ */
 int disassembleInstruction(Chunk *chunk, int offset)
 {
   printf("%04d ", offset);
-  
+  // when the line info is the same in two different chunks, just print out
+  // a continuation
   if(offset > 0 && chunk->lines[offset] == chunk->lines[offset - 1])
   {
     printf("   | ");

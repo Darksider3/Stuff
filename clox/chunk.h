@@ -14,13 +14,32 @@ typedef struct {
   int count;
   int capacity;
   uint8_t *code;
-  int* lines;
+  int* lines; // @TODO: just write the line when actually on a new one; needs to refit all code effectivly writing to the lines parameter
   ValueArray constants;
 } Chunk;
 
+/**
+ * @brief Initialise a chunk, make it effectivly ready for use
+ * @param chunk
+ */
 void initChunk(Chunk* chunk);
+/**
+ * @brief deallocate a chunk *and* NULL it
+ * @param chunk
+ */
 void freeChunk(Chunk* chunk);
+/**
+ * @brief Interface to write a chunk
+ * @param chunk
+ * @param byte
+ * @param line
+ */
 void writeChunk(Chunk* chunk, uint8_t byte, int line);
-
+/**
+ * @brief Add a constant value to the chunk-list
+ * @param chunk
+ * @param value
+ * @return
+ */
 int addConstant(Chunk *chunk, Value value);
 #endif
