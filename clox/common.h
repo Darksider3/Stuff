@@ -1,5 +1,5 @@
 #ifndef clox_common_h
-#define clox_commonh_h
+#define clox_common_h
 
 #include <cstdint>
 
