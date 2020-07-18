@@ -1,5 +1,6 @@
 #ifndef VEC_H
 #define VEC_H
+#include <cmath>
 
 typedef struct
 {
@@ -21,6 +22,8 @@ public:
   VecTools();
   static void Intersect();
   static bool Equals();
+  static void Add();
+  static void Substract();
   virtual ~VecTools();
 };
 
@@ -47,6 +50,23 @@ public:
   static bool Equals(const Vec2d *l, const Vec2d *r)
   {
     return l->x == r->x && l->y == r->y;
+  }
+
+  static void Add(const Vec2d *p0, const Vec2d *p1, Vec2d *result)
+  {
+    result->x = p0->x + p1->x;
+    result->y = p0->y + p1->y;
+  }
+
+  static void Substract(const Vec2d *p0, const Vec2d *p1, Vec2d *result)
+  {
+    result->x = p1->x - p0->x;
+    result->y = p1->y - p0->y;
+  }
+
+  static double Magnitude(const Vec2d *p)
+  {
+    return std::sqrt((std::pow(p->x, 2) + std::pow(p->y, 2)));
   }
 };
 
