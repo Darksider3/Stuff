@@ -2,9 +2,13 @@
 #define VEC_H
 #include <cmath>
 
-typedef struct Vec2d
-{
+typedef struct Vector1d {
   double x;
+} Vec;
+
+
+typedef struct Vec2d : public Vector1d
+{
   double y;
 
 
@@ -17,20 +21,20 @@ typedef struct Vec2d
     return res;
   }
 
-  Vec2d operator+=(Vec2d const &rhs)
+  void operator+=(Vec2d const &rhs)
   {
     *this = *this + rhs;
-
-    return *this;
   }
+
+  friend class VecTools;
 } Vec2d;
 
 
-typedef struct
+typedef struct : public Vec2d
 {
-  double x;
-  double y;
   double z;
+
+  friend class VecTools;
 } Vec3d;
 
 class VecTools
