@@ -2,10 +2,27 @@
 #define VEC_H
 #include <cmath>
 
-typedef struct
+typedef struct Vec2d
 {
   double x;
   double y;
+
+
+  Vec2d operator+(Vec2d const &rhs)
+  {
+    Vec2d res;
+    res.x = this->x + rhs.x;
+    res.y = this->y + rhs.y;
+
+    return res;
+  }
+
+  Vec2d operator+=(Vec2d const &rhs)
+  {
+    *this = *this + rhs;
+
+    return *this;
+  }
 } Vec2d;
 
 
