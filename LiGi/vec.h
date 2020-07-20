@@ -26,6 +26,27 @@ typedef struct Vec2d : public Vector1d
     *this = *this + rhs;
   }
 
+  Vec2d operator-(Vec2d const &rhs)
+  {
+    Vec2d res;
+    res.x = this->x - rhs.x;
+    res.y = this->y - rhs.y;
+    return res;
+  }
+
+  void operator-=(Vec2d const &rhs)
+  {
+    *this = *this - rhs;
+  }
+
+  bool operator==(Vec2d const &rhs)
+  {
+    if(this->x == rhs.x && this->y == rhs.y)
+      return true;
+
+    return false;
+  }
+
   friend class VecTools;
 } Vec2d;
 
@@ -70,7 +91,7 @@ public:
 
   static bool Equals(const Vec2d *l, const Vec2d *r)
   {
-    return l->x == r->x && l->y == r->y;
+    return l == r;
   }
 
   static void Add(const Vec2d *p0, const Vec2d *p1, Vec2d *result)
