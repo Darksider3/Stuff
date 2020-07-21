@@ -27,7 +27,7 @@ DONE
  - [x] [Dice Rolling Simulator](dice\_rolling\_sim.cpp)
  - [ ] Count and Fix Green Eggs and Ham
  - [ ] What's My Number?
- - [ ] Factors of a Number
+ - [x] [Factors of a Number](factors_of_my_number.cpp)
  - [ ] Countdown check | Turns out to be harder than thought, attempts made:
    - With SDL(working), but without window(working!) and std::chrono(buggy but working)
    - With libao and libsndfile, couldnt get it work with my sound sample(sound.wav)
