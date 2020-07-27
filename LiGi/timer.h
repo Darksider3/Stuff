@@ -11,9 +11,9 @@
 #include <mutex>
 #include <string>
 
-void callout(uint64_t dd)
+void callout(uint64_t const &dd)
 {
-  std::cout << "CurElaps: " << std::to_string(dd) << "ms." << std::endl;
+  //std::cout << "CurElaps: " << std::to_string(dd) << "ms." << std::endl;
   return;
 }
 
@@ -24,17 +24,17 @@ class Timer1
   uint64_t elapser;
   uint64_t goal;
   std::mutex Elaps_Guard;
-  void (*func)(uint64_t);
+  void (*func)(uint64_t const&);
 public:
-  // ctor without goal, set it by default to 500
-  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t)):
+
+  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t const&)):
     stop(stopper), func(f)
   {
     this->elapser = 0;
     this->goal = DEFAULT_MS;
   }
 
-  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t), std::chrono::milliseconds &timeGoal):  stop(stopper), func(f)
+  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t const&), std::chrono::milliseconds &timeGoal):  stop(stopper), func(f)
   {
 
     this->elapser = 0;
@@ -82,6 +82,13 @@ public:
         }
       }
     }
+  }
+
+
+
+  std::mutex& get_guard()
+  {
+    return this->Elaps_Guard;
   }
 
   uint64_t get_elapsed()
