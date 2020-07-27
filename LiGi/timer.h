@@ -10,19 +10,22 @@
 
 void callout(uint64_t dd)
 {
-  std::cout << "HEREHEREHERE" << std::to_string(dd) << "MS!" << std::endl;
+  std::cout << "CurElaps: " << std::to_string(dd) << "ms." << std::endl;
+  return;
 }
 
 class Timer1
 {
   std::atomic_bool &stop;
-  std::uint64_t elapser;
+  uint64_t elapser;
+  uint64_t goal;
   std::mutex Elaps_Guard;
   void (*func)(uint64_t);
 public:
   Timer1(std::atomic_bool &stopper, void (*f)(uint64_t)):  stop(stopper), func(f)
   {
     this->elapser = 0;
+    this->goal = 500;
   };
   void run(){
     auto t_start = std::chrono::high_resolution_clock::now();
@@ -58,6 +61,11 @@ public:
         this->elapser += 100;
         this->Elaps_Guard.unlock();
         this->func(this->elapser);
+        if(this->elapser >= this->goal)
+        {
+          std::cout << "Goal reached! Exiting! \n";
+          break;
+        }
       }
     }
   }
