@@ -1,5 +1,8 @@
 #ifndef TIMER_H
 #define TIMER_H
+
+#define DEFAULT_MS 3000
+
 #include <chrono>
 #include <thread>
 #include <ctime>
@@ -14,6 +17,7 @@ void callout(uint64_t dd)
   return;
 }
 
+
 class Timer1
 {
   std::atomic_bool &stop;
@@ -22,11 +26,21 @@ class Timer1
   std::mutex Elaps_Guard;
   void (*func)(uint64_t);
 public:
-  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t)):  stop(stopper), func(f)
+  // ctor without goal, set it by default to 500
+  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t)):
+    stop(stopper), func(f)
   {
     this->elapser = 0;
-    this->goal = 500;
+    this->goal = DEFAULT_MS;
+  }
+
+  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t), std::chrono::milliseconds &timeGoal):  stop(stopper), func(f)
+  {
+
+    this->elapser = 0;
+    this->goal = timeGoal.count();
   };
+
   void run(){
     auto t_start = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds delay(100);
@@ -68,6 +82,21 @@ public:
         }
       }
     }
+  }
+
+  uint64_t get_elapsed()
+  {
+    return this->elapser;
+  }
+
+  void elapsed_lock()
+  {
+    this->Elaps_Guard.lock();
+  }
+
+  void elapsed_unlock()
+  {
+    this->Elaps_Guard.unlock();
   }
 
   ~Timer1()
