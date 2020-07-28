@@ -1,21 +1,71 @@
 #include "timer.h"
+#include <sstream>
 
 #define ERASELINE printf("\033[A\33[2K");
-#define THREAD_DONE true;
-#define THREAD_RUNNING false;
 
+
+using namespace LiGi;
+
+
+typedef struct POMODORO_STATE
+{
+  bool done = false;
+  uint64_t Pomos = 0;
+  std::thread TimerThread;
+
+
+  void toggleDone()
+  {
+    this->done = !this->done;
+  }
+
+  void CountPomo()
+  {
+    ++this->Pomos;
+  }
+
+  std::string getCount()
+  {
+    std::stringstream ss("");
+
+    ss << this->Pomos;
+    return ss.str();
+  }
+} POMODORO_STATE;
+POMODORO_STATE OUR_STATE;
 bool DONE = false;
 int Pomos = 0;
 
 
+std::string getMinutes(uint64_t const &elaps)
+{
+  std::stringstream ss("");
+  ss << ((elaps+100)/1000)/60;
+  return ss.str();
+}
+
+std::string getSeconds(uint64_t const &elaps)
+{
+  std::stringstream ss("");
+  ss << ((elaps+100)/1000);
+  return ss.str();
+}
+
+std::string getPercent(uint64_t const &elaps, uint64_t const &to)
+{
+  std::stringstream ss("");
+  ss << ((elaps+100) / (to / 100));
+  return ss.str();
+}
+
 void Pomo()
 {
-  DONE = THREAD_RUNNING;
+  OUR_STATE.done = false;
   std::atomic_bool Stop(false);
   auto Goal = std::chrono::milliseconds(1000*60*30);
   Timer1 timer1(Stop, callout, Goal);
 
-  std::thread thread1(&Timer1::RunnerFunc, &timer1);
+  std::thread thread1(&Timer1::run, &timer1);
 
   timer1.elapsed_lock();
   uint64_t curElapsed = timer1.get_elapsed();
@@ -29,20 +79,25 @@ void Pomo()
       std::cout << curElapsed;
       break;
     }
-    std::cout << "curElapsed: " << curElapsed << ", uintGoal: " << uintGoal << ", Percent done: " <<
-                 (curElapsed / (uintGoal/100))<< "\n";
+    std::cout << "curElapsed: " << curElapsed << ", uintGoal: " << uintGoal <<
+                 ", Percent done: " << getPercent(curElapsed, uintGoal) <<
+                 " or " << getMinutes(curElapsed) << " Minutes and " <<
+                 getSeconds(curElapsed) << " seconds" << "\n";
+    std::cout << "And total Pomos this run: " << OUR_STATE.getCount() << "\n";
     timer1.elapsed_lock();
     curElapsed = timer1.get_elapsed();
     timer1.elapsed_unlock();
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    ERASELINE
+    ERASELINE;
+    ERASELINE;
   }
 
 
-  DONE = THREAD_DONE;
-  ++Pomos;
   Stop = true;
   thread1.join();
+  OUR_STATE.done = true;
+  OUR_STATE.CountPomo();
+  return;
 }
 
 int main()
@@ -50,13 +105,18 @@ int main()
   std::string answer("");
   while(true)
   {
+    answer = "";
     Pomo();
-    if(DONE)
+    if(OUR_STATE.done)
     {
-      std::cout << "Would you like to start a new pomodoro? You have done " << Pomos << " already: ";
+      std::cout << "\n" << "Would you like to start a new pomodoro? You have done "
+                << OUR_STATE.getCount() << " already: ";
       std::cin >> answer;
       if(answer == "yes")
+      {
+        ERASELINE;
         continue;
+      }
       else
         break;
     }
