@@ -5,7 +5,6 @@
 
 #include <chrono>
 #include <thread>
-#include <ctime>
 #include <atomic>
 #include <iostream>
 #include <mutex>
@@ -14,39 +13,36 @@
 
 void callout(uint64_t const &dd)
 {
-  //std::cout << "CurElaps: " << std::to_string(dd) << "ms." << std::endl;
   return;
 }
-namespace LiGi
+namespace Li
 {
-class Timer1
+class GoalTImer
 {
+public:
   std::atomic_bool &stop;
   uint64_t elapser;
-  uint64_t goal;
-  std::mutex Elaps_Guard;
-  //Locker Elaps_Lock;
+  std::atomic_uint64_t goal;
   void (*func)(uint64_t const&);
-public:
 
   static void dummy(uint64_t const&){};
 
   // exec dummy function above - it's just something we dont need here sometimes...
-  Timer1(std::atomic_bool &stopper, uint64_t timeGoal):
-    stop(stopper), func(Timer1::dummy)
+  GoalTImer(std::atomic_bool &stopper, uint64_t timeGoal):
+    stop(stopper), func(GoalTImer::dummy)
   {
     this->elapser = 0;
     this->goal = timeGoal;
   }
 
-  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t const&)):
+  GoalTImer(std::atomic_bool &stopper, void (*f)(uint64_t const&)):
     stop(stopper), func(f)
   {
     this->elapser = 0;
     this->goal = DEFAULT_MS;
   }
 
-  Timer1(std::atomic_bool &stopper, void (*f)(uint64_t const&),
+  GoalTImer(std::atomic_bool &stopper, void (*f)(uint64_t const&),
          std::chrono::milliseconds &timeGoal):  stop(stopper), func(f)
   {
 
@@ -56,10 +52,16 @@ public:
 
   void adjustGoal(std::chrono::milliseconds const &Newgoal)
   {
-    this->goal = Newgoal.count();
-    this->Elaps_Guard.lock();
     this->elapser = 0;
-    this->Elaps_Guard.unlock();
+    this->goal = Newgoal.count();
+    this->stop = false;
+  }
+
+  void adjustGoal(uint64_t const newgoal)
+  {
+    this->elapser = 0;
+    this->goal = newgoal;
+    this->stop = false;
   }
 
   void run()
@@ -68,21 +70,21 @@ public:
     std::chrono::milliseconds delay(100);
     while(!stop)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
       auto t_now = std::chrono::high_resolution_clock::now();
       std::chrono::milliseconds elapsed =
           std::chrono::duration_cast<std::chrono::milliseconds>(t_now - t_started);
       if(delay <= elapsed) {
         t_started = t_now;
-        this->Elaps_Guard.lock();
         this->elapser += 100;
-        this->Elaps_Guard.unlock();
         this->func(this->elapser);
         if(this->elapser >= this->goal)
         {
-          std::cout << "Goal reached! Exiting! \n";
-          return;
+          this->stop = true;
+          break;
         }
+        if(this->stop)
+          break;
       }
     }
     return;
@@ -90,29 +92,14 @@ public:
 
 
 
-  std::mutex& get_guard()
-  {
-    return this->Elaps_Guard;
-  }
-
   uint64_t get_elapsed()
   {
     return this->elapser;
   }
 
-  void elapsed_lock()
-  {
-    this->Elaps_Guard.lock();
-  }
 
-  void elapsed_unlock()
+  ~GoalTImer()
   {
-    this->Elaps_Guard.unlock();
-  }
-
-  ~Timer1()
-  {
-    std::cout << std::to_string(this->elapser) << "ms run!" << std::endl;
   }
 
 };
@@ -123,8 +110,9 @@ public:
 // @TODO: Data structure representing state...
 struct STATE
 {
-  enum {
+  enum current {
     BREAK,
+    BIGBREAK,
     PAUSE,
     POMO,
 
@@ -139,30 +127,38 @@ struct STATE
 
   uint64_t goal = 0;
   uint64_t elapsed = 0;
-  uint32_t pomodoros = 0;
+  uint32_t Pomo_counter = 0;
   bool done = false;
 
-  void bigbreak()
+  uint64_t bigbreak()
   {
+    ++this->big_breaks;
     this->goal = this->big_break_time;
-    this->mode = STATE::BREAK;
+    this->mode = STATE::BIGBREAK;
+    this->done = false;
+    return this->big_break_time;
   }
-  void shortbreak()
+  uint64_t shortbreak()
   {
+    ++this->short_breaks;
     this->goal = this->short_break_time;
     this->mode = STATE::BREAK;
+    this->done = false;
+    return this->short_break_time;
   }
 
-  void PomoStart()
+  uint64_t Pomodoro()
   {
+    ++this->Pomo_counter;
     this->goal = this->pomodoro_time;
     this->mode = STATE::POMO;
     this->done = false;
+    return this->pomodoro_time;
   }
   void Done()
   {
-    ++this->pomodoros;
     this->done = true;
+    this->elapsed = 0;
     this->mode = STATE::PAUSE;
   }
   void manualPause()
@@ -171,67 +167,65 @@ struct STATE
   }
 };
 
-class Pomodoro : public Timer1
+class Pomodoro : public GoalTImer
 {
   std::atomic_bool StopToggle = false;
-  std::mutex stateGuard;
-  STATE &state;
 public:
+  STATE &state;
   Pomodoro(STATE &states) :
-    Timer1(StopToggle, states.pomodoro_time),
+    GoalTImer(StopToggle, states.pomodoro_time),
     state(states)
   {
     this->adjustGoal(std::chrono::milliseconds(this->state.pomodoro_time));
   }
 
-  void RunPomo(void (*progressui)(uint64_t const&, STATE const &))
+  void RunPomo(void (*progressui)(uint64_t const&, STATE const &), STATE::current exstate = STATE::POMO)
   {
-    this->state.PomoStart();
-    std::thread TimerThread(&Timer1::run, this);
-    bool stopWhile = false;
-    while(!stopWhile)
+    switch(exstate)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      this->elapsed_lock();
-      this->state.elapsed = this->get_elapsed();
-      progressui(this->state.elapsed, this->state);
-      this->elapsed_unlock();
-      if(this->state.goal < this->state.elapsed)
-      {
-        //@TODO: Debugging message: Done
-        stopWhile = true;
-      }
+      case STATE::BREAK:
+        this->adjustGoal(this->state.shortbreak());
+        break;
+      case STATE::BIGBREAK:
+        this->adjustGoal(this->state.bigbreak());
+        break;
+      case STATE::PAUSE:
+        return;
+      default:
+        this->adjustGoal(this->state.Pomodoro());
     }
 
-    this->StopToggle = true;
-    TimerThread.join();
+    std::thread TimerThread(&GoalTImer::run, this);
+    this->StopToggle = false;
+    while(!this->StopToggle)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      this->state.elapsed = this->get_elapsed();
+      progressui(this->state.elapsed, this->state);
+    }
+
     this->state.Done();
+    TimerThread.join();
     //@TODO: Debuggingmessage run through
     return;
   }
 
   bool isPaused()
   {
-    return (this->state.mode == STATE::PAUSE);
+    return this->state.mode == STATE::PAUSE;
   }
 
   uint32_t PomosDone()
   {
-    return this->state.pomodoros;
+    return this->state.Pomo_counter;
   }
 };
 
 
-class ThreadedPomodoro : public Pomodoro
+void PomoThread(STATE &s)
 {
-  STATE state = STATE();
-public:
-  ThreadedPomodoro() : Pomodoro(state)
-  {
-
-  }
-};
-
+  return;
+}
 namespace TimerTools
 {
 namespace Format
@@ -286,7 +280,9 @@ namespace Format
 
   std::string getFullTimeString(uint64_t const t)
   {
-    return (std::string(getHours(t)+":"+getMinutes(t)+":"+getSeconds(t)));
+    return (std::string(
+              getHours(t)+":"+getMinutes(t)+":"+getSeconds(t)
+            ));
   }
 }
 }
