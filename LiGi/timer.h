@@ -115,8 +115,11 @@ struct STATE
     BIGBREAK,
     PAUSE,
     POMO,
+    RESUME
 
   } mode;
+
+  current priorMode;
   uint64_t pomodoro_time = 1000 * 60 * 30;
   uint64_t big_break_time = 1000 * 60 * 18; // 18 minutes
   uint64_t short_break_time = 1000 * 60 * 7; // 7 minutes
@@ -159,11 +162,31 @@ struct STATE
   {
     this->done = true;
     this->elapsed = 0;
+    this->priorMode = this->mode;
     this->mode = STATE::PAUSE;
   }
   void manualPause()
   {
+    this->priorMode = this->mode;
     this->mode = STATE::PAUSE;
+  }
+
+  uint64_t getPriorTime()
+  {
+    if(this->priorMode == STATE::POMO)
+    {
+      return this->pomodoro_time - this->elapsed;
+    }
+    if(this->priorMode == STATE::BREAK)
+    {
+      return this->short_break_time - this->elapsed;
+    }
+    if(this->priorMode == STATE::BIGBREAK)
+    {
+      return this->big_break_time - this->elapsed;
+    }
+
+    return this->pomodoro_time;
   }
 };
 
@@ -191,6 +214,8 @@ public:
         break;
       case STATE::PAUSE:
         return;
+      case STATE::RESUME:
+        this->adjustGoal(this->state.elapsed)
       default:
         this->adjustGoal(this->state.Pomodoro());
     }
