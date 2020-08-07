@@ -66,10 +66,14 @@ int main()
     refresh();
     if(c == 'q')
     {
-      quitter();
       Timer.stop = true;
       PomoThread.join();
+      quitter();
       return(0);
+    }
+    else
+    {
+      c = -1;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
