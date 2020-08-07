@@ -222,10 +222,6 @@ public:
 };
 
 
-void PomoThread(STATE &s)
-{
-  return;
-}
 namespace TimerTools
 {
 namespace Format
