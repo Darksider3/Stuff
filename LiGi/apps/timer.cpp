@@ -71,9 +71,9 @@ int main()
       quitter();
       return(0);
     }
-    else
+    else if(c == ERR)
     {
-      c = -1;
+      // got no new data this run.
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
