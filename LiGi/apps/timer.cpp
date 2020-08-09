@@ -29,7 +29,7 @@ void ViewRunningMenue()
   mvaddstr(10, 2, "Press b to take a break");
 }
 
-void ViewMode(Li::STATE &state)
+void ViewMode(Li::STATE const &state)
 {
   using Li::STATE;
 
