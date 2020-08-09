@@ -32,6 +32,7 @@ void ViewRunningMenue()
 void ViewMode(Li::STATE &state)
 {
   using Li::STATE;
+
   if(state.mode == STATE::BREAK)
     mvaddstr(5, 1, "Taking a break");
   else if(state.mode == STATE::BIGBREAK)
@@ -85,17 +86,32 @@ int main()
       quitter();
       return(0);
     }
+    else if(c == 'o')
+    {
+      Timer.stop = true;
+      PomoThread.join();
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::POMO);
+      erase();
+    }
     else if(c == 'b')
     {
       Timer.stop = true;
       PomoThread.join();
       PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::BREAK);
+      erase();
+    }
+    else if(c == 'g')
+    {
+      Timer.stop = true;
+      PomoThread.join();
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::BIGBREAK);
+      erase();
     }
     else if(c == ERR)
     {
       // got no new data this run.
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   return(0);
 }
