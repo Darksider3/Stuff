@@ -25,7 +25,20 @@ void init()
 
 void ViewRunningMenue()
 {
-  mvaddstr(11, 2, "Press Q to exit");
+  mvaddstr(11, 2, "Press q to exit");
+  mvaddstr(10, 2, "Press b to take a break");
+}
+
+void ViewMode(Li::STATE &state)
+{
+  using Li::STATE;
+  if(state.mode == STATE::BREAK)
+    mvaddstr(5, 1, "Taking a break");
+  else if(state.mode == STATE::BIGBREAK)
+    mvaddstr(5, 1, "Taking a big break!");
+  else if(state.mode == STATE::POMO)
+    mvaddstr(5, 1, "Working on a Pomodoro!");
+
 }
 
 int main()
@@ -63,6 +76,7 @@ int main()
       mvprintw(2, 5, Li::TimerTools::Format::getFullTimeString(State.elapsed).c_str());
     }
     ViewRunningMenue();
+    ViewMode(State);
     refresh();
     if(c == 'q')
     {
@@ -70,6 +84,12 @@ int main()
       PomoThread.join();
       quitter();
       return(0);
+    }
+    else if(c == 'b')
+    {
+      Timer.stop = true;
+      PomoThread.join();
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::BREAK);
     }
     else if(c == ERR)
     {
