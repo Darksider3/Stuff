@@ -215,7 +215,8 @@ public:
       case STATE::PAUSE:
         return;
       case STATE::RESUME:
-        this->adjustGoal(this->state.elapsed)
+        this->adjustGoal(this->state.elapsed);
+        break;
       default:
         this->adjustGoal(this->state.Pomodoro());
     }
