@@ -39,6 +39,8 @@ void ViewMode(Li::STATE const &state)
     mvaddstr(5, 1, "Taking a big break!");
   else if(state.mode == STATE::POMO)
     mvaddstr(5, 1, "Working on a Pomodoro!");
+  else if(state.mode == STATE::PAUSE)
+    mvaddstr(5, 1, "Taking a manual pause!");
 
 }
 
@@ -46,8 +48,6 @@ int main()
 {
   init();
   //int x, y;
-
-  bool last_was_pause = false;
   Li::STATE State;
 
   State.pomodoro_time = 1000 * 60 * 30;
@@ -59,23 +59,10 @@ int main()
   std::thread PomoThread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::POMO);
 
   int c;
-
   while(true)
   {
     c = getch();
-    if(Timer.isPaused())
-    {
-      PomoThread.join();
-      std::string answer = "";
-      if(last_was_pause)
-      {
-        //nothing
-      }
-    }
-    else
-    {
       mvprintw(2, 5, Li::TimerTools::Format::getFullTimeString(State.elapsed).c_str());
-    }
     ViewRunningMenue();
     ViewMode(State);
     refresh();
@@ -85,6 +72,22 @@ int main()
       PomoThread.join();
       quitter();
       return(0);
+    }
+    else if(c == 'p' && !Timer.isPaused())
+    {
+      Timer.stop = true;
+      PomoThread.join();
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::PAUSE);
+      erase();
+      ViewRunningMenue();
+      ViewMode(State);
+      refresh();
+    }
+    else if(c == 'p' && Timer.isPaused())
+    {
+      Timer.stop = true;
+      PomoThread.join();
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::RESUME);
     }
     else if(c == 'o')
     {
@@ -110,6 +113,7 @@ int main()
     else if(c == ERR)
     {
       // got no new data this run.
+      mvprintw(3, 12, "GOT NOTHING");
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
