@@ -49,9 +49,10 @@ public:
     auto t_start = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds t_delay(static_cast<T*>(this)->delay);
 
-    while(!static_cast<T*>(this)->stopper)
+    while(!static_cast<const T*>(this)->stopper)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<T*>(this)->sleep));
+      std::this_thread::sleep_for(
+            std::chrono::milliseconds(static_cast<const T*>(this)->sleep));
 
       auto t_now = std::chrono::high_resolution_clock::now();
 
@@ -61,14 +62,11 @@ public:
       {
         t_start = t_now;
         static_cast<T*>(this)->elapsed += t_elapsed.count();
-        if(static_cast<T*>(this)->elapsed >= static_cast<T*>(this)->goal)
+        if(static_cast<const T*>(this)->elapsed >= static_cast<const T*>(this)->goal)
         {
           static_cast<T*>(this)->stopper = true;
           break;
         }
-
-        if(static_cast<T*>(this)->stopper)
-          break;
       }
     }
     return;
