@@ -17,7 +17,7 @@ void callout(uint64_t const &dd)
 }
 namespace Li
 {
-class GoalTImer
+class GoalTimer
 {
 public:
   std::atomic_bool &stop;
@@ -28,21 +28,21 @@ public:
   static void dummy(uint64_t const&){};
 
   // exec dummy function above - it's just something we dont need here sometimes...
-  GoalTImer(std::atomic_bool &stopper, uint64_t timeGoal):
-    stop(stopper), func(GoalTImer::dummy)
+  GoalTimer(std::atomic_bool &stopper, uint64_t timeGoal):
+    stop(stopper), func(GoalTimer::dummy)
   {
     this->elapser = 0;
     this->goal = timeGoal;
   }
 
-  GoalTImer(std::atomic_bool &stopper, void (*f)(uint64_t const&)):
+  GoalTimer(std::atomic_bool &stopper, void (*f)(uint64_t const&)):
     stop(stopper), func(f)
   {
     this->elapser = 0;
     this->goal = DEFAULT_MS;
   }
 
-  GoalTImer(std::atomic_bool &stopper, void (*f)(uint64_t const&),
+  GoalTimer(std::atomic_bool &stopper, void (*f)(uint64_t const&),
          std::chrono::milliseconds &timeGoal):  stop(stopper), func(f)
   {
 
@@ -98,7 +98,7 @@ public:
   }
 
 
-  ~GoalTImer()
+  ~GoalTimer()
   {
   }
 
@@ -171,6 +171,12 @@ struct STATE
     this->mode = STATE::PAUSE;
   }
 
+  void Resume()
+  {
+    this->priorMode = this->mode;
+    this->mode = priorMode;
+  }
+
   uint64_t getPriorTime()
   {
     if(this->priorMode == STATE::POMO)
@@ -190,19 +196,20 @@ struct STATE
   }
 };
 
-class Pomodoro : public GoalTImer
+class Pomodoro : public GoalTimer
 {
+  uint64_t left = 0;
   std::atomic_bool StopToggle = false;
 public:
   STATE &state;
   Pomodoro(STATE &states) :
-    GoalTImer(StopToggle, states.pomodoro_time),
+    GoalTimer(StopToggle, states.pomodoro_time),
     state(states)
   {
     this->adjustGoal(std::chrono::milliseconds(this->state.pomodoro_time));
   }
 
-  void RunPomo(void (*progressui)(uint64_t const&, STATE const &), STATE::current exstate = STATE::POMO)
+  void RunPomo(void (*progressui)(uint64_t const&, STATE const &), STATE::current exstate = Li::STATE::POMO)
   {
     switch(exstate)
     {
@@ -213,15 +220,19 @@ public:
         this->adjustGoal(this->state.bigbreak());
         break;
       case STATE::PAUSE:
-        return;
+        this->left = this->state.goal - this->state.elapsed;
+        this->state.manualPause();
+        this->adjustGoal(9999999);
+        break;
       case STATE::RESUME:
-        this->adjustGoal(this->state.elapsed);
+        this->adjustGoal(this->left);
+        this->state.Resume();
         break;
       default:
         this->adjustGoal(this->state.Pomodoro());
     }
 
-    std::thread TimerThread(&GoalTImer::run, this);
+    std::thread TimerThread(&GoalTimer::run, this);
     this->StopToggle = false;
     while(!this->StopToggle)
     {
