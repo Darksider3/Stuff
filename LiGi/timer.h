@@ -1,3 +1,22 @@
+/**
+ ** This file is part of the Stuff project.
+ ** Copyright 2020 darksider3 <github@darksider3.de>.
+ **
+ ** This program is free software: you can redistribute it and/or modify
+ ** it under the terms of the GNU General Public License as published by
+ ** the Free Software Foundation, either version 3 of the License, or
+ ** (at your option) any later version.
+ **
+ ** This program is distributed in the hope that it will be useful,
+ ** but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ** GNU General Public License for more details.
+ **
+ ** You should have received a copy of the GNU General Public License
+ ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ **/
+
+
 #ifndef TIMER_H
 #define TIMER_H
 
@@ -20,15 +39,39 @@ template<class T>
 concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
 
 template<typename T>
+/**
+ * @brief The Timer CRTP class
+ * @todo Implement a simple hook system; nothing fancy. Just a queue that runs through on certain
+ *       occastions like stop, start and changing values. Of course, we will have to time those
+ *       too, to add it to the elapsed timer, sadly.
+ */
 class Timer
 {
-protected:
+private:
+  /**
+   * @brief stopper atomic stopping variable to control flow
+   */
   std::atomic_bool &stopper;
+  /**
+   * @brief goal The time we actually want to reach!
+   */
   uint64_t goal;
 
-  uint64_t delay = 10;
+  /**
+   * @brief delay Delay in which we actually increase variables
+   */
+  uint64_t delay = 100;
+
+  /**
+   * @brief elapsed Stores, after delay and sleep, the already slept/waited time
+   */
   uint64_t elapsed = 0;
+
+  /**
+   * @brief sleep How long we sleep between checks
+   */
   uint64_t sleep = 20;
+
 public:
   void setElapsed(const SuitableTime auto &set)
   {
@@ -43,6 +86,11 @@ public:
   void setDelay(const SuitableTime auto &set)
   {
     static_cast<T*>(this)->delay = set;
+  }
+
+  void setSleep(const SuitableTime auto &set)
+  {
+    static_cast<T*>(this)->sleep = set;
   }
 
   void RunTimer()
@@ -75,12 +123,19 @@ public:
   Timer(std::atomic_bool &stop, const SuitableTime auto &Goal) : stopper(stop), goal(Goal)
   {
   }
+
+  virtual ~Timer() = default;
 };
 
 class Pom : public Timer<Pom>
 {
 public:
   using Timer<Pom>::Timer;
+  Pom(std::atomic_bool &stop, const SuitableTime auto &Goal) : Timer<Pom>(stop, Goal)
+  {
+    this->setDelay(500);
+    this->setSleep(250);
+  }
 };
 class GoalTimer
 {
