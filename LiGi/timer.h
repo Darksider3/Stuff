@@ -10,15 +10,80 @@
 #include <mutex>
 #include <string>
 #include <sstream>
-
-void callout(uint64_t const &dd)
-{
-  return;
-}
+#include <concepts>
 
 namespace Li
 {
 
+using namespace std::literals;
+template<class T>
+concept integral = std::is_integral<T>::value;
+template<typename T>
+class Timer
+{
+protected:
+  std::atomic_bool &stopper;
+  uint64_t goal;
+
+  uint64_t delay = 50;
+  uint64_t elapsed = 0;
+  uint64_t sleep = 20;
+public:
+  void setElapsed(const integral auto &set)
+  {
+    static_cast<const T*>(this)->elapsed = set;
+  }
+
+  integral auto getElapsed()
+  {
+    return static_cast<T*>(this)->elapsed;
+  }
+
+  void setDelay(const integral auto &set)
+  {
+    static_cast<T*>(this)->delay = set;
+  }
+
+  void RunTimer()
+  {
+    auto t_start = std::chrono::high_resolution_clock::now();
+    std::chrono::milliseconds t_delay(static_cast<T*>(this)->delay);
+
+    while(!static_cast<T*>(this)->stopper)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<T*>(this)->sleep));
+
+      auto t_now = std::chrono::high_resolution_clock::now();
+
+      std::chrono::milliseconds t_elapsed =
+          std::chrono::duration_cast<std::chrono::milliseconds>(t_now - t_start);
+      if(t_delay <= t_elapsed)
+      {
+        t_start = t_now;
+        static_cast<T*>(this)->elapsed += t_elapsed.count();
+        if(static_cast<T*>(this)->elapsed >= static_cast<T*>(this)->goal)
+        {
+          static_cast<T*>(this)->stopper = true;
+          break;
+        }
+
+        if(static_cast<T*>(this)->stopper)
+          break;
+      }
+    }
+    return;
+  }
+  Timer(std::atomic_bool &stop, const integral auto &Goal) : stopper(stop), goal(Goal)
+  {
+  }
+};
+
+class Pom : public Timer<Pom>
+{
+public:
+  Pom(std::atomic_bool &stop, const integral auto &Goal) : Timer(stop, Goal)
+  {}
+};
 class GoalTimer
 {
 
