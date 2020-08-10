@@ -15,10 +15,13 @@ void callout(uint64_t const &dd)
 {
   return;
 }
+
 namespace Li
 {
+
 class GoalTimer
 {
+
 public:
   std::atomic_bool &stop;
   uint64_t elapser;
