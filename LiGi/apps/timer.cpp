@@ -47,6 +47,11 @@ void ViewMode(Li::STATE const &state)
 int main()
 {
   init();
+  std::atomic_bool stop = false;
+  Pom bla(stop, 1);
+  bla.RunTimer();
+  bla.getElapsed();
+  stop = true;
   //int x, y;
   Li::STATE State;
 
