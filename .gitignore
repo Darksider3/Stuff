@@ -22,5 +22,6 @@ __pycache__/
 *.cxxflags
 *.o
 *CMake*
+*venv*
 !CMakeLists.txt
 build/
