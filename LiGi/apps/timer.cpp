@@ -48,7 +48,7 @@ int main()
 {
   init();
   std::atomic_bool stop = false;
-  Li::Pom bla(stop, 1);
+  Li::Pom bla(stop, 1000*3);
   bla.RunTimer();
   bla.getElapsed();
   stop = true;

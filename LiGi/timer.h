@@ -17,7 +17,8 @@ namespace Li
 
 using namespace std::literals;
 template<class T>
-concept integral = std::is_integral<T>::value;
+concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
+
 template<typename T>
 class Timer
 {
@@ -25,21 +26,21 @@ protected:
   std::atomic_bool &stopper;
   uint64_t goal;
 
-  uint64_t delay = 50;
+  uint64_t delay = 10;
   uint64_t elapsed = 0;
   uint64_t sleep = 20;
 public:
-  void setElapsed(const integral auto &set)
+  void setElapsed(const SuitableTime auto &set)
   {
-    static_cast<const T*>(this)->elapsed = set;
+    static_cast<T*>(this)->elapsed = set;
   }
 
-  integral auto getElapsed()
+  SuitableTime auto getElapsed()
   {
-    return static_cast<T*>(this)->elapsed;
+    return static_cast<const T*>(this)->elapsed;
   }
 
-  void setDelay(const integral auto &set)
+  void setDelay(const SuitableTime auto &set)
   {
     static_cast<T*>(this)->delay = set;
   }
@@ -47,7 +48,7 @@ public:
   void RunTimer()
   {
     auto t_start = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds t_delay(static_cast<T*>(this)->delay);
+    std::chrono::milliseconds t_delay(static_cast<const T*>(this)->delay);
 
     while(!static_cast<const T*>(this)->stopper)
     {
@@ -71,7 +72,7 @@ public:
     }
     return;
   }
-  Timer(std::atomic_bool &stop, const integral auto &Goal) : stopper(stop), goal(Goal)
+  Timer(std::atomic_bool &stop, const SuitableTime auto &Goal) : stopper(stop), goal(Goal)
   {
   }
 };
@@ -79,8 +80,7 @@ public:
 class Pom : public Timer<Pom>
 {
 public:
-  Pom(std::atomic_bool &stop, const integral auto &Goal) : Timer(stop, Goal)
-  {}
+  using Timer<Pom>::Timer;
 };
 class GoalTimer
 {
