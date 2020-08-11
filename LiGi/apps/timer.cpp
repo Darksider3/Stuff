@@ -66,14 +66,28 @@ void ViewMode(Li::STATE const &state)
 
 int main()
 {
+#ifdef TEST_NEW_TIMER
   // TEST
   std::atomic_bool stop = false;
   Li::Reverse bla(stop, 1000*3);
   bla.RunTimer();
-  stop = true;
+  bla.Pause();
+  std::cout << "PAUSED; CONTINUE" << std::endl;
+
+  std::string testans = "";
+
+  std::cin >> testans;
+  std::cout << "RUNNING RESUME" << std::endl;
+  bla.Resume();
+  bla.Pause();
+  std::cout << "PAUSED; CONTINUE" << std::endl;
+  std::cin >> testans;
+  std::cout << "DONE RESUME" << std::endl;
+
+  std::cin >> testans;
 
   // \TEST
-
+#endif
   init();
 
   //int x, y;
