@@ -27,6 +27,7 @@ void dummyFunc(uint64_t const &tt, Li::STATE const &state)
 {
   return;
 }
+
 void quitter()
 {
   endwin();
@@ -65,12 +66,16 @@ void ViewMode(Li::STATE const &state)
 
 int main()
 {
-  init();
+  // TEST
   std::atomic_bool stop = false;
-  Li::Pom bla(stop, 1000*3);
+  Li::Reverse bla(stop, 1000*3);
   bla.RunTimer();
-  bla.getElapsed();
   stop = true;
+
+  // \TEST
+
+  init();
+
   //int x, y;
   Li::STATE State;
 
