@@ -89,26 +89,26 @@ public:
     u_.goal = Goal;
   }
 
-  SuitableTime auto getTimeLeft()
+  SuitableTime auto getTimeLeft() const
   {
     return u_c.time_left;
   }
-  SuitableTime auto getGoal()
+  SuitableTime auto getGoal() const
   {
     return u_c.goal;
   }
 
-  SuitableTime auto getDelay()
+  SuitableTime auto getDelay() const
   {
     return u_c.delay;
   }
 
-  SuitableTime auto getSleep()
+  SuitableTime auto getSleep() const
   {
     return u_c.sleep;
   }
 
-  std::atomic_bool &getStopper()
+  std::atomic_bool &getStopper() const
   {
     return u_c.stopper;
   }
@@ -155,9 +155,8 @@ public:
     }
     return;
   }
-  Timer(std::atomic_bool &stop, const SuitableTime auto &Goal) : stopper(stop), goal(Goal), time_left(Goal)
-  {
-  }
+  Timer(std::atomic_bool &stop, const SuitableTime auto &Goal) :
+    stopper(stop), goal(Goal), time_left(Goal){}
 
   virtual ~Timer() = default;
 };
