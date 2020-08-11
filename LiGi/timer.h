@@ -38,13 +38,7 @@ using namespace std::literals;
 template<class T>
 concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
 
-template<typename T>
-/**
- * @brief The Timer CRTP class
- * @todo Implement a simple hook system; nothing fancy. Just a queue that runs through on certain
- *       occastions like stop, start and changing values. Of course, we will have to time those
- *       too, to add it to the elapsed timer, sadly.
- */
+template<class T>
 class Timer
 {
 private:
@@ -65,7 +59,7 @@ private:
   /**
    * @brief elapsed Stores, after delay and sleep, the already slept/waited time
    */
-  uint64_t elapsed = 0;
+  uint64_t time_left;
 
   /**
    * @brief sleep How long we sleep between checks
@@ -73,14 +67,14 @@ private:
   uint64_t sleep = 20;
 
 public:
-  void setElapsed(const SuitableTime auto &set)
+  void setTimeLeft(const SuitableTime auto &set)
   {
-    static_cast<T*>(this)->elapsed = set;
+    static_cast<T*>(this)->time_left = set;
   }
 
-  SuitableTime auto getElapsed()
+  SuitableTime auto getTimeLeft()
   {
-    return static_cast<const T*>(this)->elapsed;
+    return static_cast<const T*>(this)->time_left;
   }
 
   void setDelay(const SuitableTime auto &set)
@@ -91,6 +85,33 @@ public:
   void setSleep(const SuitableTime auto &set)
   {
     static_cast<T*>(this)->sleep = set;
+  }
+
+  SuitableTime auto getGoal()
+  {
+    return static_cast<T*>(this)->goal;
+  }
+
+  void setGoal(SuitableTime auto Goal)
+  {
+    static_cast<T*>(this)->goal = Goal;
+  }
+
+  void Pause()
+  {
+    static_cast<T*>(this)->stopper = true;
+  }
+
+  void ResetTime()
+  {
+    static_cast<T*>(this)->time_left = static_cast<T*>(this)->goal;
+  }
+
+  void Stop()
+  {
+    static_cast<T*>(this)->stopper = true;
+    static_cast<T*>(this)->Pause();
+    static_cast<T*>(this)->ResetTime();
   }
 
   void RunTimer()
@@ -110,33 +131,32 @@ public:
       if(t_delay <= t_elapsed)
       {
         t_start = t_now;
-        static_cast<T*>(this)->elapsed += t_elapsed.count();
-        if(static_cast<const T*>(this)->elapsed >= static_cast<const T*>(this)->goal)
-        {
-          static_cast<T*>(this)->stopper = true;
-          break;
-        }
+        // @TODO: this->time_left = this->time_left - t_elapsed
+        static_cast<T*>(this)->time_left = static_cast<T*>(this)->time_left - t_elapsed.count();
+        if(static_cast<T*>(this)->time_left <= 0 || static_cast<T*>(this)->time_left == UINT64_MAX)
+          break; // we done!
       }
     }
     return;
   }
-  Timer(std::atomic_bool &stop, const SuitableTime auto &Goal) : stopper(stop), goal(Goal)
+  Timer(std::atomic_bool &stop, const SuitableTime auto &Goal) : stopper(stop), goal(Goal), time_left(Goal)
   {
   }
 
   virtual ~Timer() = default;
 };
 
-class Pom : public Timer<Pom>
+class Reverse : public Timer<Reverse>
 {
 public:
-  using Timer<Pom>::Timer;
-  Pom(std::atomic_bool &stop, const SuitableTime auto &Goal) : Timer<Pom>(stop, Goal)
+  using Timer<Reverse>::Timer;
+  Reverse(std::atomic_bool &stop, const SuitableTime auto &Goal) : Timer<Reverse>(stop, Goal)
   {
     this->setDelay(500);
     this->setSleep(250);
   }
 };
+
 class GoalTimer
 {
 
