@@ -20,6 +20,42 @@
 #include "../timer.h"
 #include <ncurses.h>
 
+constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
+constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
+constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
+
+class PomodoroTimer : public Li::Timer<PomodoroTimer>
+{
+private:
+  void run(Li::Literals::TimeValue auto Goal)
+  {
+    this->setGoal(Goal);
+    this->ResetTime();
+    this->RunTimer();
+  }
+public:
+  using Timer<PomodoroTimer>::Timer;
+  PomodoroTimer(std::atomic_bool &stop, const Li::Literals::TimeValue auto &Goal) : Timer<PomodoroTimer>(stop, Goal)
+  {
+    this->setDelay(100);
+    this->setSleep(50);
+  }
+
+  void RunPomo(Li::Literals::TimeValue auto const Goal = POMODORO_TIME)
+  {
+    this->run(Goal);
+  }
+
+  void RunShortBreak(Li::Literals::TimeValue auto const Goal = SHORT_BREAK_TIME)
+  {
+    this->run(Goal);
+  }
+
+  void RunBigBreak(Li::Literals::TimeValue auto const Goal = BIG_BREAK_TIME)
+  {
+    this->run(Goal);
+  }
+};
 
 WINDOW *w;
 
@@ -69,7 +105,7 @@ int main()
 #ifdef TEST_NEW_TIMER
   // TEST
   std::atomic_bool stop = false;
-  Li::Reverse bla(stop, 1000*3);
+  PomodoroTimer bla(stop, 1000*3);
   bla.RunTimer();
   bla.Pause();
   std::cout << "PAUSED; CONTINUE" << std::endl;
@@ -78,11 +114,10 @@ int main()
 
   std::cin >> testans;
   std::cout << "RUNNING RESUME" << std::endl;
+  bla.setTimeLeft(1000*1);
   bla.Resume();
   bla.Pause();
-  std::cout << "PAUSED; CONTINUE" << std::endl;
-  std::cin >> testans;
-  std::cout << "DONE RESUME" << std::endl;
+  std::cout << "DONE RESUME&PAUSE; CONTINUE" << std::endl;
 
   std::cin >> testans;
 
@@ -156,7 +191,6 @@ int main()
     else if(c == ERR)
     {
       // got no new data this run.
-      mvprintw(3, 12, "GOT NOTHING");
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
