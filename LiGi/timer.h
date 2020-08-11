@@ -130,12 +130,26 @@ public:
     u_c.ResetTime();
   }
 
+  void Resume()
+  {
+    u_.stopper = false;
+    // prevent deadlock - by decreasing `time_left` in RunTimer
+    //it's possible we overflow on the lower
+
+    // spectrum.
+    if(u_c.time_left <= 0 || u_c.time_left == UINT64_MAX)
+    {
+      u_.time_left = u_c.goal;
+    }
+    u_.RunTimer();
+  }
+
   void RunTimer()
   {
     auto t_start = std::chrono::high_resolution_clock::now();
     std::chrono::milliseconds t_delay(u_c.delay);
 
-    while(!static_cast<const T*>(this)->stopper)
+    while(!u_c.stopper)
     {
       std::this_thread::sleep_for(
             std::chrono::milliseconds(u_c.sleep));
@@ -147,8 +161,8 @@ public:
       if(t_delay <= t_elapsed)
       {
         t_start = t_now;
-        // @TODO: this->time_left = this->time_left - t_elapsed
         u_.time_left = u_.time_left - t_elapsed.count();
+
         if(u_c.time_left <= 0 || u_c.time_left == UINT64_MAX)
           break; // we done!
       }
