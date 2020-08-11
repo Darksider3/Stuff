@@ -42,6 +42,8 @@ template<class T>
 class Timer
 {
 private:
+  T& u_ = static_cast<T&>(*this);
+  const T& u_c = static_cast<const T&>(*this);
   /**
    * @brief stopper atomic stopping variable to control flow
    */
@@ -69,60 +71,74 @@ private:
 public:
   void setTimeLeft(const SuitableTime auto &set)
   {
-    static_cast<T*>(this)->time_left = set;
-  }
-
-  SuitableTime auto getTimeLeft()
-  {
-    return static_cast<const T*>(this)->time_left;
+    u_.time_left = set;
   }
 
   void setDelay(const SuitableTime auto &set)
   {
-    static_cast<T*>(this)->delay = set;
+    u_.delay = set;
   }
 
   void setSleep(const SuitableTime auto &set)
   {
-    static_cast<T*>(this)->sleep = set;
-  }
-
-  SuitableTime auto getGoal()
-  {
-    return static_cast<T*>(this)->goal;
+    u_.sleep = set;
   }
 
   void setGoal(SuitableTime auto Goal)
   {
-    static_cast<T*>(this)->goal = Goal;
+    u_.goal = Goal;
+  }
+
+  SuitableTime auto getTimeLeft()
+  {
+    return u_c.time_left;
+  }
+  SuitableTime auto getGoal()
+  {
+    return u_c.goal;
+  }
+
+  SuitableTime auto getDelay()
+  {
+    return u_c.delay;
+  }
+
+  SuitableTime auto getSleep()
+  {
+    return u_c.sleep;
+  }
+
+  std::atomic_bool &getStopper()
+  {
+    return u_c.stopper;
   }
 
   void Pause()
   {
-    static_cast<T*>(this)->stopper = true;
+    u_.stopper = true;
   }
 
   void ResetTime()
   {
-    static_cast<T*>(this)->time_left = static_cast<T*>(this)->goal;
+    u_.time_left = u_c.goal;
   }
 
   void Stop()
   {
-    static_cast<T*>(this)->stopper = true;
-    static_cast<T*>(this)->Pause();
-    static_cast<T*>(this)->ResetTime();
+    u_.stopper = true;
+    u_c.Pause();
+    u_c.ResetTime();
   }
 
   void RunTimer()
   {
     auto t_start = std::chrono::high_resolution_clock::now();
-    std::chrono::milliseconds t_delay(static_cast<const T*>(this)->delay);
+    std::chrono::milliseconds t_delay(u_c.delay);
 
     while(!static_cast<const T*>(this)->stopper)
     {
       std::this_thread::sleep_for(
-            std::chrono::milliseconds(static_cast<const T*>(this)->sleep));
+            std::chrono::milliseconds(u_c.sleep));
 
       auto t_now = std::chrono::high_resolution_clock::now();
 
@@ -132,8 +148,8 @@ public:
       {
         t_start = t_now;
         // @TODO: this->time_left = this->time_left - t_elapsed
-        static_cast<T*>(this)->time_left = static_cast<T*>(this)->time_left - t_elapsed.count();
-        if(static_cast<T*>(this)->time_left <= 0 || static_cast<T*>(this)->time_left == UINT64_MAX)
+        u_.time_left = u_.time_left - t_elapsed.count();
+        if(u_c.time_left <= 0 || u_c.time_left == UINT64_MAX)
           break; // we done!
       }
     }
