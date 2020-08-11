@@ -20,8 +20,6 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#define DEFAULT_MS 3000
-
 #include <chrono>
 #include <thread>
 #include <atomic>
@@ -34,9 +32,15 @@
 namespace Li
 {
 
-using namespace std::literals;
+namespace Literals {
+
 template<class T>
-concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
+//concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
+concept TimeValue  = requires(T a) {
+      std::is_integral<T>::value && std::is_arithmetic<T>::value;
+    };
+}
+using namespace std::literals;
 
 template<class T>
 class Timer
@@ -69,41 +73,41 @@ private:
   uint64_t sleep = 20;
 
 public:
-  void setTimeLeft(const SuitableTime auto &set)
+  void setTimeLeft(const Literals::TimeValue auto &set)
   {
     u_.time_left = set;
   }
 
-  void setDelay(const SuitableTime auto &set)
+  void setDelay(const Literals::TimeValue auto &set)
   {
     u_.delay = set;
   }
 
-  void setSleep(const SuitableTime auto &set)
+  void setSleep(const Literals::TimeValue auto &set)
   {
     u_.sleep = set;
   }
 
-  void setGoal(SuitableTime auto Goal)
+  void setGoal(Literals::TimeValue auto Goal)
   {
     u_.goal = Goal;
   }
 
-  SuitableTime auto getTimeLeft() const
+  Literals::TimeValue auto getTimeLeft() const
   {
     return u_c.time_left;
   }
-  SuitableTime auto getGoal() const
+  Literals::TimeValue auto getGoal() const
   {
     return u_c.goal;
   }
 
-  SuitableTime auto getDelay() const
+  Literals::TimeValue auto getDelay() const
   {
     return u_c.delay;
   }
 
-  SuitableTime auto getSleep() const
+  Literals::TimeValue auto getSleep() const
   {
     return u_c.sleep;
   }
@@ -146,7 +150,7 @@ public:
 
   void RunTimer()
   {
-    auto t_start = std::chrono::high_resolution_clock::now();
+    auto t_start = std::chrono::steady_clock::now();
     std::chrono::milliseconds t_delay(u_c.delay);
 
     while(!u_c.stopper)
@@ -154,7 +158,7 @@ public:
       std::this_thread::sleep_for(
             std::chrono::milliseconds(u_c.sleep));
 
-      auto t_now = std::chrono::high_resolution_clock::now();
+      auto t_now = std::chrono::steady_clock::now();
 
       std::chrono::milliseconds t_elapsed =
           std::chrono::duration_cast<std::chrono::milliseconds>(t_now - t_start);
@@ -169,21 +173,10 @@ public:
     }
     return;
   }
-  Timer(std::atomic_bool &stop, const SuitableTime auto &Goal) :
+  Timer(std::atomic_bool &stop, const Literals::TimeValue auto &Goal) :
     stopper(stop), goal(Goal), time_left(Goal){}
 
   virtual ~Timer() = default;
-};
-
-class Reverse : public Timer<Reverse>
-{
-public:
-  using Timer<Reverse>::Timer;
-  Reverse(std::atomic_bool &stop, const SuitableTime auto &Goal) : Timer<Reverse>(stop, Goal)
-  {
-    this->setDelay(500);
-    this->setSleep(250);
-  }
 };
 
 class GoalTimer
@@ -209,7 +202,7 @@ public:
     stop(stopper), func(f)
   {
     this->elapser = 0;
-    this->goal = DEFAULT_MS;
+    this->goal = 3000;
   }
 
   GoalTimer(std::atomic_bool &stopper, void (*f)(uint64_t const&),
