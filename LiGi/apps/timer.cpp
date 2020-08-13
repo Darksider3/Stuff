@@ -18,6 +18,7 @@
 
 
 #include "../timer.h"
+#include "../TimerTools.h"
 #include <ncurses.h>
 
 constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
@@ -54,6 +55,13 @@ public:
   void RunBigBreak(Li::Literals::TimeValue auto const Goal = BIG_BREAK_TIME)
   {
     this->run(Goal);
+  }
+
+  const std::string getTimeStr() const noexcept
+  {
+    namespace Format = Li::TimerTools::Format;
+    Li::Literals::TimeValue  auto t = this->getTimeLeft();
+    return Format::getMinutes(t)+":"+Format::getSeconds(t);
   }
 };
 
@@ -115,6 +123,7 @@ int main()
   std::cin >> testans;
   std::cout << "RUNNING RESUME" << std::endl;
   bla.setTimeLeft(1000*1);
+  std::cout << bla.getTimeStr() << "\n";
   bla.Resume();
   bla.Pause();
   std::cout << "DONE RESUME&PAUSE; CONTINUE" << std::endl;
