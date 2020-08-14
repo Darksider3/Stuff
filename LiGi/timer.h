@@ -177,6 +177,17 @@ public:
     stopper(stop), goal(Goal), time_left(Goal){}
 
   virtual ~Timer() = default;
+
+  // Copy Policy - disable
+  // It does no make sense at all to allow these. The timers have no single benefit of it
+  Timer &operator=(const Timer& rhs) = delete;
+  Timer (const Timer& src) = delete;
+
+  // Move Policy - disable
+  // again, no benefit
+
+  Timer &operator=(Timer&& rhs) = delete;
+  Timer (const Timer&& src) = delete;
 };
 
 class GoalTimer
