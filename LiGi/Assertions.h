@@ -14,4 +14,7 @@ __attribute__((noreturn)) void __assertion_failed(const char* msg, const char* f
 #    define msgassert(expr, msg) void()
 #    define ASSERT_NOT_REACHED() void()
 #endif
+#define CRPT_DEF(CLAZZ) \
+  CLAZZ &u_ = static_cast<CLAZZ&>(*this); \
+  const CLAZZ &u_c = static_cast<const CLAZZ&>(*this);
 #endif // ASSERTIONS_H
