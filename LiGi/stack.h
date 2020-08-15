@@ -15,6 +15,7 @@ public:
   const T* top() const;
   void pushd(T* Node);
   void popd();
+  T *pop();
   size_t height(){return this->size();}
 };
 template<typename T>
@@ -39,6 +40,14 @@ template<typename T>
 void Stack<T>::pushd(T* Node)
 {
   this->append(Node);
+}
+
+template<typename T>
+T *Stack<T>::pop()
+{
+  T *ret = this->top;
+  this->popd();
+  return ret;
 }
 
 template<typename T>
