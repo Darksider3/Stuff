@@ -37,7 +37,7 @@ namespace Literals {
 template<class T>
 //concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
 concept TimeValue  = requires(T a) {
-      std::is_integral<T>::value && std::is_arithmetic<T>::value;
+      std::is_integral<T>::value && std::is_arithmetic<T>::value && std::is_unsigned<T>::value;
     };
 }
 using namespace std::literals;
@@ -65,7 +65,7 @@ private:
   /**
    * @brief elapsed Stores, after delay and sleep, the already slept/waited time
    */
-  uint64_t time_left;
+  std::atomic_uint64_t time_left;
 
   /**
    * @brief sleep How long we sleep between checks
@@ -95,7 +95,8 @@ public:
 
   Literals::TimeValue auto getTimeLeft() const
   {
-    return u_c.time_left;
+    uint64_t val = u_c.time_left;
+    return val;
   }
   Literals::TimeValue auto getGoal() const
   {
