@@ -150,13 +150,13 @@ int main()
   auto set_red = [&]() {
     color_set(2, 0);
   };
+#define TEST_NEW_TIMER
 #ifdef TEST_NEW_TIMER
   // TEST
-  std::atomic_bool stop = false;
+  std::atomic_bool stop = false, globalStop = false;
   PomodoroTimer bla(stop, 1000*3);
-  //std::atomic_bool stop = false, globalStop = false;
-  //std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
-  /*std::deque<std::function<void()>> FunctionList;
+  /*std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
+  std::deque<std::function<void()>> FunctionList;
   auto Threading = [&](){
     while(!globalStop)
     {
@@ -173,16 +173,19 @@ int main()
         std::cout << "dropped in threading" << "\n";
       }
     }
+    return;
   };
 
   auto InsertFunc = [&](std::function<void()> func)
   {
     FunctionList.emplace_back(func);
-  };*/
+  };
 
-  //std::thread ThreadingThingy(Threading);
-  //InsertFunc(std::bind(&PomodoroTimer::Resume, std::ref(bla)));
-  //globalStop = true;
+  std::thread ThreadingThingy(Threading);
+  InsertFunc(std::bind(&PomodoroTimer::Resume, std::ref(bla)));
+  globalStop = true;
+  ThreadingThingy.join();*/
+
   bla.Resume();
   bla.Pause();
   std::cout << "PAUSED; CONTINUE" << std::endl;
@@ -198,7 +201,6 @@ int main()
   std::cout << "DONE RESUME&PAUSE; CONTINUE" << std::endl;
 
   std::cin >> testans;
-
   // \TEST
 #endif
   init();
