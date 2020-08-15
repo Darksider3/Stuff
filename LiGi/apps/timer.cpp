@@ -26,55 +26,18 @@ constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
 constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
 constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
 
-template<class T>
-class ncurses
-{
-private:
-  WINDOW *w;
-  CRPT_DEF(T) // u_, u_c
-
-public:
-  ncurses()
-  {
-    u_->w = initscr();
-  }
-};
-
-class ncursesWindow
-{
-private:
-  WINDOW *w;
-
-public:
-  ncursesWindow()
-  {
-    this->w = initscr();
-  }
-
-  static void quit()
-  {
-    endwin();
-  }
-
-  void refresh()
-  {
-    wrefresh(this->w);
-  }
-
-  void clear()
-  {
-    werase(this->w);
-  }
-
-  ~ncursesWindow()
-  {
-    this->quit();
-  }
-};
-
 class PomodoroTimer : public Li::Timer<PomodoroTimer>
 {
 private:
+  enum State
+  {
+    POMODORO,
+    SHORT,
+    LONG,
+    PAUSE,
+    STOP
+  } m_state = State::PAUSE;
+
   void run(Li::Literals::TimeValue auto Goal)
   {
     this->setGoal(Goal);
@@ -91,18 +54,29 @@ public:
 
   void RunPomo(Li::Literals::TimeValue auto const Goal = POMODORO_TIME)
   {
+    this->m_state = State::POMODORO;
     this->run(Goal);
   }
 
   void RunShortBreak(Li::Literals::TimeValue auto const Goal = SHORT_BREAK_TIME)
   {
+    this->m_state = State::SHORT;
     this->run(Goal);
   }
 
   void RunBigBreak(Li::Literals::TimeValue auto const Goal = BIG_BREAK_TIME)
   {
+    this->m_state = State::LONG;
     this->run(Goal);
   }
+
+  void RunPause()
+  {
+    this->m_state = State::PAUSE;
+    this->run(99999);
+  }
+
+  State getState() { return this->m_state;}
 
   const std::string getTimeStr() const noexcept
   {
@@ -161,7 +135,7 @@ int main()
   // TEST
   std::atomic_bool stop = false;
   PomodoroTimer bla(stop, 1000*3);
-  bla.RunTimer();
+  bla.Resume();
   bla.Pause();
   std::cout << "PAUSED; CONTINUE" << std::endl;
 
