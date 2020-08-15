@@ -24,6 +24,8 @@
 #include <deque>
 #include <functional>
 
+#include "../stack.h"
+
 constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
 constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
 constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
@@ -139,6 +141,23 @@ void ViewMode(Li::STATE const &state)
 
 }
 
+template<class FunctorT>
+struct entry : Li::LLNode<entry<FunctorT>>
+{
+  std::function<FunctorT> functor;
+};
+template<class FunctorT>
+class FunctorStack : public Li::Stack<entry<FunctorT>>
+{
+public:
+  void append(std::function<FunctorT> funct)
+  {
+    auto bla = std::make_unique<entry<FunctorT>>();
+    bla->functor = funct;
+    this->pushd(bla.get());
+  }
+};
+
 int main()
 {
 
@@ -155,8 +174,14 @@ int main()
   // TEST
   std::atomic_bool stop = false, globalStop = false;
   PomodoroTimer bla(stop, 1000*3);
-  /*std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
+  std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
   std::deque<std::function<void()>> FunctionList;
+
+/*
+  FunctorStack<void()> testers;
+  testers.append(running);
+
+
   auto Threading = [&](){
     while(!globalStop)
     {
@@ -166,6 +191,7 @@ int main()
       }
       else
       {
+        //testers.top()->functor();
         std::cout << "in threading" << "\n";
         std::function<void()> &thing = FunctionList.back();
         thing();
@@ -184,8 +210,8 @@ int main()
   std::thread ThreadingThingy(Threading);
   InsertFunc(std::bind(&PomodoroTimer::Resume, std::ref(bla)));
   globalStop = true;
-  ThreadingThingy.join();*/
-
+  ThreadingThingy.join();
+*/
   bla.Resume();
   bla.Pause();
   std::cout << "PAUSED; CONTINUE" << std::endl;
