@@ -21,6 +21,8 @@
 #include "../TimerTools.h"
 #include "../Assertions.h"
 #include <ncurses.h>
+#include <deque>
+#include <functional>
 
 constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
 constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
@@ -148,11 +150,39 @@ int main()
   auto set_red = [&]() {
     color_set(2, 0);
   };
-
 #ifdef TEST_NEW_TIMER
   // TEST
   std::atomic_bool stop = false;
   PomodoroTimer bla(stop, 1000*3);
+  //std::atomic_bool stop = false, globalStop = false;
+  //std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
+  /*std::deque<std::function<void()>> FunctionList;
+  auto Threading = [&](){
+    while(!globalStop)
+    {
+      if(FunctionList.empty())
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      }
+      else
+      {
+        std::cout << "in threading" << "\n";
+        std::function<void()> &thing = FunctionList.back();
+        thing();
+        FunctionList.pop_back();
+        std::cout << "dropped in threading" << "\n";
+      }
+    }
+  };
+
+  auto InsertFunc = [&](std::function<void()> func)
+  {
+    FunctionList.emplace_back(func);
+  };*/
+
+  //std::thread ThreadingThingy(Threading);
+  //InsertFunc(std::bind(&PomodoroTimer::Resume, std::ref(bla)));
+  //globalStop = true;
   bla.Resume();
   bla.Pause();
   std::cout << "PAUSED; CONTINUE" << std::endl;
