@@ -182,7 +182,7 @@ int main()
 
   Li::Pomodoro Timer(State);
 
-  std::thread PomoThread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::POMO);
+  std::thread PomoThread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::POMO);
 
   int c;
   while(true)
@@ -205,7 +205,7 @@ int main()
     {
       Timer.stop = true;
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::PAUSE);
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::PAUSE);
       erase();
       ViewRunningMenue();
       ViewMode(State);
@@ -215,27 +215,27 @@ int main()
     {
       Timer.stop = true;
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::RESUME);
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::RESUME);
     }
     else if(c == 'o')
     {
       Timer.stop = true;
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::POMO);
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::POMO);
       erase();
     }
     else if(c == 'b')
     {
       Timer.stop = true;
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::BREAK);
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::BREAK);
       erase();
     }
     else if(c == 'g')
     {
       Timer.stop = true;
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, &Timer, dummyFunc, Li::STATE::BIGBREAK);
+      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::BIGBREAK);
       erase();
     }
     else if(c == ERR)
