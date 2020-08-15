@@ -98,6 +98,13 @@ void quitter()
   endwin();
 }
 
+void init_colors()
+{
+  start_color();
+  init_pair(1, COLOR_WHITE, COLOR_BLACK);
+  init_pair(2, COLOR_RED, COLOR_BLACK);
+}
+
 void init()
 {
   w = initscr();
@@ -105,6 +112,7 @@ void init()
   noecho();
   nodelay(w, true);
   atexit(quitter);
+  init_colors();
   curs_set(0);
 }
 
@@ -131,6 +139,16 @@ void ViewMode(Li::STATE const &state)
 
 int main()
 {
+
+  auto set_white = [&]() {
+    color_set(1,0);
+  };
+
+
+  auto set_red = [&]() {
+    color_set(2, 0);
+  };
+
 #ifdef TEST_NEW_TIMER
   // TEST
   std::atomic_bool stop = false;
@@ -170,7 +188,9 @@ int main()
   while(true)
   {
     c = getch();
-      mvprintw(2, 5, Li::TimerTools::Format::getFullTimeString(State.elapsed).c_str());
+    set_red();
+    mvprintw(2, 5, Li::TimerTools::Format::getFullTimeString(State.elapsed).c_str());
+    set_white();
     ViewRunningMenue();
     ViewMode(State);
     refresh();
