@@ -15,8 +15,6 @@
  ** You should have received a copy of the GNU General Public License
  ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
-
-
 #ifndef TIMER_H
 #define TIMER_H
 
@@ -31,8 +29,8 @@
 
 namespace Li
 {
-
-namespace Literals {
+namespace Literals
+{
 
 template<class T>
 //concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
@@ -40,6 +38,7 @@ concept TimeValue  = requires(T a) {
       std::is_integral<T>::value && std::is_arithmetic<T>::value && std::is_unsigned<T>::value;
     };
 }
+
 using namespace std::literals;
 
 template<class T>
@@ -123,6 +122,11 @@ public:
     u_.stopper = true;
   }
 
+  void Unpause()
+  {
+    u_.stopper = false;
+  }
+
   void ResetTime()
   {
     u_.time_left = u_c.goal;
@@ -131,8 +135,8 @@ public:
   void Stop()
   {
     u_.stopper = true;
-    u_c.Pause();
-    u_c.ResetTime();
+    u_.Pause();
+    u_.ResetTime();
   }
 
   void Resume()
