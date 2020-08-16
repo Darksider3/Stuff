@@ -33,6 +33,15 @@ constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
 class PomodoroTimer : public Li::Timer<PomodoroTimer>
 {
 private:
+
+  void run(Li::Literals::TimeValue auto Goal)
+  {
+    this->setGoal(Goal);
+    this->ResetTime();
+    this->RunTimer();
+  }
+public:
+
   enum State
   {
     POMODORO,
@@ -42,42 +51,30 @@ private:
     STOP
   } m_state = State::PAUSE;
 
-  void run(Li::Literals::TimeValue auto Goal)
-  {
-    this->setGoal(Goal);
-    this->ResetTime();
-    this->RunTimer();
-  }
-public:
   using Timer<PomodoroTimer>::Timer;
-  PomodoroTimer(std::atomic_bool &stop, const Li::Literals::TimeValue auto &Goal) : Timer<PomodoroTimer>(stop, Goal)
-  {
-    this->setDelay(100);
-    this->setSleep(50);
-  }
 
-  void RunPomo(Li::Literals::TimeValue auto const Goal = POMODORO_TIME)
+  void RunPomo(uint64_t Goal = POMODORO_TIME)
   {
     this->m_state = State::POMODORO;
     this->run(Goal);
   }
 
-  void RunShortBreak(Li::Literals::TimeValue auto const Goal = SHORT_BREAK_TIME)
+  void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME)
   {
     this->m_state = State::SHORT;
     this->run(Goal);
   }
 
-  void RunBigBreak(Li::Literals::TimeValue auto const Goal = BIG_BREAK_TIME)
+  void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME)
   {
     this->m_state = State::LONG;
     this->run(Goal);
   }
 
-  void RunPause()
+  void RunPause(uint64_t Goal = 999999999999)
   {
     this->m_state = State::PAUSE;
-    this->run(99999);
+    this->run(Goal);
   }
 
   State getState() { return this->m_state;}
@@ -126,17 +123,17 @@ void ViewRunningMenue()
   mvaddstr(10, 2, "Press b to take a break");
 }
 
-void ViewMode(Li::STATE const &state)
+void ViewMode(PomodoroTimer::State const &state)
 {
   using Li::STATE;
 
-  if(state.mode == STATE::BREAK)
+  if(state == PomodoroTimer::SHORT)
     mvaddstr(5, 1, "Taking a break");
-  else if(state.mode == STATE::BIGBREAK)
+  else if(state == PomodoroTimer::LONG)
     mvaddstr(5, 1, "Taking a big break!");
-  else if(state.mode == STATE::POMO)
+  else if(state == PomodoroTimer::POMODORO)
     mvaddstr(5, 1, "Working on a Pomodoro!");
-  else if(state.mode == STATE::PAUSE)
+  else if(state  == PomodoroTimer::PAUSE || state == PomodoroTimer::STOP)
     mvaddstr(5, 1, "Taking a manual pause!");
 
 }
@@ -170,14 +167,16 @@ int main()
     color_set(2, 0);
   };
 #define TEST_NEW_TIMER
+#undef TEST_NEW_TIMER
 #ifdef TEST_NEW_TIMER
   // TEST
   std::atomic_bool stop = false, globalStop = false;
   PomodoroTimer bla(stop, 1000*3);
+  /*
   std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
   std::deque<std::function<void()>> FunctionList;
 
-/*
+
   FunctorStack<void()> testers;
   testers.append(running);
 
@@ -188,15 +187,15 @@ int main()
       if(FunctionList.empty())
       {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        continue;
       }
       else
       {
         //testers.top()->functor();
-        std::cout << "in threading" << "\n";
         std::function<void()> &thing = FunctionList.back();
         thing();
         FunctionList.pop_back();
-        std::cout << "dropped in threading" << "\n";
+        continue;
       }
     }
     return;
@@ -234,66 +233,58 @@ int main()
   //int x, y;
   Li::STATE State;
 
-  State.pomodoro_time = 1000 * 60 * 30;
-  State.short_break_time = 1000 * 60 * 6;
-  State.big_break_time = 1000 * 60 * 18;
+  std::atomic_bool stop = false;
 
-  Li::Pomodoro Timer(State);
 
-  std::thread PomoThread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::POMO);
+  PomodoroTimer Timer{stop, POMODORO_TIME};
 
+  std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
   int c;
   while(true)
   {
     c = getch();
     set_red();
-    mvprintw(2, 5, Li::TimerTools::Format::getFullTimeString(State.elapsed).c_str());
+    mvprintw(2, 5, Li::TimerTools::Format::getFullTimeString(Timer.getTimeLeft()).c_str());
     set_white();
     ViewRunningMenue();
-    ViewMode(State);
+    ViewMode(Timer.getState());
     refresh();
     if(c == 'q')
     {
-      Timer.stop = true;
+      Timer.Pause();
       PomoThread.join();
       quitter();
       return(0);
     }
-    else if(c == 'p' && !Timer.isPaused())
+    else if(c == 'p' && Timer.getState() != PomodoroTimer::State::STOP)
     {
-      Timer.stop = true;
+      Timer.Pause();
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::PAUSE);
-      erase();
-      ViewRunningMenue();
-      ViewMode(State);
-      refresh();
-    }
-    else if(c == 'p' && Timer.isPaused())
-    {
-      Timer.stop = true;
-      PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::RESUME);
+      PomoThread = std::thread(&PomodoroTimer::RunPause, std::ref(Timer), 999999999);
+      Timer.Unpause();
     }
     else if(c == 'o')
     {
-      Timer.stop = true;
+      Timer.Pause();
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::POMO);
+      PomoThread = std::thread(&PomodoroTimer::RunPomo, std::ref(Timer),  POMODORO_TIME);
+      Timer.Unpause();
       erase();
     }
     else if(c == 'b')
     {
-      Timer.stop = true;
+      Timer.Pause();
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::BREAK);
+      PomoThread = std::thread(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME);
+      Timer.Unpause();
       erase();
     }
     else if(c == 'g')
     {
-      Timer.stop = true;
+      Timer.Pause();
       PomoThread.join();
-      PomoThread = std::thread(&Li::Pomodoro::RunPomo, std::ref(Timer), dummyFunc, Li::STATE::BIGBREAK);
+      PomoThread = std::thread(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME);
+      Timer.Unpause();
       erase();
     }
     else if(c == ERR)
