@@ -89,11 +89,6 @@ public:
 
 WINDOW *w;
 
-void dummyFunc(uint64_t const &tt, Li::STATE const &state)
-{
-  return;
-}
-
 void quitter()
 {
   endwin();
