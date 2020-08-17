@@ -146,7 +146,7 @@ public:
   {
     auto bla = std::make_unique<entry<FunctorT>>();
     bla->functor = funct;
-    this->pushd(bla.get());
+    this->pushd(bla);
   }
 };
 
@@ -162,11 +162,9 @@ int main()
     color_set(2, 0);
   };
 #define TEST_NEW_TIMER
-#undef TEST_NEW_TIMER
 #ifdef TEST_NEW_TIMER
   // TEST
   std::atomic_bool stop = false, globalStop = false;
-  PomodoroTimer bla(stop, 1000*3);
   /*
   std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
   std::deque<std::function<void()>> FunctionList;
@@ -206,30 +204,11 @@ int main()
   globalStop = true;
   ThreadingThingy.join();
 */
-  bla.Resume();
-  bla.Pause();
-  std::cout << "PAUSED; CONTINUE" << std::endl;
-
-  std::string testans = "";
-
-  std::cin >> testans;
-  std::cout << "RUNNING RESUME" << std::endl;
-  bla.setTimeLeft(1000*1);
-  std::cout << bla.getTimeStr() << "\n";
-  bla.Resume();
-  bla.Pause();
-  std::cout << "DONE RESUME&PAUSE; CONTINUE" << std::endl;
-
-  std::cin >> testans;
-  // \TEST
 #endif
   init();
 
   //int x, y;
   Li::STATE State;
-
-  std::atomic_bool stop = false;
-
 
   PomodoroTimer Timer{stop, POMODORO_TIME};
 
