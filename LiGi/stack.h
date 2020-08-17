@@ -14,6 +14,7 @@ public:
   T* top();
   const T* top() const;
   void pushd(T* Node);
+  void pushd(std::unique_ptr<T>);
   void popd();
   T *pop();
   size_t height(){return this->size();}
@@ -40,6 +41,11 @@ template<typename T>
 void Stack<T>::pushd(T* Node)
 {
   this->append(Node);
+}
+template<typename T>
+void Stack<T>::pushd(std::unique_ptr<T> Node)
+{
+  this->pushd(Node.get());
 }
 
 template<typename T>
