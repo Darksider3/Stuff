@@ -96,6 +96,17 @@ int main(int argc, char** argv)
   createBoxesAround({mainw, topsubw, midsubw});
 
   getch();
+
+  werase(mainw);
+  mvwprintw(mainw, 1,1, "Oh noe! Something changed!");
+  mvwhline(mainw,2,1, chtype{'='}, COLS-1);
+  box(mainw, 0,0);
+  wrefresh(mainw);
+  refresh();
+
+  getch();
+
+  delwin(topsubw);
   delwin(midsubw);
   delwin(mainw);
 
