@@ -86,6 +86,22 @@ public:
     return Format::getMinutes(t)+":"+Format::getSeconds(t);
   }
 };
+template<class FunctorT>
+struct entry : Li::LLNode<entry<FunctorT>>
+{
+  std::function<FunctorT> functor;
+};
+template<class FunctorT>
+class FunctorStack : public Li::Stack<entry<FunctorT>>
+{
+public:
+  void append(std::function<FunctorT> funct)
+  {
+    auto bla = std::make_unique<entry<FunctorT>>();
+    bla->functor = funct;
+    this->pushd(bla);
+  }
+};
 
 WINDOW *w;
 
@@ -112,6 +128,33 @@ void init()
   curs_set(0);
 }
 
+//general Layout Idea
+/*
+#C92020 <- Header Standard coloring(darkish red)
+Timer background: #03A4BC, Timer Foreground: Black
+
++-----------------+------------+----------+
+| (E)dit Settings | Statistics | ProgName |
++-----------------+------------+----------+
+|                                         |
+|                 TIMER                   |
+|    -> MODE(Pause, Long, Short, Pomo)    |
+|                                         |
++------------------+----------------------+
+| Shortcuts:       | Short Statistics, e.g|
+|  -> (B)reak      |                      |
+|  -> (L)ong Break |  X Pomodoros this run|
+|  -> (P)ause      |  X breaks till long  |
+|  -> P(o)modoro   |  X Time estimate till|
+|  -> (C)lose      |    done.             |
+|                  |  X long breaks taken |
++------------------+----------------------+
+
+*/
+void ViewTitleBar()
+{
+  mvaddstr(1, 1, "(E)dit settings");
+}
 void ViewRunningMenue()
 {
   mvaddstr(11, 2, "Press q to exit");
@@ -132,23 +175,6 @@ void ViewMode(PomodoroTimer::State const &state)
     mvaddstr(5, 1, "Taking a manual pause!");
 
 }
-
-template<class FunctorT>
-struct entry : Li::LLNode<entry<FunctorT>>
-{
-  std::function<FunctorT> functor;
-};
-template<class FunctorT>
-class FunctorStack : public Li::Stack<entry<FunctorT>>
-{
-public:
-  void append(std::function<FunctorT> funct)
-  {
-    auto bla = std::make_unique<entry<FunctorT>>();
-    bla->functor = funct;
-    this->pushd(bla);
-  }
-};
 
 int main()
 {
@@ -212,15 +238,25 @@ int main()
 
   PomodoroTimer Timer{stop, POMODORO_TIME};
 
+  auto EraseStateChangeRepaint = [&](){
+    ViewRunningMenue();
+    ViewTitleBar();
+  };
+
+  auto InitialPaint = [&] {
+    EraseStateChangeRepaint();
+  };
+
+
   std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
+  InitialPaint();
   int c;
   while(true)
   {
     c = getch();
     set_red();
-    mvprintw(2, 5, Li::TimerTools::Format::getFullTimeString(Timer.getTimeLeft()).c_str());
+    mvprintw(3, 5, Li::TimerTools::Format::getFullTimeString(Timer.getTimeLeft()).c_str());
     set_white();
-    ViewRunningMenue();
     ViewMode(Timer.getState());
     refresh();
     if(c == 'q')
@@ -236,6 +272,7 @@ int main()
       PomoThread.join();
       PomoThread = std::thread(&PomodoroTimer::RunPause, std::ref(Timer), 999999999);
       Timer.Unpause();
+      EraseStateChangeRepaint();
     }
     else if(c == 'o')
     {
@@ -243,7 +280,7 @@ int main()
       PomoThread.join();
       PomoThread = std::thread(&PomodoroTimer::RunPomo, std::ref(Timer),  POMODORO_TIME);
       Timer.Unpause();
-      erase();
+      EraseStateChangeRepaint();
     }
     else if(c == 'b')
     {
@@ -251,7 +288,7 @@ int main()
       PomoThread.join();
       PomoThread = std::thread(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME);
       Timer.Unpause();
-      erase();
+      EraseStateChangeRepaint();
     }
     else if(c == 'g')
     {
@@ -259,7 +296,7 @@ int main()
       PomoThread.join();
       PomoThread = std::thread(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME);
       Timer.Unpause();
-      erase();
+      EraseStateChangeRepaint();
     }
     else if(c == ERR)
     {
