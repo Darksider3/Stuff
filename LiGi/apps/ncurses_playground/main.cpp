@@ -95,10 +95,12 @@ int main(int argc, char** argv)
 //  wrefresh(topsubw);
   createBoxesAround({mainw, topsubw, midsubw});
 
+  std::string changedOhNoeExclamationMark = "Oh noe! Something changed!";
+
   getch();
 
   werase(mainw);
-  mvwprintw(mainw, 1,1, "Oh noe! Something changed!");
+  mvwprintw(mainw, 1,(COLS-changedOhNoeExclamationMark.length()) / 2, changedOhNoeExclamationMark.c_str());
   mvwhline(mainw,2,1, chtype{'='}, COLS-1);
   box(mainw, 0,0);
   wrefresh(mainw);
