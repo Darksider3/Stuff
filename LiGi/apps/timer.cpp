@@ -73,8 +73,10 @@ public:
 
   void RunPause(uint64_t Goal = 999999999999)
   {
+    uint64_t oldTimeLeft = this->getTimeLeft();
     this->m_state = State::PAUSE;
     this->run(Goal);
+    this->setTimeLeft(oldTimeLeft);
   }
 
   State getState() { return this->m_state;}
@@ -104,22 +106,44 @@ public:
 };
 
 WINDOW *w;
+WINDOW *panelWin;
+WINDOW *timerWin;
+
+int x, y;
 
 void quitter()
 {
+  delwin(w);
   endwin();
 }
 
 void init_colors()
 {
-  start_color();
+  if(start_color() == ERR || !has_colors() || !can_change_color())
+  {
+    std::cerr << "Couldn't setup coloring!" << std::endl;
+    quitter();
+  }
   init_pair(1, COLOR_WHITE, COLOR_BLACK);
   init_pair(2, COLOR_RED, COLOR_BLACK);
 }
 
+void init_windows()
+{
+  if((w = initscr()) == nullptr)
+  {
+    std::cerr << "Error! Couldn't initialise ncurses!" << std::endl;
+    quitter();
+  }
+
+  getmaxyx(w, y, x);
+  panelWin = newwin(1, 1, 0, 0);
+  timerWin = newwin(y-1, x-1, 1, 1);
+}
+
 void init()
 {
-  w = initscr();
+  init_windows();
   cbreak();
   noecho();
   nodelay(w, true);
@@ -243,6 +267,15 @@ int main()
     ViewTitleBar();
   };
 
+  auto EraseSpecificLine =  [&](int Y, int X, WINDOW *win){
+    int oldy, oldx;
+    getyx(win, oldy, oldx);
+    wmove(win, Y, X);
+    wclrtoeol(win);
+    wmove(win, oldy, oldx);
+    wrefresh(win);
+  };
+
   auto InitialPaint = [&] {
     EraseStateChangeRepaint();
   };
@@ -250,13 +283,25 @@ int main()
 
   std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
   InitialPaint();
+  PomodoroTimer::State oldState;
   int c;
   while(true)
   {
     c = getch();
     set_red();
-    mvprintw(3, 5, Li::TimerTools::Format::getFullTimeString(Timer.getTimeLeft()).c_str());
+    if(Timer.getState() != PomodoroTimer::State::PAUSE)
+    {
+      EraseSpecificLine(3, 5, w);
+      mvprintw(3, 5, Li::TimerTools::Format::getFullTimeString(Timer.getTimeLeft()).c_str());
+    }
+    else
+    {
+      EraseSpecificLine(3, 5, w);
+      mvprintw(3, 5, "Paused!");
+    }
     set_white();
+    ViewRunningMenue();
+    ViewTitleBar();
     ViewMode(Timer.getState());
     refresh();
     if(c == 'q')
@@ -266,11 +311,21 @@ int main()
       quitter();
       return(0);
     }
-    else if(c == 'p' && Timer.getState() != PomodoroTimer::State::STOP)
+    else if(c == 'p' && Timer.getState() != PomodoroTimer::State::PAUSE)
     {
+      oldState = Timer.getState();
       Timer.Pause();
       PomoThread.join();
       PomoThread = std::thread(&PomodoroTimer::RunPause, std::ref(Timer), 999999999);
+      Timer.Unpause();
+      EraseStateChangeRepaint();
+    }
+    else if(c == 'p' && Timer.getState() == PomodoroTimer::State::PAUSE)
+    {
+      Timer.Pause();
+      PomoThread.join();
+      PomoThread = std::thread(&PomodoroTimer::Resume, std::ref(Timer));
+      Timer.m_state = oldState;
       Timer.Unpause();
       EraseStateChangeRepaint();
     }
