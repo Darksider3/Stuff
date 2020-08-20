@@ -27,6 +27,8 @@
 
 #include "../stack.h"
 
+#define MIDDLE_X(WIDTH) (COLS-WIDTH)/2
+#define MIDDLE_Y() (LINES)/2
 constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
 constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
 constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
@@ -121,6 +123,7 @@ public:
 WINDOW *w;
 WINDOW *TopPanel;
 WINDOW *MidWin;
+WINDOW *ShortcutWin;
 
 int Fullx, Fully;
 
@@ -152,6 +155,12 @@ void init_windows()
 
   getmaxyx(w, Fully, Fullx);
 
+  if(Fully < 50 || Fullx < 50)
+  {
+    std::cerr << "Sorry, but your window isnt big enough!" << std::endl;
+    exit(ERR);
+  }
+
   if((TopPanel = newwin(3, COLS, 0, 0)) == nullptr)
   {
     std::cerr << "Error! Couldn't intiialise top panel!"  << std::endl;
@@ -161,6 +170,11 @@ void init_windows()
   {
     std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
     exit(ERR);
+  }
+
+  if((ShortcutWin = newwin(10, COLS/2, LINES-10, 0)) == nullptr)
+  {
+    std::cerr << "Error! Couldn't initialise shortcut window!" << std::endl;
   }
   cbreak();
   noecho();
@@ -209,22 +223,31 @@ void ViewTitleBar()
 
 void ViewRunningMenue()
 {
-  mvaddstr(11, 2, "Press q to exit");
-  mvaddstr(10, 2, "Press b to take a break");
+  std::string title = "Shortcuts";
+  box(ShortcutWin, 0, 0);
+  int win_x;
+
+  win_x = getmaxx(ShortcutWin);
+
+  mvwaddstr(ShortcutWin, 0, (win_x/2)-(title.length()-1), title.c_str());
+  mvwaddstr(ShortcutWin, 1, 2, "Press q to exit");
+  mvwaddstr(ShortcutWin, 2, 2, "Press b to take a break");
+  wrefresh(ShortcutWin);
 }
 
 void ViewMode(PomoState const &state)
 {
+  int midy = MIDDLE_Y()+2;
   if(state == PomoState::SHORT)
-    mvaddstr(5, 1, "Taking a break");
+    mvaddstr(midy, MIDDLE_X(14), "Taking a break");
   else if(state == PomoState::LONG)
-    mvaddstr(5, 1, "Taking a big break!");
+    mvaddstr(midy, MIDDLE_X(18), "Taking a big break!");
   else if(state == PomoState::POMODORO)
-    mvaddstr(5, 1, "Working on a Pomodoro!");
+    mvaddstr(midy, MIDDLE_X(22), "Working on a Pomodoro!");
   else if(state  == PomoState::PAUSE)
-    mvaddstr(5, 1, "Taking a manual pause!");
+    mvaddstr(midy, MIDDLE_X(22), "Taking a manual pause!");
   else if(state == PomoState::STOP)
-    mvaddstr(5, 1, "Waiting for input what to run!!");
+    mvaddstr(midy, MIDDLE_X(25), "Waiting for input what to run!!");
 
 }
 
@@ -316,18 +339,18 @@ int main()
     switch(Timer.getState())
     {
       case(PomoState::PAUSE):
-        EraseSpecificLine(w, 3, 5);
-        mvprintw(3, 5, "Paused!");
+        EraseSpecificLine(w, MIDDLE_Y(), MIDDLE_X(7));
+        mvprintw(MIDDLE_Y(), MIDDLE_X(6), "Paused!");
         break;
       case(PomoState::STOP):
-        EraseSpecificLine(w, 3, 5);
-        mvprintw(3, 5, "STOPPED!");
+        EraseSpecificLine(w, MIDDLE_Y(), MIDDLE_X(7));
+        mvprintw(MIDDLE_Y(), MIDDLE_X(7), "STOPPED!");
         break;
       case(PomoState::LONG):
       case(PomoState::SHORT):
       case(PomoState::POMODORO):
-        EraseSpecificLine(w, 3, 5);
-        mvprintw(3, 5, Li::TimerTools::Format::getFullTimeString(
+        EraseSpecificLine(w, MIDDLE_Y(), MIDDLE_X(10));
+        mvprintw(MIDDLE_Y(), MIDDLE_X(8), Li::TimerTools::Format::getFullTimeString(
                  Timer.getTimeLeft<uint64_t>()).c_str());
         break;
       //default:
