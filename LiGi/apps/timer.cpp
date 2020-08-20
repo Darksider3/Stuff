@@ -19,7 +19,6 @@
 
 #include "../timer.h"
 #include "../TimerTools.h"
-#include "../Assertions.h"
 #include <ncurses.h>
 #include <deque>
 #include <functional>
@@ -30,6 +29,15 @@ constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
 constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
 constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
 constexpr uint64_t PAUSE_STOP_VAL = UINT64_MAX-5;
+
+enum PomoState
+{
+  POMODORO,
+  SHORT,
+  LONG,
+  PAUSE,
+  STOP
+} m_state = PomoState::PAUSE;
 
 class PomodoroTimer : public Li::Timer<PomodoroTimer>
 {
@@ -43,53 +51,46 @@ private:
   }
 public:
 
-  enum State
-  {
-    POMODORO,
-    SHORT,
-    LONG,
-    PAUSE,
-    STOP
-  } m_state = State::PAUSE;
 
+  PomoState m_state;
   using Timer<PomodoroTimer>::Timer;
 
   void RunPomo(uint64_t Goal = POMODORO_TIME)
   {
-    this->m_state = State::POMODORO;
+    this->m_state = PomoState::POMODORO;
     this->run(Goal);
-    this->m_state = State::STOP;
+    this->m_state = PomoState::STOP;
   }
 
   void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME)
   {
-    this->m_state = State::SHORT;
+    this->m_state = PomoState::SHORT;
     this->run(Goal);
-    this->m_state = State::STOP;
+    this->m_state = PomoState::STOP;
   }
 
   void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME)
   {
-    this->m_state = State::LONG;
+    this->m_state = PomoState::LONG;
     this->run(Goal);
-    this->m_state = State::STOP;
+    this->m_state = PomoState::STOP;
   }
 
   void RunPause(uint64_t Goal = PAUSE_STOP_VAL)
   {
     uint64_t oldTimeLeft = this->getTimeLeft<uint64_t>();
-    this->m_state = State::PAUSE;
+    this->m_state = PomoState::PAUSE;
     this->run(Goal);
     this->setTimeLeft(oldTimeLeft);
   }
 
   void RunStop(uint64_t Goal = PAUSE_STOP_VAL)
   {
-    this->m_state = State::STOP;
+    this->m_state = PomoState::STOP;
     this->run(Goal);
   }
 
-  State getState() { return this->m_state;}
+  PomoState getState() { return this->m_state;}
 
   const std::string getTimeStr() const noexcept
   {
@@ -195,26 +196,23 @@ void ViewRunningMenue()
   mvaddstr(10, 2, "Press b to take a break");
 }
 
-void ViewMode(PomodoroTimer::State const &state)
+void ViewMode(PomoState const &state)
 {
-  using Li::STATE;
-
-  if(state == PomodoroTimer::SHORT)
+  if(state == PomoState::SHORT)
     mvaddstr(5, 1, "Taking a break");
-  else if(state == PomodoroTimer::LONG)
+  else if(state == PomoState::LONG)
     mvaddstr(5, 1, "Taking a big break!");
-  else if(state == PomodoroTimer::POMODORO)
+  else if(state == PomoState::POMODORO)
     mvaddstr(5, 1, "Working on a Pomodoro!");
-  else if(state  == PomodoroTimer::PAUSE)
+  else if(state  == PomoState::PAUSE)
     mvaddstr(5, 1, "Taking a manual pause!");
-  else if(state == PomodoroTimer::STOP)
+  else if(state == PomoState::STOP)
     mvaddstr(5, 1, "Waiting for input what to run!!");
 
 }
 
 int main()
 {
-
   auto set_white = [&]() {
     color_set(1,0);
   };
@@ -223,11 +221,10 @@ int main()
   auto set_red = [&]() {
     color_set(2, 0);
   };
-#define TEST_NEW_TIMER
-#ifdef TEST_NEW_TIMER
   // TEST
-  std::atomic_bool stop = false, globalStop = false;
+  std::atomic_bool stop = false;
   /*
+  std::atomic_bool globalStop = false;
   std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
   std::deque<std::function<void()>> FunctionList;
 
@@ -266,20 +263,18 @@ int main()
   globalStop = true;
   ThreadingThingy.join();
 */
-#endif
   init();
 
   //int x, y;
-  Li::STATE State;
-
   PomodoroTimer Timer{stop, POMODORO_TIME};
 
   auto EraseStateChangeRepaint = [&](){
+    werase(w);
     ViewRunningMenue();
     ViewTitleBar();
   };
 
-  auto EraseSpecificLine =  [&](int Y, int X, WINDOW *win){
+  auto EraseSpecificLine =  [&](WINDOW* win, int Y, int X){
     int oldy, oldx;
     getyx(win, oldy, oldx);
     wmove(win, Y, X);
@@ -295,27 +290,32 @@ int main()
 
   std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
   InitialPaint();
-  PomodoroTimer::State oldState;
-  int c;
+  PomoState oldState;
   while(true)
   {
-    c = getch();
+    int c = getch();
     set_red();
-    if(Timer.getState() != PomodoroTimer::State::PAUSE && Timer.getState() != PomodoroTimer::State::STOP)
+    switch(Timer.getState())
     {
-      EraseSpecificLine(3, 5, w);
-      mvprintw(3, 5, Li::TimerTools::Format::getFullTimeString(Timer.getTimeLeft<uint64_t>()).c_str());
+      case(PomoState::PAUSE):
+        EraseSpecificLine(w, 3, 5);
+        mvprintw(3, 5, "Paused!");
+        break;
+      case(PomoState::STOP):
+        EraseSpecificLine(w, 3, 5);
+        mvprintw(3, 5, "STOPPED!");
+        break;
+      case(PomoState::LONG):
+      case(PomoState::SHORT):
+      case(PomoState::POMODORO):
+        EraseSpecificLine(w, 3, 5);
+        mvprintw(3, 5, Li::TimerTools::Format::getFullTimeString(
+                 Timer.getTimeLeft<uint64_t>()).c_str());
+        break;
+      //default:
+      //  break;
     }
-    else if(Timer.getState() == PomodoroTimer::State::PAUSE)
-    {
-      EraseSpecificLine(3, 5, w);
-      mvprintw(3, 5, "Paused!");
-    }
-    else if(Timer.getState() == PomodoroTimer::State::STOP)
-    {
-      EraseSpecificLine(3, 5, w);
-      mvprintw(3, 5, "STOPPED!");
-    }
+
     set_white();
     ViewRunningMenue();
     ViewTitleBar();
@@ -328,7 +328,7 @@ int main()
       quitter();
       return(0);
     }
-    else if(Timer.getState() == PomodoroTimer::State::STOP)
+    else if(Timer.getState() == PomoState::STOP)
     {
       Timer.Pause();
       PomoThread.join();
@@ -336,7 +336,7 @@ int main()
       Timer.Unpause();
       EraseStateChangeRepaint();
     }
-    else if(c == 'p' && Timer.getState() != PomodoroTimer::State::PAUSE)
+    else if(c == 'p' && Timer.getState() != PomoState::PAUSE)
     {
       oldState = Timer.getState();
       Timer.Pause();
@@ -345,7 +345,7 @@ int main()
       Timer.Unpause();
       EraseStateChangeRepaint();
     }
-    else if(c == 'p' && Timer.getState() == PomodoroTimer::State::PAUSE)
+    else if(c == 'p' && Timer.getState() == PomoState::PAUSE)
     {
       Timer.Pause();
       PomoThread.join();

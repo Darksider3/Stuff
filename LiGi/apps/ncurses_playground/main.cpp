@@ -27,12 +27,11 @@ void init_ncurses()
     windowInitError("main screen");
   }
   getmaxyx(mainw, y, x);
-  if( (topsubw = newwin(3, 50, 3, MIDDLE_X(50))) == nullptr)
+  if( (topsubw = newwin(4,COLS,0,0)) == nullptr)
   {
     windowInitError("Top");
   }
-
-  if((midsubw = newwin(15, 20, LINES/8, MIDDLE_X(20))) == nullptr)
+  if((midsubw = newwin(5, 15, 20, 20)) == nullptr)
   {
     windowInitError("Midsub");
   }
@@ -79,13 +78,14 @@ int main(int argc, char** argv)
 {
   init_ncurses();
   //box(mainw, 0,0);
-  mvwprintw(mainw, 1, (COLS-5)/2 /* Middle */ ,"Main window");
+  mvwprintw(topsubw, 1, 1 /* Middle */ ,"Main window");
+  wrefresh(topsubw);
   mvwhline(mainw, 2, 1, chtype{'='}, COLS-1 /* border */);
-
+  wrefresh(topsubw);
   wrefresh(mainw);
+  refresh();
 
   //box(topsubw, 0, 0);
-  mvwprintw(topsubw, 1,1, "in here");
   //box(midsubw,0,0);
   mvwprintw(midsubw, 1, 1, "subwindow");
 
