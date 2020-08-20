@@ -23,12 +23,14 @@
 #include <deque>
 #include <functional>
 #include <locale.h>
-
+#include <signal.h>
+#include <cstring>
 
 #include "../stack.h"
+std::mutex ResizeMutex;
 
-#define MIDDLE_X(WIDTH) (COLS-WIDTH)/2
-#define MIDDLE_Y() (LINES)/2
+constexpr short MIN_X = 15;
+constexpr short MIN_Y = 15;
 constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
 constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
 constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
@@ -153,9 +155,11 @@ void init_windows()
   }
   atexit(quitter);
 
+#define MIDDLE_X(WIDTH) (Fullx-WIDTH)/2
+#define MIDDLE_Y() (Fully)/2
   getmaxyx(w, Fully, Fullx);
 
-  if(Fully < 50 || Fullx < 50)
+  if(Fully < MIN_Y || Fullx < MIN_X)
   {
     std::cerr << "Sorry, but your window isnt big enough!" << std::endl;
     exit(ERR);
@@ -166,7 +170,7 @@ void init_windows()
     std::cerr << "Error! Couldn't intiialise top panel!"  << std::endl;
     exit(ERR);
   }
-  if((MidWin = newwin(Fully-1, Fullx-1, 1, 1)) == nullptr)
+  if((MidWin = newwin(Fully, Fullx, 1, 1)) == nullptr)
   {
     std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
     exit(ERR);
@@ -251,8 +255,22 @@ void ViewMode(PomoState const &state)
 
 }
 
+void winch_handle(int sig)
+{
+std::lock_guard<std::mutex> ResizeGuard(ResizeMutex);
+  endwin();
+  init();
+  refresh();
+  clear();
+  getmaxyx(w, Fully, Fullx);
+  ViewTitleBar();
+  ViewRunningMenue();
+  refresh();
+}
+
 int main()
 {
+
   setlocale(LC_ALL, "");
   auto set_white = [&]() {
     color_set(1,0);
@@ -306,7 +324,13 @@ int main()
 */
   init();
 
-  //int x, y;
+  /**
+   * Here lies dragons - actually handling WINCH/Resizing without segfaults. o.o
+   */
+  struct sigaction sa;
+  std::memset(&sa, 0, sizeof(struct sigaction));
+  sa.sa_handler = winch_handle;
+  sigaction(SIGWINCH, &sa, NULL);
   PomodoroTimer Timer{stop, POMODORO_TIME};
 
   auto EraseStateChangeRepaint = [&](){
@@ -334,7 +358,7 @@ int main()
   PomoState oldState;
   while(true)
   {
-    int c = getch();
+    int c = wgetch(stdscr);
     set_red();
     switch(Timer.getState())
     {
@@ -419,11 +443,12 @@ int main()
       Timer.Unpause();
       EraseStateChangeRepaint();
     }
-    else if(c == ERR)
+    else if(c == KEY_RESIZE)
     {
-      // got no new data this run.
+      winch_handle(SIGWINCH);
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
   return(0);
 }
