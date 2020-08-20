@@ -25,9 +25,12 @@
 #include <locale.h>
 #include <signal.h>
 #include <cstring>
-
 #include "../stack.h"
+
+
+//@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::mutex ResizeMutex;
+
 
 constexpr short MIN_X = 15;
 constexpr short MIN_Y = 15;
@@ -257,7 +260,7 @@ void ViewMode(PomoState const &state)
 
 void winch_handle(int sig)
 {
-std::lock_guard<std::mutex> ResizeGuard(ResizeMutex);
+  std::scoped_lock<std::mutex> ResizeGuard(ResizeMutex);
   endwin();
   init();
   refresh();
@@ -270,18 +273,34 @@ std::lock_guard<std::mutex> ResizeGuard(ResizeMutex);
 
 int main()
 {
-
   setlocale(LC_ALL, "");
+
   auto set_white = [&]() {
     color_set(1,0);
   };
-
-
   auto set_red = [&]() {
     color_set(2, 0);
   };
+
+  auto EraseStateChangeRepaint = [&](){
+    werase(w);
+    ViewRunningMenue();
+    ViewTitleBar();
+  };
+
+  auto EraseSpecificLine =  [&](WINDOW* win, int Y, int X){
+    int oldy, oldx;
+    getyx(win, oldy, oldx);
+    wmove(win, Y, X);
+    wclrtoeol(win);
+    wmove(win, oldy, oldx);
+    wrefresh(win);
+  };
+
+  auto InitialPaint = [&] {
+    EraseStateChangeRepaint();
+  };
   // TEST
-  std::atomic_bool stop = false;
   /*
   std::atomic_bool globalStop = false;
   std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
@@ -322,6 +341,8 @@ int main()
   globalStop = true;
   ThreadingThingy.join();
 */
+
+  std::atomic_bool stop = false;
   init();
 
   /**
@@ -331,27 +352,9 @@ int main()
   std::memset(&sa, 0, sizeof(struct sigaction));
   sa.sa_handler = winch_handle;
   sigaction(SIGWINCH, &sa, NULL);
+
+  // Timer - main functionality
   PomodoroTimer Timer{stop, POMODORO_TIME};
-
-  auto EraseStateChangeRepaint = [&](){
-    werase(w);
-    ViewRunningMenue();
-    ViewTitleBar();
-  };
-
-  auto EraseSpecificLine =  [&](WINDOW* win, int Y, int X){
-    int oldy, oldx;
-    getyx(win, oldy, oldx);
-    wmove(win, Y, X);
-    wclrtoeol(win);
-    wmove(win, oldy, oldx);
-    wrefresh(win);
-  };
-
-  auto InitialPaint = [&] {
-    EraseStateChangeRepaint();
-  };
-
 
   std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
   InitialPaint();
@@ -445,6 +448,7 @@ int main()
     }
     else if(c == KEY_RESIZE)
     {
+      // we have to this actually, because the signal itself isn't really portable D:
       winch_handle(SIGWINCH);
     }
 
