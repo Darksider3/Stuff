@@ -22,6 +22,8 @@
 #include <ncurses.h>
 #include <deque>
 #include <functional>
+#include <locale.h>
+
 
 #include "../stack.h"
 
@@ -117,10 +119,10 @@ public:
 };
 
 WINDOW *w;
-WINDOW *panelWin;
-WINDOW *timerWin;
+WINDOW *TopPanel;
+WINDOW *MidWin;
 
-int x, y;
+int Fullx, Fully;
 
 void quitter()
 {
@@ -146,19 +148,29 @@ void init_windows()
     std::cerr << "Error! Couldn't initialise ncurses!" << std::endl;
     quitter();
   }
+  atexit(quitter);
 
-  getmaxyx(w, y, x);
-  panelWin = newwin(1, 1, 0, 0);
-  timerWin = newwin(y-1, x-1, 1, 1);
+  getmaxyx(w, Fully, Fullx);
+
+  if((TopPanel = newwin(3, COLS, 0, 0)) == nullptr)
+  {
+    std::cerr << "Error! Couldn't intiialise top panel!"  << std::endl;
+    exit(ERR);
+  }
+  if((MidWin = newwin(Fully-1, Fullx-1, 1, 1)) == nullptr)
+  {
+    std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
+    exit(ERR);
+  }
+  cbreak();
+  noecho();
+  nodelay(w, true);
+  curs_set(0);
 }
 
 void init()
 {
   init_windows();
-  cbreak();
-  noecho();
-  nodelay(w, true);
-  atexit(quitter);
   init_colors();
   curs_set(0);
 }
@@ -188,8 +200,13 @@ Timer background: #03A4BC, Timer Foreground: Black
 */
 void ViewTitleBar()
 {
-  mvaddstr(1, 1, "(E)dit settings");
+  mvwaddstr(TopPanel, 1, 1, "(E)dit settings");
+  //for(size_t i = COLS; i != 0; --i)
+  //  mvwadd_wch(TopPanel, 2, i, WACS_T_HLINE);
+  mvwhline(TopPanel, 2, 0, ACS_HLINE, COLS);
+  wrefresh(TopPanel);
 }
+
 void ViewRunningMenue()
 {
   mvaddstr(11, 2, "Press q to exit");
@@ -213,6 +230,7 @@ void ViewMode(PomoState const &state)
 
 int main()
 {
+  setlocale(LC_ALL, "");
   auto set_white = [&]() {
     color_set(1,0);
   };
