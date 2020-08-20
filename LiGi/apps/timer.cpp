@@ -48,7 +48,7 @@ enum PomoState
   STOP
 } m_state = PomoState::PAUSE;
 
-class PomodoroTimer : public Li::Timer<PomodoroTimer>
+class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
 
@@ -87,7 +87,7 @@ public:
 
   void RunPause(uint64_t Goal = PAUSE_STOP_VAL)
   {
-    uint64_t oldTimeLeft = this->getTimeLeft<uint64_t>();
+    uint64_t oldTimeLeft = this->getTimeLeft();
     this->m_state = PomoState::PAUSE;
     this->run(Goal);
     this->setTimeLeft(oldTimeLeft);
@@ -104,7 +104,7 @@ public:
   const std::string getTimeStr() const noexcept
   {
     namespace Format = Li::TimerTools::Format;
-    Li::Literals::TimeValue  auto t = this->getTimeLeft<uint64_t>();
+    Li::Literals::TimeValue  auto t = this->getTimeLeft();
     return Format::getMinutes(t)+":"+Format::getSeconds(t);
   }
 };
@@ -378,7 +378,7 @@ int main()
       case(PomoState::POMODORO):
         EraseSpecificLine(w, MIDDLE_Y(), MIDDLE_X(10));
         mvprintw(MIDDLE_Y(), MIDDLE_X(8), Li::TimerTools::Format::getFullTimeString(
-                 Timer.getTimeLeft<uint64_t>()).c_str());
+                 Timer.getTimeLeft()).c_str());
         break;
       //default:
       //  break;
