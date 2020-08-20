@@ -29,7 +29,6 @@
 
 
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
-std::mutex ResizeMutex;
 std::atomic_bool interrupt = false;
 
 constexpr short MIN_X = 15;
@@ -168,12 +167,12 @@ void init_windows()
     exit(ERR);
   }
 
-  if((TopPanel = newwin(3, COLS, 0, 0)) == nullptr)
+  if((TopPanel = newwin(3, Fullx, 0, 0)) == nullptr)
   {
     std::cerr << "Error! Couldn't intiialise top panel!"  << std::endl;
     exit(ERR);
   }
-  if((MidWin = newwin(Fully, Fullx, 1, 1)) == nullptr)
+  if((MidWin = newwin(Fully-13, Fullx, 3, 1)) == nullptr)
   {
     std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
     exit(ERR);
@@ -242,19 +241,21 @@ void ViewRunningMenue()
   wrefresh(ShortcutWin);
 }
 
-void ViewMode(PomoState const &state)
+void ViewMode(PomoState const &state, WINDOW *win)
 {
-  int midy = MIDDLE_Y()+2;
+  int midy, midx;
+  getmaxyx(win, midy, midx);
+  midy = midy /2;
   if(state == PomoState::SHORT)
-    mvaddstr(midy, MIDDLE_X(14), "Taking a break");
+    mvaddstr(midy+2, MIDDLE_X(14), "Taking a break");
   else if(state == PomoState::LONG)
-    mvaddstr(midy, MIDDLE_X(18), "Taking a big break!");
+    mvaddstr(midy+2, MIDDLE_X(18), "Taking a big break!");
   else if(state == PomoState::POMODORO)
-    mvaddstr(midy, MIDDLE_X(22), "Working on a Pomodoro!");
+    mvaddstr(midy+2, MIDDLE_X(22), "Working on a Pomodoro!");
   else if(state  == PomoState::PAUSE)
-    mvaddstr(midy, MIDDLE_X(22), "Taking a manual pause!");
+    mvaddstr(midy+2, MIDDLE_X(22), "Taking a manual pause!");
   else if(state == PomoState::STOP)
-    mvaddstr(midy, MIDDLE_X(25), "Waiting for input what to run!!");
+    mvaddstr(midy+2, MIDDLE_X(25), "Waiting for input what to run!!");
 
 }
 
@@ -356,22 +357,29 @@ int main()
   {
     int c = wgetch(stdscr);
     set_red();
+        int midx, midy;
+        getmaxyx(MidWin, midy, midx);
+        midy = midy / 2;
     switch(Timer.getState())
     {
       case(PomoState::PAUSE):
-        EraseSpecificLine(w, MIDDLE_Y(), MIDDLE_X(7));
-        mvprintw(MIDDLE_Y(), MIDDLE_X(6), "Paused!");
+        EraseSpecificLine(MidWin, midy, MIDDLE_X(7));
+        mvwprintw(MidWin, midy, MIDDLE_X(6), "Paused!");
+        wrefresh(MidWin);
         break;
       case(PomoState::STOP):
-        EraseSpecificLine(w, MIDDLE_Y(), MIDDLE_X(7));
-        mvprintw(MIDDLE_Y(), MIDDLE_X(7), "STOPPED!");
+        EraseSpecificLine(MidWin, midy, MIDDLE_X(7));
+        mvwprintw(MidWin, midy, MIDDLE_X(7), "STOPPED!");
+        wrefresh(MidWin);
         break;
       case(PomoState::LONG):
       case(PomoState::SHORT):
       case(PomoState::POMODORO):
-        EraseSpecificLine(w, MIDDLE_Y(), MIDDLE_X(10));
-        mvprintw(MIDDLE_Y(), MIDDLE_X(8), Li::TimerTools::Format::getFullTimeString(
+        wcolor_set(MidWin, 2, 0);
+        EraseSpecificLine(w, midy, MIDDLE_X(10));
+        mvwprintw(MidWin, midy, MIDDLE_X(8), Li::TimerTools::Format::getFullTimeString(
                  Timer.getTimeLeft()).c_str());
+        wrefresh(MidWin);
         break;
       //default:
       //  break;
@@ -380,7 +388,7 @@ int main()
     set_white();
     ViewRunningMenue();
     ViewTitleBar();
-    ViewMode(Timer.getState());
+    ViewMode(Timer.getState(), MidWin);
     refresh();
     if(c == 'q')
     {
@@ -447,8 +455,6 @@ int main()
 
     if(interrupt)
     {
-
-      std::scoped_lock<std::mutex> ResizeGuard(ResizeMutex);
       endwin();
       init();
       refresh();
@@ -459,8 +465,9 @@ int main()
       refresh();
       interrupt = false;
     }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    else{
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
   }
   return(0);
 }
