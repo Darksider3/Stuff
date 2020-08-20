@@ -7,10 +7,12 @@ namespace TimerTools
 {
 namespace Format
 {
-std::string getSeconds(uint64_t const t)
+
+template<Li::Literals::TimeValue T>
+std::string getSeconds(T const &t)
 {
   std::stringstream ss("");
-  int secs = (
+  T secs = (
                (t + 100)
                / 1000)
              % 60;
@@ -22,10 +24,11 @@ std::string getSeconds(uint64_t const t)
   return ss.str();
 }
 
-std::string getMinutes(uint64_t const t)
+template<Li::Literals::TimeValue T>
+std::string getMinutes(T const &t)
 {
   std::stringstream ss("");
-  int mins = ((
+  T mins = ((
                 (t + 100)
                 / 1000)
               / 60)
@@ -38,10 +41,11 @@ std::string getMinutes(uint64_t const t)
   return ss.str();
 }
 
-std::string getHours(uint64_t const t)
+template<Li::Literals::TimeValue T>
+std::string getHours(T const &t)
 {
   std::stringstream ss("");
-  int hours = (((
+  T hours = (((
                   (t + 100)
                   / 1000)
                 / 60)
@@ -54,8 +58,8 @@ std::string getHours(uint64_t const t)
 
   return ss.str();
 }
-
-std::string getFullTimeString(uint64_t const t)
+template<Li::Literals::TimeValue T>
+std::string getFullTimeString(T const &t)
 {
   return (
             getHours(t)+":"+getMinutes(t)+":"+getSeconds(t)

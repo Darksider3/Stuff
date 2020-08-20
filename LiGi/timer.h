@@ -33,7 +33,6 @@ namespace Literals
 {
 
 template<class T>
-//concept SuitableTime  = std::is_integral<T>::value && !std::is_abstract<T>::value;
 concept TimeValue  = requires(T a) {
       std::is_integral<T>::value && std::is_arithmetic<T>::value && std::is_unsigned<T>::value;
     };
@@ -72,6 +71,7 @@ private:
   uint64_t sleep = 20;
 
 public:
+
   void setTimeLeft(const Literals::TimeValue auto &set)
   {
     u_.time_left = set;
