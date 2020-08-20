@@ -41,7 +41,7 @@ concept TimeValue  = requires(T a) {
 
 using namespace std::literals;
 
-template<class T>
+template<class T, Literals::TimeValue RValType = uint64_t>
 class Timer
 {
 private:
@@ -91,23 +91,23 @@ public:
   {
     u_.goal = Goal;
   }
-template<Literals::TimeValue TimeVal>
-  TimeVal getTimeLeft() const
+
+  RValType getTimeLeft() const
   {
     uint64_t val = u_c.time_left;
     return val;
   }
-  Literals::TimeValue auto getGoal() const
+  RValType getGoal() const
   {
     return u_c.goal;
   }
 
-  Literals::TimeValue auto getDelay() const
+  RValType getDelay() const
   {
     return u_c.delay;
   }
 
-  Literals::TimeValue auto getSleep() const
+  RValType getSleep() const
   {
     return u_c.sleep;
   }
