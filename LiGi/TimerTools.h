@@ -57,9 +57,9 @@ std::string getHours(uint64_t const t)
 
 std::string getFullTimeString(uint64_t const t)
 {
-  return (std::string(
+  return (
             getHours(t)+":"+getMinutes(t)+":"+getSeconds(t)
-            ));
+            );
 }
 }
 }
