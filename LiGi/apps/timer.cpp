@@ -30,7 +30,7 @@
 
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::mutex ResizeMutex;
-
+std::atomic_bool interrupt = false;
 
 constexpr short MIN_X = 15;
 constexpr short MIN_Y = 15;
@@ -260,15 +260,8 @@ void ViewMode(PomoState const &state)
 
 void winch_handle(int sig)
 {
-  std::scoped_lock<std::mutex> ResizeGuard(ResizeMutex);
-  endwin();
-  init();
-  refresh();
-  clear();
-  getmaxyx(w, Fully, Fullx);
-  ViewTitleBar();
-  ViewRunningMenue();
-  refresh();
+  if(sig == SIGWINCH)
+    interrupt = true;
 }
 
 int main()
@@ -450,6 +443,21 @@ int main()
     {
       // we have to this actually, because the signal itself isn't really portable D:
       winch_handle(SIGWINCH);
+    }
+
+    if(interrupt)
+    {
+
+      std::scoped_lock<std::mutex> ResizeGuard(ResizeMutex);
+      endwin();
+      init();
+      refresh();
+      clear();
+      getmaxyx(w, Fully, Fullx);
+      ViewTitleBar();
+      ViewRunningMenue();
+      refresh();
+      interrupt = false;
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
