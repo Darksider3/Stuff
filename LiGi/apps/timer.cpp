@@ -31,12 +31,23 @@
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool interrupt = false;
 
+#define MIDDLE_X(WIDTH) (Fullx-WIDTH)/2
+#define MIDDLE_Y() (Fully)/2
 constexpr short MIN_X = 15;
 constexpr short MIN_Y = 15;
 constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
 constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
 constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
 constexpr uint64_t PAUSE_STOP_VAL = UINT64_MAX-5;
+
+
+WINDOW *w;
+WINDOW *TopPanel;
+WINDOW *MidWin;
+WINDOW *ShortcutWin;
+
+int Fullx, Fully;
+
 
 enum PomoState
 {
@@ -45,13 +56,13 @@ enum PomoState
   LONG,
   PAUSE,
   STOP
-} m_state = PomoState::PAUSE;
+};
 
 class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
 
-  void run(Li::Literals::TimeValue auto Goal)
+  void run(Li::Literals::TimeValue auto Goal) noexcept
   {
     this->setGoal(Goal);
     this->ResetTime();
@@ -59,32 +70,54 @@ private:
   }
 public:
 
+  class View
+  {
+  private:
+  public:
+    static void printModeView(const PomoState& state, WINDOW *win) noexcept
+    {
+
+      int midy, midx;
+      getmaxyx(win, midy, midx);
+      midy = midy /2;
+      if(state == PomoState::SHORT)
+        mvaddstr(midy+2, MIDDLE_X(14), "Taking a break");
+      else if(state == PomoState::LONG)
+        mvaddstr(midy+2, MIDDLE_X(18), "Taking a big break!");
+      else if(state == PomoState::POMODORO)
+        mvaddstr(midy+2, MIDDLE_X(22), "Working on a Pomodoro!");
+      else if(state  == PomoState::PAUSE)
+        mvaddstr(midy+2, MIDDLE_X(22), "Taking a manual pause!");
+      else if(state == PomoState::STOP)
+        mvaddstr(midy+2, MIDDLE_X(25), "Waiting for input what to run!!");
+    }
+  };
 
   PomoState m_state;
   using Timer<PomodoroTimer>::Timer;
 
-  void RunPomo(uint64_t Goal = POMODORO_TIME)
+  void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
   {
     this->m_state = PomoState::POMODORO;
     this->run(Goal);
     this->m_state = PomoState::STOP;
   }
 
-  void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME)
+  void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME) noexcept
   {
     this->m_state = PomoState::SHORT;
     this->run(Goal);
     this->m_state = PomoState::STOP;
   }
 
-  void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME)
+  void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME) noexcept
   {
     this->m_state = PomoState::LONG;
     this->run(Goal);
     this->m_state = PomoState::STOP;
   }
 
-  void RunPause(uint64_t Goal = PAUSE_STOP_VAL)
+  void RunPause(uint64_t Goal = PAUSE_STOP_VAL) noexcept
   {
     uint64_t oldTimeLeft = this->getTimeLeft();
     this->m_state = PomoState::PAUSE;
@@ -98,7 +131,7 @@ public:
     this->run(Goal);
   }
 
-  PomoState getState() { return this->m_state;}
+  PomoState getState() const noexcept { return this->m_state;}
 
   const std::string getTimeStr() const noexcept
   {
@@ -123,13 +156,6 @@ public:
     this->pushd(bla);
   }
 };
-
-WINDOW *w;
-WINDOW *TopPanel;
-WINDOW *MidWin;
-WINDOW *ShortcutWin;
-
-int Fullx, Fully;
 
 void quitter()
 {
@@ -157,8 +183,6 @@ void init_windows()
   }
   atexit(quitter);
 
-#define MIDDLE_X(WIDTH) (Fullx-WIDTH)/2
-#define MIDDLE_Y() (Fully)/2
   getmaxyx(w, Fully, Fullx);
 
   if(Fully < MIN_Y || Fullx < MIN_X)
@@ -388,7 +412,7 @@ int main()
     set_white();
     ViewRunningMenue();
     ViewTitleBar();
-    ViewMode(Timer.getState(), MidWin);
+    PomodoroTimer::View::printModeView(Timer.getState(), MidWin);
     refresh();
     if(c == 'q')
     {
@@ -460,8 +484,6 @@ int main()
       refresh();
       clear();
       getmaxyx(w, Fully, Fullx);
-      ViewTitleBar();
-      ViewRunningMenue();
       refresh();
       interrupt = false;
     }
