@@ -30,8 +30,6 @@
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool interrupt = false;
 
-#define MIDDLE_X(WIDTH) (Fullx-WIDTH)/2
-#define MIDDLE_Y() (Fully)/2
 constexpr short MIN_X = 15;
 constexpr short MIN_Y = 15;
 constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
@@ -57,6 +55,12 @@ enum PomoState
   STOP
 };
 
+int xMiddle(size_t const &full, size_t const &sub) noexcept
+{
+  size_t x = (full - sub) / 2;
+  return static_cast<int>(x);
+}
+
 class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
@@ -80,15 +84,15 @@ public:
       getmaxyx(win, midy, midx);
       midy = midy /2;
       if(state == PomoState::SHORT)
-        mvaddstr(midy+2, MIDDLE_X(14), "Taking a break");
+        mvaddstr(midy+2, xMiddle(midx, 14), "Taking a break");
       else if(state == PomoState::LONG)
-        mvaddstr(midy+2, MIDDLE_X(18), "Taking a big break!");
+        mvaddstr(midy+2, xMiddle(midx, 18), "Taking a big break!");
       else if(state == PomoState::POMODORO)
-        mvaddstr(midy+2, MIDDLE_X(22), "Working on a Pomodoro!");
+        mvaddstr(midy+2, xMiddle(midx, 22), "Working on a Pomodoro!");
       else if(state  == PomoState::PAUSE)
-        mvaddstr(midy+2, MIDDLE_X(22), "Taking a manual pause!");
+        mvaddstr(midy+2, xMiddle(midx, 22), "Taking a manual pause!");
       else if(state == PomoState::STOP)
-        mvaddstr(midy+2, MIDDLE_X(25), "Waiting for input what to run!!");
+        mvaddstr(midy+2, xMiddle(midx, 25), "Waiting for input what to run!!");
     }
   };
 
@@ -270,15 +274,15 @@ void ViewMode(PomoState const &state, WINDOW *win)
   getmaxyx(win, midy, midx);
   midy = midy /2;
   if(state == PomoState::SHORT)
-    mvaddstr(midy+2, MIDDLE_X(14), "Taking a break");
+    mvaddstr(midy+2, xMiddle(midx, 14), "Taking a break");
   else if(state == PomoState::LONG)
-    mvaddstr(midy+2, MIDDLE_X(18), "Taking a big break!");
+    mvaddstr(midy+2, xMiddle(midx, 18), "Taking a big break!");
   else if(state == PomoState::POMODORO)
-    mvaddstr(midy+2, MIDDLE_X(22), "Working on a Pomodoro!");
+    mvaddstr(midy+2, xMiddle(midx, 22), "Working on a Pomodoro!");
   else if(state  == PomoState::PAUSE)
-    mvaddstr(midy+2, MIDDLE_X(22), "Taking a manual pause!");
+    mvaddstr(midy+2, xMiddle(midx, 22), "Taking a manual pause!");
   else if(state == PomoState::STOP)
-    mvaddstr(midy+2, MIDDLE_X(25), "Waiting for input what to run!!");
+    mvaddstr(midy+2, xMiddle(midx, 25), "Waiting for input what to run!!");
 
 }
 
@@ -386,21 +390,21 @@ int main()
     switch(Timer.getState())
     {
       case(PomoState::PAUSE):
-        EraseSpecificLine(MidWin, midy, MIDDLE_X(7));
-        mvwprintw(MidWin, midy, MIDDLE_X(6), "Paused!");
+        EraseSpecificLine(MidWin, midy, xMiddle(midx, 7));
+        mvwprintw(MidWin, midy, xMiddle(midx, 6), "Paused!");
         wrefresh(MidWin);
         break;
       case(PomoState::STOP):
-        EraseSpecificLine(MidWin, midy, MIDDLE_X(7));
-        mvwprintw(MidWin, midy, MIDDLE_X(7), "STOPPED!");
+        EraseSpecificLine(MidWin, midy, xMiddle(midx, 7));
+        mvwprintw(MidWin, midy, xMiddle(midx, 7), "STOPPED!");
         wrefresh(MidWin);
         break;
       case(PomoState::LONG):
       case(PomoState::SHORT):
       case(PomoState::POMODORO):
         wcolor_set(MidWin, 2, 0);
-        EraseSpecificLine(w, midy, MIDDLE_X(10));
-        mvwprintw(MidWin, midy, MIDDLE_X(8), Li::TimerTools::Format::getFullTimeString(
+        EraseSpecificLine(w, midy, xMiddle(midx, 10));
+        mvwprintw(MidWin, midy, xMiddle(midx, 8), Li::TimerTools::Format::getFullTimeString(
                  Timer.getTimeLeft()).c_str());
         wrefresh(MidWin);
         break;
