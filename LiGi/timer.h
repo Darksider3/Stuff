@@ -72,6 +72,8 @@ private:
 
 public:
 
+  operator RValType() const {return u_c.time_left;}
+
   void setTimeLeft(const Literals::TimeValue auto &set)
   {
     u_.time_left = set;
