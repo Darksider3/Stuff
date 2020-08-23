@@ -17,16 +17,15 @@
  **/
 
 
-#include "../timer.h"
-#include "../TimerTools.h"
+#include "timer.h"
+#include "TimerTools.h"
+#include "stack.h"
 #include <ncurses.h>
 #include <deque>
 #include <functional>
 #include <locale.h>
 #include <signal.h>
 #include <cstring>
-#include "../stack.h"
-
 
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool interrupt = false;
