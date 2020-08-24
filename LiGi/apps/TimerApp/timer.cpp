@@ -37,7 +37,6 @@ constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
 constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
 constexpr uint64_t PAUSE_STOP_VAL = UINT64_MAX-5;
 
-
 WINDOW *w;
 WINDOW *TopPanel;
 WINDOW *MidWin;
@@ -54,6 +53,19 @@ enum PomoState
   PAUSE,
   STOP
 };
+/*
+struct PomoStatistics
+{
+using N_I = uint16_t;
+  N_I ShortBreaks;
+  N_I LongBreaks;
+  N_I Pomodoros;
+  N_I TotalWorkingTime; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
+  N_I TotalShortBreakTime;
+  N_I TotalLongBreakTime;
+  N_I TotalPauseTime; // Logic to stop instead of default pause;
+  N_I TotalStopTime; // Difference to Pause is that we stopped instead of paused, @todo logic for that
+};*/
 
 int xMiddle(size_t const &full, size_t const &sub) noexcept
 {
@@ -97,12 +109,14 @@ public:
   };
 
   PomoState m_state;
+  PomoState m_oldState;
   using Timer<PomodoroTimer>::Timer;
 
   void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
   {
     this->m_state = PomoState::POMODORO;
     this->run(Goal);
+    this->m_oldState = this->m_state;
     this->m_state = PomoState::STOP;
   }
 
@@ -110,6 +124,7 @@ public:
   {
     this->m_state = PomoState::SHORT;
     this->run(Goal);
+    this->m_oldState = this->m_state;
     this->m_state = PomoState::STOP;
   }
 
@@ -117,6 +132,7 @@ public:
   {
     this->m_state = PomoState::LONG;
     this->run(Goal);
+    this->m_oldState = this->m_state;
     this->m_state = PomoState::STOP;
   }
 
@@ -125,11 +141,13 @@ public:
     uint64_t oldTimeLeft = this->getTimeLeft();
     this->m_state = PomoState::PAUSE;
     this->run(Goal);
+    this->m_state = this->m_oldState;
     this->setTimeLeft(oldTimeLeft);
   }
 
   void RunStop(uint64_t Goal = PAUSE_STOP_VAL)
   {
+    this->m_oldState = this->m_state;
     this->m_state = PomoState::STOP;
     this->run(Goal);
   }
@@ -304,7 +322,7 @@ int main()
   };
 
   auto EraseStateChangeRepaint = [&](){
-    werase(w);
+    werase(MidWin);
     ViewRunningMenue();
     ViewTitleBar();
   };
@@ -319,6 +337,15 @@ int main()
   };
 
   auto InitialPaint = [&] {
+    EraseStateChangeRepaint();
+  };
+
+  auto StateChange = [&](std::thread &ThreadObj, PomodoroTimer &PomObj, std::function<void()> runFunc)
+  {
+    PomObj.Pause();
+    ThreadObj.join();
+    ThreadObj = std::thread(runFunc);
+    PomObj.Unpause();
     EraseStateChangeRepaint();
   };
   // TEST
@@ -379,7 +406,6 @@ int main()
 
   std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
   InitialPaint();
-  PomoState oldState;
   while(true)
   {
     int c = wgetch(stdscr);
@@ -422,57 +448,31 @@ int main()
       Timer.Pause();
       PomoThread.join();
       quitter();
-      return(0);
+      return(EXIT_SUCCESS);
     }
     else if(Timer.getState() == PomoState::STOP)
     {
-      Timer.Pause();
-      PomoThread.join();
-      PomoThread = std::thread(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL);
-      Timer.Unpause();
-      EraseStateChangeRepaint();
+      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
     }
     else if(c == 'p' && Timer.getState() != PomoState::PAUSE)
     {
-      oldState = Timer.getState();
-      Timer.Pause();
-      PomoThread.join();
-      PomoThread = std::thread(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL);
-      Timer.Unpause();
-      EraseStateChangeRepaint();
+      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL));
     }
     else if(c == 'p' && Timer.getState() == PomoState::PAUSE)
     {
-      Timer.Pause();
-      PomoThread.join();
-      PomoThread = std::thread(&PomodoroTimer::Resume, std::ref(Timer));
-      Timer.m_state = oldState;
-      Timer.Unpause();
-      EraseStateChangeRepaint();
+      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::Resume, std::ref(Timer)));
     }
     else if(c == 'o')
     {
-      Timer.Pause();
-      PomoThread.join();
-      PomoThread = std::thread(&PomodoroTimer::RunPomo, std::ref(Timer),  POMODORO_TIME);
-      Timer.Unpause();
-      EraseStateChangeRepaint();
+        StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
     }
     else if(c == 'b')
     {
-      Timer.Pause();
-      PomoThread.join();
-      PomoThread = std::thread(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME);
-      Timer.Unpause();
-      EraseStateChangeRepaint();
+        StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
     }
     else if(c == 'g')
     {
-      Timer.Pause();
-      PomoThread.join();
-      PomoThread = std::thread(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME);
-      Timer.Unpause();
-      EraseStateChangeRepaint();
+        StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
     }
     else if(c == KEY_RESIZE)
     {
