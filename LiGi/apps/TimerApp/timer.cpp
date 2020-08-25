@@ -44,7 +44,6 @@ WINDOW *ShortcutWin;
 
 int Fullx, Fully;
 
-
 enum PomoState
 {
   POMODORO,
@@ -53,6 +52,7 @@ enum PomoState
   PAUSE,
   STOP
 };
+
 /*
 struct PomoStatistics
 {
@@ -84,7 +84,6 @@ private:
     this->RunTimer();
   }
 public:
-
   class View
   {
   private:
@@ -108,15 +107,22 @@ public:
     }
   };
 
-  PomoState m_state;
-  PomoState m_oldState;
+  std::atomic<PomoState> m_state;
+  std::atomic<PomoState> m_oldState;
   using Timer<PomodoroTimer>::Timer;
+
+  explicit PomodoroTimer(std::atomic_bool &stopper) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
+  {
+    this->setDelay(500);
+    this->setSleep(125);
+  }
+
 
   void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
   {
     this->m_state = PomoState::POMODORO;
     this->run(Goal);
-    this->m_oldState = this->m_state;
+    this->m_oldState.store(this->m_state);
     this->m_state = PomoState::STOP;
   }
 
@@ -124,7 +130,7 @@ public:
   {
     this->m_state = PomoState::SHORT;
     this->run(Goal);
-    this->m_oldState = this->m_state;
+    this->m_oldState.store(this->m_state);
     this->m_state = PomoState::STOP;
   }
 
@@ -132,7 +138,7 @@ public:
   {
     this->m_state = PomoState::LONG;
     this->run(Goal);
-    this->m_oldState = this->m_state;
+    this->m_oldState.store(this->m_state);
     this->m_state = PomoState::STOP;
   }
 
@@ -141,18 +147,18 @@ public:
     uint64_t oldTimeLeft = this->getTimeLeft();
     this->m_state = PomoState::PAUSE;
     this->run(Goal);
-    this->m_state = this->m_oldState;
+    this->m_state.store(this->m_oldState);
     this->setTimeLeft(oldTimeLeft);
   }
 
   void RunStop(uint64_t Goal = PAUSE_STOP_VAL)
   {
-    this->m_oldState = this->m_state;
+    this->m_oldState.store(this->m_state);
     this->m_state = PomoState::STOP;
     this->run(Goal);
   }
 
-  PomoState getState() const noexcept { return this->m_state;}
+  PomoState getState() const noexcept { return this->m_state.load();}
 
   const std::string getTimeStr() const noexcept
   {
@@ -392,6 +398,9 @@ int main()
 
   std::atomic_bool stop = false;
   init();
+#ifdef LOOP_DEBUG
+  uint64_t stopLoop = 0;
+#endif
 
   /**
    * Here lies dragons - actually handling WINCH/Resizing without segfaults. o.o
@@ -402,7 +411,7 @@ int main()
   sigaction(SIGWINCH, &sa, NULL);
 
   // Timer - main functionality
-  PomodoroTimer Timer{stop, POMODORO_TIME};
+  PomodoroTimer Timer{stop};
 
   std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
   InitialPaint();
@@ -450,10 +459,6 @@ int main()
       quitter();
       return(EXIT_SUCCESS);
     }
-    else if(Timer.getState() == PomoState::STOP)
-    {
-      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
-    }
     else if(c == 'p' && Timer.getState() != PomoState::PAUSE)
     {
       StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL));
@@ -474,6 +479,19 @@ int main()
     {
         StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
     }
+    else if(Timer.getState() == PomoState::STOP)
+    {
+      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
+#ifdef LOOP_DEBUG
+      mvwprintw(MidWin, midy-5,  xMiddle(midx, 5), std::to_string(stopLoop).c_str());
+      ++stopLoop;
+#endif
+#ifdef AUTO_NEXT
+      if(Timer.m_oldState == PomoState::SHORT || Timer.m_oldState == PomoState::LONG)
+      {
+      }
+#endif
+    }
     else if(c == KEY_RESIZE)
     {
       // we have to this actually, because the signal itself isn't really portable D:
@@ -491,7 +509,7 @@ int main()
       interrupt = false;
     }
     else{
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }
   return(0);
