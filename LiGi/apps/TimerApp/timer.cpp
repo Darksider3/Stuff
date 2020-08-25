@@ -329,7 +329,7 @@ void winch_handle(int sig)
     {}
 
     template<typename FUNC, typename ... Arguments>
-    bool insert(FUNC const f, Arguments&&... args)
+    bool insert(FUNC f, Arguments&&... args)
     {
       std::lock_guard<std::mutex> l(this->RunnerLock);
       if(this->funcQueue.size() > 0)
@@ -455,13 +455,13 @@ int main()
 */
 
   std::atomic_bool stop = false;
-  Threader bla(stop, stop);
+  /*Threader bla(stop, stop);
   bla.insert<>(dummy, 123);
   bla.printTypeLol();
   bla.run();
 
   std::string no;
-  std::cin >> no;
+  std::cin >> no;*/
   init();
 #ifdef LOOP_DEBUG
   uint64_t stopLoop = 0;
