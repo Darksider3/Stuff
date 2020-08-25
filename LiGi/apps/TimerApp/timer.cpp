@@ -478,7 +478,7 @@ int main()
   // Timer - main functionality
   PomodoroTimer Timer{stop};
 
-  std::thread PomoThread(&PomodoroTimer::RunPomo, &Timer, POMODORO_TIME);
+  std::thread PomoThread(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
   InitialPaint();
   while(true)
   {
