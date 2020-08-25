@@ -25,7 +25,7 @@
 #include <functional>
 #include <locale.h>
 #include <signal.h>
-#include <cstring>
+#include <cstring> // memset...
 
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool interrupt = false;
