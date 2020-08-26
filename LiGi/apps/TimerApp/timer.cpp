@@ -27,16 +27,10 @@
 #include <signal.h>
 #include <cstring> // memset...
 
+#include "ApplicationDefaults.h"
+#include "Tools.h"
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool interrupt = false;
-
-constexpr short MIN_X = 15;
-constexpr short MIN_Y = 15;
-constexpr uint64_t POMODORO_TIME = 1000 * 60 * 30;
-constexpr uint64_t SHORT_BREAK_TIME = 1000 * 60 * 6;
-constexpr uint64_t BIG_BREAK_TIME = 1000 * 60 * 18;
-constexpr uint64_t PAUSE_STOP_VAL = UINT64_MAX - (UINT64_MAX / 10);
-
 WINDOW *w;
 WINDOW *TopPanel;
 WINDOW *MidWin;
@@ -67,12 +61,6 @@ using N_I = uint16_t;
   N_I TotalStopTime; // Difference to Pause is that we stopped instead of paused, @todo logic for that
 };*/
 
-int xMiddle(size_t const &full, size_t const &sub) noexcept
-{
-  size_t x = (full - sub) / 2;
-  return static_cast<int>(x);
-}
-
 class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
@@ -90,7 +78,7 @@ public:
   public:
     static void printModeView(const PomoState& state, WINDOW *win) noexcept
     {
-
+      using namespace TimerApp;
       int midy, midx;
       getmaxyx(win, midy, midx);
       midy = midy /2;
@@ -295,6 +283,7 @@ void ViewRunningMenue()
 void ViewMode(PomoState const &state, WINDOW *win)
 {
   int midy, midx;
+  using namespace TimerApp;
   getmaxyx(win, midy, midx);
   midy = midy /2;
   if(state == PomoState::SHORT)
@@ -482,6 +471,7 @@ int main()
   InitialPaint();
   while(true)
   {
+    using namespace TimerApp;
     int c = wgetch(stdscr);
     set_red();
         int midx, midy;
