@@ -11,8 +11,8 @@ namespace FuncModifiers
 {
 namespace Thread
 {
-  enum __ShareThread{} ShareThread; // Selector
-  enum __HoldThread{} HoldThread;
+struct ShareThread{};
+struct HoldThread{};
 }
 }
 }
@@ -73,7 +73,7 @@ public:
 
 
 
-  std::shared_ptr<std::thread> RunThread(Li::FuncModifiers::Thread::__ShareThread&)
+  std::shared_ptr<std::thread> RunThread(Li::FuncModifiers::Thread::ShareThread)
   {
     // std::ref(*this): We want the Thread to have our data here...
     std::shared_ptr<std::thread> &&MovingThread = std::make_shared<std::thread>(&ThreadWrapper::threadingFunction, std::ref(*this));
@@ -139,7 +139,7 @@ int main()
 
   std::atomic_bool Global = false;
   ThreadWrapper ThreaderWrapper(Global);
-  std::shared_ptr<std::thread> ThreadCopy = ThreaderWrapper.RunThread(Li::FuncModifiers::Thread::ShareThread);
+  std::shared_ptr<std::thread> ThreadCopy = ThreaderWrapper.RunThread(Li::FuncModifiers::Thread::ShareThread());
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   ThreaderWrapper.insert<void()>(blafunc);
   std::string asw = "";
