@@ -27,11 +27,6 @@ endif()
 get_filename_component(PARENT_DIR ../.. ABSOLUTE)
 include_directories(${PARENT_DIR}/)
 
-option(LOOP_DEBUG "Debug STOP-Loop" OFF)
-if(LOOP_DEBUG)
-  add_definitions(-DLOOP_DEBUG)
-endif()
-
 add_executable(Pomocurses timer.cpp)
 
 target_link_libraries(Pomocurses ${CURSES_LIBRARIES} Threads::Threads)

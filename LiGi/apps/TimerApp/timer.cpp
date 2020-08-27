@@ -392,9 +392,6 @@ int main()
 
   std::atomic_bool stop = false;
   init();
-#ifdef LOOP_DEBUG
-  uint64_t stopLoop = 0;
-#endif
 
   /**
    * Here lies dragons - actually handling WINCH/Resizing without segfaults. o.o
@@ -477,15 +474,6 @@ int main()
     else if(Timer.getState() == PomoState::STOP)
     {
       StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
-#ifdef LOOP_DEBUG
-      mvwprintw(MidWin, midy-5,  xMiddle(midx, 5), std::to_string(stopLoop).c_str());
-      ++stopLoop;
-#endif
-#ifdef AUTO_NEXT
-      if(Timer.m_oldState == PomoState::SHORT || Timer.m_oldState == PomoState::LONG)
-      {
-      }
-#endif
     }
     else if(c == KEY_RESIZE)
     {
