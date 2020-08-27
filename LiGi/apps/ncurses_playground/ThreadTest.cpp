@@ -7,14 +7,8 @@
 
 namespace Ap
 {
-namespace FuncModifiers
-{
-namespace Thread
-{
 struct ShareThread{};
 struct HoldThread{};
-}
-}
 }
 
 class SingleThreadLoop
@@ -72,7 +66,7 @@ public:
 
 
 
-  std::shared_ptr<std::thread> RunThread(Ap::FuncModifiers::Thread::ShareThread)
+  std::shared_ptr<std::thread> RunThread(Ap::ShareThread)
   {
     // std::ref(*this): We want the Thread to have our data here...
     std::shared_ptr<std::thread> &&MovingThread = std::make_shared<std::thread>(&SingleThreadLoop::threadingFunction, std::ref(*this));
@@ -140,7 +134,7 @@ int main()
 
   std::atomic_bool Global = false;
   SingleThreadLoop ThreaderWrapper(Global);
-  std::shared_ptr<std::thread> ThreadCopy = ThreaderWrapper.RunThread(Ap::FuncModifiers::Thread::ShareThread());
+  std::shared_ptr<std::thread> ThreadCopy = ThreaderWrapper.RunThread(Ap::ShareThread());
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   ThreaderWrapper.insert<void()>(blafunc);
   std::string asw = "";
