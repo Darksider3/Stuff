@@ -175,6 +175,9 @@ public:
 void quitter()
 {
   delwin(w);
+  delwin(MidWin);
+  delwin(TopPanel);
+  delwin(ShortcutWin);
   endwin();
 }
 
