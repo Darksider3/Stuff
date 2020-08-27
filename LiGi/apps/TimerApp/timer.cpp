@@ -349,46 +349,6 @@ int main()
     PomObj.Unpause();
     EraseStateChangeRepaint();
   };
-  // TEST
-  /*
-  std::atomic_bool globalStop = false;
-  std::function<void()> running = std::bind(&PomodoroTimer::Resume, std::ref(bla));
-  std::deque<std::function<void()>> FunctionList;
-
-  FunctorStack<void()> testers;
-  testers.append(running);
-
-
-  auto Threading = [&](){
-    while(!globalStop)
-    {
-      if(FunctionList.empty())
-      {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        continue;
-      }
-      else
-      {
-        //testers.top()->functor();
-        std::function<void()> &thing = FunctionList.back();
-        thing();
-        FunctionList.pop_back();
-        continue;
-      }
-    }
-    return;
-  };
-
-  auto InsertFunc = [&](std::function<void()> func)
-  {
-    FunctionList.emplace_back(func);
-  };
-
-  std::thread ThreadingThingy(Threading);
-  InsertFunc(std::bind(&PomodoroTimer::Resume, std::ref(bla)));
-  globalStop = true;
-  ThreadingThingy.join();
-*/
 
   std::atomic_bool stop = false;
   init();
