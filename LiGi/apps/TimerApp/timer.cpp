@@ -278,8 +278,11 @@ void ViewRunningMenue()
   win_x = getmaxx(ShortcutWin);
 
   mvwaddstr(ShortcutWin, 0, (win_x/2)-(title.length()-1), title.c_str());
-  mvwaddstr(ShortcutWin, 1, 2, "Press q to exit");
-  mvwaddstr(ShortcutWin, 2, 2, "Press b to take a break");
+  mvwaddstr(ShortcutWin, 1, 2, "-> (C)lose");
+  mvwaddstr(ShortcutWin, 2, 2, "-> (B)reak");
+  mvwaddstr(ShortcutWin, 3, 2, "-> (P)ause/Un(P)ause");
+  mvwaddstr(ShortcutWin, 4, 2, "-> P(O)modoro");
+  mvwaddstr(ShortcutWin, 5, 2, "-> (L)ong Break");
   wrefresh(ShortcutWin);
 }
 
@@ -288,18 +291,25 @@ void ViewMode(PomoState const &state, WINDOW *win)
   int midy, midx;
   using namespace TimerApp;
   getmaxyx(win, midy, midx);
-  midy = midy /2;
-  if(state == PomoState::SHORT)
-    mvaddstr(midy+2, xMiddle(midx, 14), "Taking a break");
-  else if(state == PomoState::LONG)
-    mvaddstr(midy+2, xMiddle(midx, 18), "Taking a big break!");
-  else if(state == PomoState::POMODORO)
-    mvaddstr(midy+2, xMiddle(midx, 22), "Working on a Pomodoro!");
-  else if(state  == PomoState::PAUSE)
-    mvaddstr(midy+2, xMiddle(midx, 22), "Taking a manual pause!");
-  else if(state == PomoState::STOP)
-    mvaddstr(midy+2, xMiddle(midx, 25), "Waiting for input what to run!!");
-
+  midy = midy / 2;
+  switch(state)
+  {
+    case PomoState::SHORT:
+      mvaddstr(midy+2, xMiddle(midx, 14), "Taking a break");
+      break;
+    case PomoState::LONG:
+      mvaddstr(midy+2, xMiddle(midx, 18), "Taking a big break!");
+      break;
+    case PomoState::POMODORO:
+      mvaddstr(midy+2, xMiddle(midx, 22), "Working on a Pomodoro!");
+      break;
+    case PomoState::PAUSE:
+      mvaddstr(midy+2, xMiddle(midx, 22), "Taking a manual pause!");
+      break;
+    case PomoState::STOP:
+      mvaddstr(midy+2, xMiddle(midx, 25), "Waiting for input what to run!!");
+      break;
+  }
 }
 
 void winch_handle(int sig)
@@ -407,7 +417,7 @@ int main()
     ViewTitleBar();
     PomodoroTimer::View::printModeView(Timer.getState(), MidWin);
     refresh();
-    if(c == 'q')
+    if(c == 'c')
     {
       Timer.Pause();
       PomoThread.join();
@@ -430,7 +440,7 @@ int main()
     {
         StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
     }
-    else if(c == 'g')
+    else if(c == 'l')
     {
         StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
     }
