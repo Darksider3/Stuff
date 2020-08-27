@@ -305,65 +305,12 @@ void winch_handle(int sig)
     interrupt = true;
 }
 
-  class Threader
-  {
-  private:
-    std::deque<std::function<void()>> funcQueue;
-    std::mutex RunnerLock;
-    std::atomic_bool &stop;
-    std::atomic_bool &globalStop;
-  public:
-
-    Threader(std::atomic_bool &StopVar, std::atomic_bool &GlobalStopVar) : stop(StopVar), globalStop(GlobalStopVar)
-    {}
-
-    template<typename FUNC, typename ... Arguments>
-    bool insert(FUNC f, Arguments&&... args)
-    {
-      std::lock_guard<std::mutex> l(this->RunnerLock);
-      if(this->funcQueue.size() > 0)
-        return false; // just one element allowed
-      std::function<void()> Next = std::function<void()>(
-                                                 std::bind(f, std::forward<Arguments>(args)...));
-      this->funcQueue.emplace_back(std::move(Next));
-      return true;
-    }
-
-    void ThreadFunc()
-    {
-      while(!this->globalStop)
-      {
-        // @todo additional scope for scoped_lock
-        if(!this->funcQueue.empty())
-          run();
-        else
-          std::this_thread::sleep_for(std::chrono::milliseconds(500));
-      }
-    }
-
-    bool run()
-    {
-      std::scoped_lock<std::mutex> (this->RunnerLock);
-      if(this->funcQueue.size() < 1)
-        return false;
-      std::function<void()> const &RunFunc = this->funcQueue.back();
-      RunFunc();
-      this->funcQueue.pop_back();
-      return true;
-    }
-
-    void printTypeLol()
-    {
-      for(auto &b: this->funcQueue)
-        std::cout << typeid(b).name() << std::endl;
-    }
-  };
-
 int dummy(int bla)
 {
   std::cout << bla;
   return bla;
 }
+
 int main()
 {
   setlocale(LC_ALL, "");
@@ -444,13 +391,6 @@ int main()
 */
 
   std::atomic_bool stop = false;
-  /*Threader bla(stop, stop);
-  bla.insert<>(dummy, 123);
-  bla.printTypeLol();
-  bla.run();
-
-  std::string no;
-  std::cin >> no;*/
   init();
 #ifdef LOOP_DEBUG
   uint64_t stopLoop = 0;

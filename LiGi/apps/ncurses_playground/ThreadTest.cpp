@@ -5,7 +5,7 @@
 #include <mutex>
 #include <deque>
 
-namespace Li
+namespace Ap
 {
 namespace FuncModifiers
 {
@@ -17,7 +17,7 @@ struct HoldThread{};
 }
 }
 
-class ThreadWrapper
+class SingleThreadLoop
 {
 private:
   std::deque<std::function<void()>> funcQueue;
@@ -42,8 +42,7 @@ private:
         }
         else
         {
-          std::cout << "idling" << std::endl;
-          std::this_thread::sleep_for(std::chrono::milliseconds(500));
+          std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
       }
     }
@@ -51,7 +50,7 @@ private:
 protected:
 public:
 
-  explicit ThreadWrapper(std::atomic_bool &GlobalStopVar) : globalStop(GlobalStopVar)
+  explicit SingleThreadLoop(std::atomic_bool &GlobalStopVar) : globalStop(GlobalStopVar)
   {}
 
   template<typename FUNC, typename ... Arguments>
@@ -73,12 +72,14 @@ public:
 
 
 
-  std::shared_ptr<std::thread> RunThread(Li::FuncModifiers::Thread::ShareThread)
+  std::shared_ptr<std::thread> RunThread(Ap::FuncModifiers::Thread::ShareThread)
   {
     // std::ref(*this): We want the Thread to have our data here...
-    std::shared_ptr<std::thread> &&MovingThread = std::make_shared<std::thread>(&ThreadWrapper::threadingFunction, std::ref(*this));
+    std::shared_ptr<std::thread> &&MovingThread = std::make_shared<std::thread>(&SingleThreadLoop::threadingFunction, std::ref(*this));
     return std::move(MovingThread);
   }
+
+
 
   bool runFunc()
   {
@@ -120,7 +121,7 @@ public:
     return (this->mState == running);
   }
 
-  ~ThreadWrapper()
+  ~SingleThreadLoop()
   {
   }
 };
@@ -138,8 +139,8 @@ int main()
   };
 
   std::atomic_bool Global = false;
-  ThreadWrapper ThreaderWrapper(Global);
-  std::shared_ptr<std::thread> ThreadCopy = ThreaderWrapper.RunThread(Li::FuncModifiers::Thread::ShareThread());
+  SingleThreadLoop ThreaderWrapper(Global);
+  std::shared_ptr<std::thread> ThreadCopy = ThreaderWrapper.RunThread(Ap::FuncModifiers::Thread::ShareThread());
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   ThreaderWrapper.insert<void()>(blafunc);
   std::string asw = "";
