@@ -30,13 +30,13 @@
 #include "ApplicationDefaults.h"
 #include "Tools.h"
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
-std::atomic_bool interrupt = false;
-WINDOW *w;
-WINDOW *TopPanel;
-WINDOW *MidWin;
-WINDOW *ShortcutWin;
+std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
+WINDOW *FullWin; // full window; used to get dimensions
+WINDOW *TopPanel; // Subwindow in FullWin, used for the top bar
+WINDOW *MidWin; // also in the FullWindow, used for status and timer itself
+WINDOW *ShortcutWin; // and again in FullWindow, here for visibility of shortcuts
 
-int Fullx, Fully;
+int FULL_COORD_X, FULL_COORD_Y;
 
 enum PomoState
 {
@@ -174,7 +174,7 @@ public:
 
 void quitter()
 {
-  delwin(w);
+  delwin(FullWin);
   delwin(MidWin);
   delwin(TopPanel);
   delwin(ShortcutWin);
@@ -194,27 +194,27 @@ void init_colors()
 
 void init_windows()
 {
-  if((w = initscr()) == nullptr)
+  if((FullWin = initscr()) == nullptr)
   {
     std::cerr << "Error! Couldn't initialise ncurses!" << std::endl;
     quitter();
   }
   atexit(quitter);
 
-  getmaxyx(w, Fully, Fullx);
+  getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
 
-  if(Fully < MIN_Y || Fullx < MIN_X)
+  if(FULL_COORD_Y < MIN_Y || FULL_COORD_X < MIN_X)
   {
     std::cerr << "Sorry, but your window isnt big enough!" << std::endl;
     exit(ERR);
   }
 
-  if((TopPanel = newwin(3, Fullx, 0, 0)) == nullptr)
+  if((TopPanel = newwin(3, FULL_COORD_X, 0, 0)) == nullptr)
   {
     std::cerr << "Error! Couldn't intiialise top panel!"  << std::endl;
     exit(ERR);
   }
-  if((MidWin = newwin(Fully-13, Fullx, 3, 1)) == nullptr)
+  if((MidWin = newwin(FULL_COORD_Y-13, FULL_COORD_X, 3, 1)) == nullptr)
   {
     std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
     exit(ERR);
@@ -226,7 +226,7 @@ void init_windows()
   }
   cbreak();
   noecho();
-  nodelay(w, true);
+  nodelay(FullWin, true);
   curs_set(0);
 }
 
@@ -315,7 +315,7 @@ void ViewMode(PomoState const &state, WINDOW *win)
 void winch_handle(int sig)
 {
   if(sig == SIGWINCH)
-    interrupt = true;
+    _INTERRUPTED_ = true;
 }
 
 int dummy(int bla)
@@ -327,6 +327,16 @@ int dummy(int bla)
 int main()
 {
   setlocale(LC_ALL, "");
+
+  auto interrupt_handle = [&]() {
+      endwin();
+      init();
+      refresh();
+      clear();
+      getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
+      refresh();
+      _INTERRUPTED_ = false;
+  };
 
   auto set_white = [&]() {
     color_set(1,0);
@@ -403,7 +413,7 @@ int main()
       case(PomoState::SHORT):
       case(PomoState::POMODORO):
         wcolor_set(MidWin, 2, 0);
-        EraseSpecificLine(w, midy, xMiddle(midx, 10));
+        EraseSpecificLine(FullWin, midy, xMiddle(midx, 10));
         mvwprintw(MidWin, midy, xMiddle(midx, 8), Li::TimerTools::Format::getFullTimeString(
                  Timer.getTimeLeft()).c_str());
         wrefresh(MidWin);
@@ -454,15 +464,9 @@ int main()
       winch_handle(SIGWINCH);
     }
 
-    if(interrupt)
+    if(_INTERRUPTED_)
     {
-      endwin();
-      init();
-      refresh();
-      clear();
-      getmaxyx(w, Fully, Fullx);
-      refresh();
-      interrupt = false;
+      interrupt_handle();
     }
     else{
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
