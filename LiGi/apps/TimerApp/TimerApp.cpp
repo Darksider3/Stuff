@@ -76,7 +76,17 @@ public:
   {
   private:
   public:
-    static void printModeView(const PomoState& state, WINDOW *win) noexcept
+    static void set_red()
+    {
+      color_set(2, 0);
+    }
+
+    static void set_white()
+    {
+      color_set(1,0);
+    }
+
+    static void ModeView(const PomoState &state, WINDOW *win) noexcept
     {
       using namespace TimerApp;
       int midy, midx;
@@ -93,6 +103,41 @@ public:
       else if(state == PomoState::STOP)
         mvaddstr(midy+2, xMiddle(midx, 25), "Waiting for input what to run!!");
     }
+
+    static void MidView(const PomodoroTimer &Timer, WINDOW *win) noexcept
+    {
+      int midx, midy;
+      getmaxyx(win, midy, midx);
+      midy = midy / 2;
+
+      set_red();
+      switch(Timer.getState())
+      {
+        case(PomoState::PAUSE):
+          TimerApp::EraseSpecific(win, midy, TimerApp::xMiddle(midx, 7));
+          mvwprintw(win, midy, TimerApp::xMiddle(midx, 6), "Paused!");
+          wrefresh(win);
+          break;
+        case(PomoState::STOP):
+          TimerApp::EraseSpecific(win, midy, TimerApp::xMiddle(midx, 7));
+          mvwprintw(win, midy, TimerApp::xMiddle(midx, 7), "STOPPED!");
+          wrefresh(win);
+          break;
+        case(PomoState::LONG):
+        case(PomoState::SHORT):
+        case(PomoState::POMODORO):
+          wcolor_set(win, 2, 0);
+          TimerApp::EraseSpecific(win, midy, TimerApp::xMiddle(midx, 10));
+          mvwprintw(win, midy, TimerApp::xMiddle(midx, 8),
+                    Li::TimerTools::Format::getFullTimeString(
+                      Timer.getTimeLeft()).c_str());
+          wrefresh(win);
+          break;
+          //default:
+          //  break;
+      }
+      set_white();
+    }
   };
 
   std::atomic<PomoState> M_state;
@@ -102,7 +147,7 @@ public:
   explicit PomodoroTimer(std::atomic_bool &stopper) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
   {
     this->setDelay(500);
-    this->setSleep(125);
+    this->setSleep(250);
   }
 
 
@@ -338,26 +383,10 @@ int main()
       _INTERRUPTED_ = false;
   };
 
-  auto set_white = [&]() {
-    color_set(1,0);
-  };
-  auto set_red = [&]() {
-    color_set(2, 0);
-  };
-
   auto EraseStateChangeRepaint = [&](){
     werase(MidWin);
     ViewRunningMenue();
     ViewTitleBar();
-  };
-
-  auto EraseSpecificLine =  [&](WINDOW* win, int Y, int X){
-    int oldy, oldx;
-    getyx(win, oldy, oldx);
-    wmove(win, Y, X);
-    wclrtoeol(win);
-    wmove(win, oldy, oldx);
-    wrefresh(win);
   };
 
   auto InitialPaint = [&] {
@@ -393,39 +422,10 @@ int main()
   {
     using namespace TimerApp;
     int c = wgetch(stdscr);
-    set_red();
-        int midx, midy;
-        getmaxyx(MidWin, midy, midx);
-        midy = midy / 2;
-    switch(Timer.getState())
-    {
-      case(PomoState::PAUSE):
-        EraseSpecificLine(MidWin, midy, xMiddle(midx, 7));
-        mvwprintw(MidWin, midy, xMiddle(midx, 6), "Paused!");
-        wrefresh(MidWin);
-        break;
-      case(PomoState::STOP):
-        EraseSpecificLine(MidWin, midy, xMiddle(midx, 7));
-        mvwprintw(MidWin, midy, xMiddle(midx, 7), "STOPPED!");
-        wrefresh(MidWin);
-        break;
-      case(PomoState::LONG):
-      case(PomoState::SHORT):
-      case(PomoState::POMODORO):
-        wcolor_set(MidWin, 2, 0);
-        EraseSpecificLine(FullWin, midy, xMiddle(midx, 10));
-        mvwprintw(MidWin, midy, xMiddle(midx, 8), Li::TimerTools::Format::getFullTimeString(
-                 Timer.getTimeLeft()).c_str());
-        wrefresh(MidWin);
-        break;
-      //default:
-      //  break;
-    }
-
-    set_white();
+    PomodoroTimer::View::MidView(std::ref(Timer), MidWin);
     ViewRunningMenue();
     ViewTitleBar();
-    PomodoroTimer::View::printModeView(Timer.getState(), MidWin);
+    PomodoroTimer::View::ModeView(Timer.getState(), MidWin);
     refresh();
     if(c == 'c')
     {
