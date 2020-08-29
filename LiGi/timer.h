@@ -49,113 +49,113 @@ private:
   /**
    * @brief stopper atomic stopping variable to control flow
    */
-  std::atomic_bool &stopper;
+  std::atomic_bool &M_stopper;
   /**
    * @brief goal The time we actually want to reach!
    */
-  uint64_t goal;
+  uint64_t M_goal;
 
   /**
    * @brief delay Delay in which we actually increase variables
    */
-  uint64_t delay = 100;
+  uint64_t M_delay = 100;
 
   /**
    * @brief elapsed Stores, after delay and sleep, the already slept/waited time
    */
-  std::atomic_uint64_t time_left;
+  std::atomic_uint64_t M_timeLeft;
 
   /**
    * @brief sleep How long we sleep between checks
    */
-  uint64_t sleep = 20;
+  uint64_t M_sleep = 20;
 
 public:
 
-  operator RValType() const {return u_c.time_left;}
+  operator RValType() const {return u_c.M_timeLeft;}
 
   void setTimeLeft(const Literals::TimeValue auto &set)
   {
-    u_.time_left = set;
+    u_.M_timeLeft = set;
   }
 
   void setDelay(const Literals::TimeValue auto &set)
   {
-    u_.delay = set;
+    u_.M_delay = set;
   }
 
   void setSleep(const Literals::TimeValue auto &set)
   {
-    u_.sleep = set;
+    u_.M_sleep = set;
   }
 
   void setGoal(Literals::TimeValue auto Goal)
   {
-    u_.goal = Goal;
+    u_.M_goal = Goal;
   }
 
   RValType getTimeLeft() const
   {
-    uint64_t val = u_c.time_left;
+    uint64_t val = u_c.M_timeLeft;
     return val;
   }
   RValType getGoal() const
   {
-    return u_c.goal;
+    return u_c.M_goal;
   }
 
   RValType getDelay() const
   {
-    return u_c.delay;
+    return u_c.M_delay;
   }
 
   RValType getSleep() const
   {
-    return u_c.sleep;
+    return u_c.M_sleep;
   }
 
   std::atomic_bool &getStopper() const
   {
-    return u_c.stopper;
+    return u_c.M_stopper;
   }
 
   void Pause()
   {
-    u_.stopper = true;
+    u_.M_stopper = true;
   }
 
   void ToggleStopper()
   {
-    u_.stopper = !u_.stopper;
+    u_.M_stopper = !u_.M_stopper;
   }
 
   void Unpause()
   {
-    u_.stopper = false;
+    u_.M_stopper = false;
   }
 
   void ResetTime()
   {
-    u_.time_left = u_c.goal;
+    u_.M_timeLeft = u_c.M_goal;
   }
 
   void Stop()
   {
-    u_.stopper = true;
-    u_.Pause();
-    u_.ResetTime();
+    u_.M_stopper = true;
+    u_.M_Pause();
+    u_.M_ResetTime();
   }
 
   void Resume()
   {
-    u_.stopper = false;
+    u_.M_stopper = false;
     // prevent deadlock - by decreasing `time_left` in RunTimer
     //it's possible we overflow on the lower
 
     // spectrum.
-    if(u_c.time_left <= 0 || u_c.time_left == UINT64_MAX)
+    if(u_c.M_timeLeft <= 0 || u_c.M_timeLeft == UINT64_MAX)
     {
-      u_.time_left = u_c.goal;
+      u_.M_timeLeft = u_c.M_goal;
     }
     u_.RunTimer();
   }
@@ -163,12 +163,12 @@ public:
   void RunTimer()
   {
     auto t_start = std::chrono::steady_clock::now();
-    std::chrono::milliseconds t_delay(u_c.delay);
+    std::chrono::milliseconds t_delay(u_c.M_delay);
 
-    while(!u_c.stopper)
+    while(!u_c.M_stopper)
     {
       std::this_thread::sleep_for(
-            std::chrono::milliseconds(u_c.sleep));
+            std::chrono::milliseconds(u_c.M_sleep));
 
       auto t_now = std::chrono::steady_clock::now();
 
@@ -177,16 +177,16 @@ public:
       if(t_delay <= t_elapsed)
       {
         t_start = t_now;
-        u_.time_left = u_.time_left - t_elapsed.count();
+        u_.M_timeLeft = u_.M_timeLeft - t_elapsed.count();
 
-        if(u_c.time_left <= 0 || u_c.time_left == UINT64_MAX)
+        if(u_c.M_timeLeft <= 0 || u_c.M_timeLeft == UINT64_MAX)
           break; // we done!
       }
     }
     return;
   }
   Timer(std::atomic_bool &stop, const Literals::TimeValue auto &Goal) :
-    stopper(stop), goal(Goal), time_left(Goal){}
+    M_stopper(stop), M_goal(Goal), M_timeLeft(Goal){}
 
   virtual ~Timer() = default;
 

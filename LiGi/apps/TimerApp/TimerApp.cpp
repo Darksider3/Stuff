@@ -95,8 +95,8 @@ public:
     }
   };
 
-  std::atomic<PomoState> m_state;
-  std::atomic<PomoState> m_oldState;
+  std::atomic<PomoState> M_state;
+  std::atomic<PomoState> M_oldState;
   using Timer<PomodoroTimer>::Timer;
 
   explicit PomodoroTimer(std::atomic_bool &stopper) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
@@ -108,45 +108,45 @@ public:
 
   void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
   {
-    this->m_state = PomoState::POMODORO;
-    this->run(Goal);
-    this->m_oldState.store(this->m_state);
-    this->m_state = PomoState::STOP;
+    M_state = PomoState::POMODORO;
+    run(Goal);
+    M_oldState.store(M_state);
+    M_state = PomoState::STOP;
   }
 
   void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME) noexcept
   {
-    this->m_state = PomoState::SHORT;
-    this->run(Goal);
-    this->m_oldState.store(this->m_state);
-    this->m_state = PomoState::STOP;
+    M_state = PomoState::SHORT;
+    run(Goal);
+    M_oldState.store(M_state);
+    M_state = PomoState::STOP;
   }
 
   void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME) noexcept
   {
-    this->m_state = PomoState::LONG;
-    this->run(Goal);
-    this->m_oldState.store(this->m_state);
-    this->m_state = PomoState::STOP;
+    M_state = PomoState::LONG;
+    run(Goal);
+    M_oldState.store(M_state);
+    M_state = PomoState::STOP;
   }
 
   void RunPause(uint64_t Goal = PAUSE_STOP_VAL) noexcept
   {
     uint64_t oldTimeLeft = this->getTimeLeft();
-    this->m_state = PomoState::PAUSE;
-    this->run(Goal);
-    this->m_state.store(this->m_oldState);
-    this->setTimeLeft(oldTimeLeft);
+    M_state = PomoState::PAUSE;
+    run(Goal);
+    M_state.store(M_oldState);
+    setTimeLeft(oldTimeLeft);
   }
 
   void RunStop(uint64_t Goal = PAUSE_STOP_VAL)
   {
-    this->m_oldState.store(this->m_state);
-    this->m_state = PomoState::STOP;
-    this->run(Goal);
+    M_oldState.store(M_state);
+    M_state = PomoState::STOP;
+    run(Goal);
   }
 
-  PomoState getState() const noexcept { return this->m_state.load();}
+  PomoState getState() const noexcept { return M_state.load();}
 
   const std::string getTimeStr() const noexcept
   {
