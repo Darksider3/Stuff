@@ -27,6 +27,6 @@ endif()
 get_filename_component(PARENT_DIR ../.. ABSOLUTE)
 include_directories(${PARENT_DIR}/)
 
-add_executable(Pomocurses timer.cpp)
+add_executable(Pomocurses TimerApp.cpp)
 
 target_link_libraries(Pomocurses ${CURSES_LIBRARIES} Threads::Threads)
