@@ -27,17 +27,19 @@ private:
   {
     while(!this->globalStop)
     {
-      // @todo additional scope for scoped_lock
+      bool ss = true;
       {
         std::scoped_lock<std::mutex>(this->queueLock);
-        if(!this->funcQueue.empty())
-        {
-          runFunc();
-        }
-        else
-        {
-          std::this_thread::sleep_for(std::chrono::milliseconds(250));
-        }
+        ss = this->funcQueue.empty();
+      }
+      // @todo additional scope for scoped_lock
+      if(!ss)
+      {
+        runFunc();
+      }
+      else
+      {
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
       }
     }
   }
@@ -54,11 +56,8 @@ public:
       std::scoped_lock<std::mutex> l(this->queueLock);
       if(this->funcQueue.size() > 0)
         return false; // just one element allowed
-    }
-    std::function<void()> Next = std::function<void()>(
-                                   std::bind(f, std::forward<Arguments>(args)...));
-    {
-      std::scoped_lock<std::mutex>(this->queueLock);
+      std::function<void()> Next = std::function<void()>(
+                                     std::bind(f, std::forward<Arguments>(args)...));
       this->funcQueue.emplace_back(std::move(Next));
     }
     return true;
@@ -79,25 +78,18 @@ public:
   {
     std::function<void()> RunFunc;
     {
-      std::scoped_lock<std::mutex> (this->queueLock);
+      std::scoped_lock<std::mutex, std::mutex> (this->statelock, this->queueLock);
       if(this->funcQueue.size() < 1)
         return false;
       RunFunc = this->funcQueue.back();
-    }
-    {
-      std::scoped_lock<std::mutex> (this->statelock);
       mState = running;
     }
 
     RunFunc();
 
     {
-      std::scoped_lock<std::mutex> (this->statelock);
+      std::scoped_lock<std::mutex, std::mutex> (this->statelock, this->queueLock);
       mState = idle;
-    }
-
-    {
-      std::scoped_lock<std::mutex> (this->queueLock);
       this->funcQueue.pop_back();
     }
     return true;

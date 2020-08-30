@@ -378,7 +378,22 @@ int dummy(int bla)
 
 int main()
 {
+  /**
+   * Here lies dragons - actually handling WINCH/Resizing without segfaults. o.o
+   */
+
   setlocale(LC_ALL, "");
+  struct sigaction sa;
+  std::memset(&sa, 0, sizeof(struct sigaction));
+  sa.sa_handler = winch_handle;
+  sigaction(SIGWINCH, &sa, NULL);
+
+  std::atomic_bool stop = false;
+  init();
+
+  // Timer - main functionality
+  PomodoroTimer Timer{stop};
+  PomodoroTimer::View AppView(Timer);
 
   auto interrupt_handle = [&]() {
       endwin();
@@ -396,10 +411,6 @@ int main()
     ViewTitleBar();
   };
 
-  auto InitialPaint = [&] {
-    EraseStateChangeRepaint();
-  };
-
   auto StateChange = [&](std::thread &ThreadObj, PomodoroTimer &PomObj, std::function<void()> runFunc)
   {
     PomObj.Pause();
@@ -409,23 +420,8 @@ int main()
     EraseStateChangeRepaint();
   };
 
-  std::atomic_bool stop = false;
-  init();
-
-  /**
-   * Here lies dragons - actually handling WINCH/Resizing without segfaults. o.o
-   */
-  struct sigaction sa;
-  std::memset(&sa, 0, sizeof(struct sigaction));
-  sa.sa_handler = winch_handle;
-  sigaction(SIGWINCH, &sa, NULL);
-
-  // Timer - main functionality
-  PomodoroTimer Timer{stop};
 
   std::thread PomoThread(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
-  InitialPaint();
-  PomodoroTimer::View AppView(Timer);
   while(true)
   {
     using namespace TimerApp;
@@ -468,7 +464,7 @@ int main()
     }
     else if(c == KEY_RESIZE)
     {
-      // we have to this actually, because the signal itself isn't really portable D:
+      // we have to do this actually, because the signal itself isn't really portable D:
       winch_handle(SIGWINCH);
     }
 
