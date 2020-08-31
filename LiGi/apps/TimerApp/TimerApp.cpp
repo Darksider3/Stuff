@@ -81,67 +81,91 @@ public:
 
     explicit View(PomodoroTimer const &timer) : M_Timer(timer) {}
 
-    static void set_red()
+    static void set_red(WINDOW &win)
     {
-      color_set(2, 0);
+      wcolor_set(&win, 2, 0);
     }
 
-    static void set_white()
+    static void set_white(WINDOW &win)
     {
-      color_set(1,0);
+      wcolor_set(&win, 1, 0);
     }
 
-    void Mode(WINDOW *win) const noexcept
+    void Mode(WINDOW &win) const noexcept
     {
       const PomoState &state = M_Timer.getState();
       int midy, midx;
-      getmaxyx(win, midy, midx);
+      getmaxyx(&win, midy, midx);
       midy = midy /2;
       if(state == PomoState::SHORT)
-        mvaddstr(midy+2, TimerApp::xMiddle(midx, 14), "Taking a break");
+        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 14), "Taking a break");
       else if(state == PomoState::LONG)
-        mvaddstr(midy+2, TimerApp::xMiddle(midx, 18), "Taking a big break!");
+        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 18), "Taking a big break!");
       else if(state == PomoState::POMODORO)
-        mvaddstr(midy+2, TimerApp::xMiddle(midx, 22), "Working on a Pomodoro!");
+        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 22), "Working on a Pomodoro!");
       else if(state  == PomoState::PAUSE)
-        mvaddstr(midy+2, TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
+        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
       else if(state == PomoState::STOP)
-        mvaddstr(midy+2, TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
+        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
     }
 
-    void Mid(WINDOW *win) const noexcept
+    void Mid(WINDOW &win) const noexcept
     {
       int midx, midy;
-      getmaxyx(win, midy, midx);
+      getmaxyx(&win, midy, midx);
       midy = midy / 2;
 
-      set_red();
+      set_red(win);
       switch(M_Timer.getState())
       {
         case(PomoState::PAUSE):
-          TimerApp::EraseSpecific(win, midy, TimerApp::xMiddle(midx, 7));
-          mvwprintw(win, midy, TimerApp::xMiddle(midx, 6), "Paused!");
-          wrefresh(win);
+          TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
+          mvwprintw(&win, midy, TimerApp::xMiddle(midx, 6), "Paused!");
+          wrefresh(&win);
           break;
         case(PomoState::STOP):
-          TimerApp::EraseSpecific(win, midy, TimerApp::xMiddle(midx, 7));
-          mvwprintw(win, midy, TimerApp::xMiddle(midx, 7), "STOPPED!");
-          wrefresh(win);
+          TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
+          mvwprintw(&win, midy, TimerApp::xMiddle(midx, 7), "STOPPED!");
+          wrefresh(&win);
           break;
         case(PomoState::LONG):
         case(PomoState::SHORT):
         case(PomoState::POMODORO):
-          wcolor_set(win, 2, 0);
-          TimerApp::EraseSpecific(win, midy, TimerApp::xMiddle(midx, 10));
-          mvwprintw(win, midy, TimerApp::xMiddle(midx, 8),
+          TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 10));
+          mvwprintw(&win, midy, TimerApp::xMiddle(midx, 8),
                     Li::TimerTools::Format::getFullTimeString(
                       M_Timer.getTimeLeft()).c_str());
-          wrefresh(win);
+          wrefresh(&win);
           break;
           //default:
           //  break;
       }
-      set_white();
+      set_white(win);
+    }
+
+    void Shortcut(WINDOW &win) const noexcept
+    {
+
+      std::string title = "Shortcuts";
+      box(&win, 0, 0);
+      int win_x;
+
+      win_x = getmaxx(&win);
+
+      mvwaddstr(&win, 0, (win_x/2)-(title.length()-1), title.c_str());
+      mvwaddstr(&win, 1, 2, "-> (C)lose");
+      mvwaddstr(&win, 2, 2, "-> (B)reak");
+      mvwaddstr(&win, 3, 2, "-> (P)ause/Un(P)ause");
+      mvwaddstr(&win, 4, 2, "-> P(O)modoro");
+      mvwaddstr(&win, 5, 2, "-> (L)ong Break");
+      wrefresh(&win);
+    }
+
+    void TitleBar(WINDOW &win) const noexcept
+    {
+      mvwaddstr(&win, 1, 1, "(E)dit settings");
+      mvwhline(&win, 2, 0, ACS_HLINE, COLS);
+      wrefresh(&win);
     }
   };
 
@@ -153,8 +177,8 @@ public:
 
   explicit PomodoroTimer(std::atomic_bool &stopper) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
   {
-    this->setDelay(500);
-    this->setSleep(250);
+    this->setDelay(50);
+    this->setSleep(10);
   }
 
 
@@ -312,57 +336,6 @@ Timer background: #03A4BC, Timer Foreground: Black
 +------------------+----------------------+
 
 */
-void ViewTitleBar()
-{
-  mvwaddstr(TopPanel, 1, 1, "(E)dit settings");
-  //for(size_t i = COLS; i != 0; --i)
-  //  mvwadd_wch(TopPanel, 2, i, WACS_T_HLINE);
-  mvwhline(TopPanel, 2, 0, ACS_HLINE, COLS);
-  wrefresh(TopPanel);
-}
-
-void ViewRunningMenue()
-{
-  std::string title = "Shortcuts";
-  box(ShortcutWin, 0, 0);
-  int win_x;
-
-  win_x = getmaxx(ShortcutWin);
-
-  mvwaddstr(ShortcutWin, 0, (win_x/2)-(title.length()-1), title.c_str());
-  mvwaddstr(ShortcutWin, 1, 2, "-> (C)lose");
-  mvwaddstr(ShortcutWin, 2, 2, "-> (B)reak");
-  mvwaddstr(ShortcutWin, 3, 2, "-> (P)ause/Un(P)ause");
-  mvwaddstr(ShortcutWin, 4, 2, "-> P(O)modoro");
-  mvwaddstr(ShortcutWin, 5, 2, "-> (L)ong Break");
-  wrefresh(ShortcutWin);
-}
-
-void ViewMode(PomoState const &state, WINDOW *win)
-{
-  int midy, midx;
-  using namespace TimerApp;
-  getmaxyx(win, midy, midx);
-  midy = midy / 2;
-  switch(state)
-  {
-    case PomoState::SHORT:
-      mvaddstr(midy+2, xMiddle(midx, 14), "Taking a break");
-      break;
-    case PomoState::LONG:
-      mvaddstr(midy+2, xMiddle(midx, 18), "Taking a big break!");
-      break;
-    case PomoState::POMODORO:
-      mvaddstr(midy+2, xMiddle(midx, 22), "Working on a Pomodoro!");
-      break;
-    case PomoState::PAUSE:
-      mvaddstr(midy+2, xMiddle(midx, 22), "Taking a manual pause!");
-      break;
-    case PomoState::STOP:
-      mvaddstr(midy+2, xMiddle(midx, 25), "Waiting for input what to run!!");
-      break;
-  }
-}
 
 void winch_handle(int sig)
 {
@@ -407,8 +380,8 @@ int main()
 
   auto EraseStateChangeRepaint = [&](){
     werase(MidWin);
-    ViewRunningMenue();
-    ViewTitleBar();
+    AppView.Shortcut(*ShortcutWin);
+    AppView.TitleBar(*TopPanel);
   };
 
   auto StateChange = [&](std::thread &ThreadObj, PomodoroTimer &PomObj, std::function<void()> runFunc)
@@ -426,10 +399,10 @@ int main()
   {
     using namespace TimerApp;
     int c = wgetch(stdscr);
-    AppView.Mid(MidWin);
-    AppView.Mode(MidWin);
-    ViewRunningMenue();
-    ViewTitleBar();
+    AppView.Mid(*MidWin);
+    AppView.Mode(*MidWin);
+    AppView.Shortcut(*ShortcutWin);
+    AppView.TitleBar(*TopPanel);
     refresh();
     if(c == 'c')
     {
@@ -473,7 +446,7 @@ int main()
       interrupt_handle();
     }
     else{
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
   }
   return(0);
