@@ -6,7 +6,7 @@ int main()
 {
   xdg_basedirs *Ins = xdg_basedirs::instance();
   std::string bl = "/home/darksider3";
-  if(Ins->valid_env(bl))
+  if(Ins->valid_xdg_var(bl))
   {
     std::cout << "Valid";
   }
@@ -26,7 +26,7 @@ int main()
   std::cout << "\nConfigDirs: " << std::endl;
   for(auto &ele: vectorthing)
     std::cout << "-> " << ele << std::endl;
-  std::cout << "\n" << Ins->home << std::endl;
+  std::cout << "\n" << Ins->M_home << std::endl;
 
   return 1;
 }
