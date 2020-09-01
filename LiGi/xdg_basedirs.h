@@ -4,7 +4,9 @@
 #include <filesystem>
 #include <vector>
 
+#include "EnvTools.h"
 #include "Singleton.h"
+#include "GeneralTools.h"
 
 /*! A Singleton class managing & sanitizing the existence of XDG_$name$ variables, conform to the standard
  *
@@ -20,26 +22,6 @@ private:
   std::filesystem::path M_tmpPath;
 protected:
   char M_list_delim = ':';
-
-  void empty_if_nullptr(const char *checkvar, std::string &strvar)
-  {
-    if(checkvar == nullptr)
-      strvar = "";
-    else
-      strvar = checkvar;
-  }
-
-  std::vector<std::string> split(const std::string& s, char delimiter)
-  {
-    std::vector<std::string> tokens;
-    std::string token;
-    std::istringstream tokenStream(s);
-    while (std::getline(tokenStream, token, delimiter))
-    {
-      tokens.push_back(token);
-    }
-    return tokens;
-  }
 
 public:
   struct Dirs_List {};
@@ -62,12 +44,12 @@ public:
    */
   void xdg_basedir_populate()
   {
-    empty_if_nullptr(std::getenv("HOME"), home);
-    empty_if_nullptr(std::getenv("XDG_DATA_HOME"), data_home);
-    empty_if_nullptr(std::getenv("XDG_CONFIG_HOME"), config_home);
-    empty_if_nullptr(std::getenv("XDG_DATA_DIRS"), data_dirs);
-    empty_if_nullptr(std::getenv("XDG_CONFIG_DIRS"), config_dirs);
-    empty_if_nullptr(std::getenv("XDG_CACHE_HOME"), cache_home);
+    Li::Env::empty_if_nullptr_env(std::getenv("HOME"), home);
+    Li::Env::empty_if_nullptr_env(std::getenv("XDG_DATA_HOME"), data_home);
+    Li::Env::empty_if_nullptr_env(std::getenv("XDG_CONFIG_HOME"), config_home);
+    Li::Env::empty_if_nullptr_env(std::getenv("XDG_DATA_DIRS"), data_dirs);
+    Li::Env::empty_if_nullptr_env(std::getenv("XDG_CONFIG_DIRS"), config_dirs);
+    Li::Env::empty_if_nullptr_env(std::getenv("XDG_CACHE_HOME"), cache_home);
     return;
   }
 
@@ -104,7 +86,7 @@ public:
     return default_to(data_home, home + "/.local/share");
   }
 
-  std::string ConfigHOme()
+  std::string ConfigHome()
   {
     return default_to(config_home, home + "/.config");
   }
@@ -126,17 +108,17 @@ public:
 
   std::vector<std::string> DataDirs(Dirs_List)
   {
-    std::vector<std::string> potRet = split(data_dirs, M_list_delim);
+    std::vector<std::string> potRet = Li::GeneralTools::split(data_dirs, M_list_delim);
 
     if(potRet.empty())
-      potRet = split(DataDirs(), M_list_delim);
+      potRet = Li::GeneralTools::split(DataDirs(), M_list_delim);
 
     return potRet;
   }
 
   std::vector<std::string> ConfigDirs(Dirs_List)
   {
-    std::vector<std::string> potRet = split(config_dirs, M_list_delim);
+    std::vector<std::string> potRet = Li::GeneralTools::split(config_dirs, M_list_delim);
     if(potRet.empty())
       potRet.emplace_back(ConfigDirs());
 
