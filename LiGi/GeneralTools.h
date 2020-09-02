@@ -10,7 +10,7 @@ namespace Li
 namespace GeneralTools
 {
 
-std::vector<std::string> split(const std::string& s, char delimiter)
+std::vector<std::string> split(const std::string& s, const char delimiter) noexcept
 {
   std::vector<std::string> tokens;
   std::string token;
