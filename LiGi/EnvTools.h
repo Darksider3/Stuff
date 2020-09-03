@@ -37,6 +37,7 @@ inline void empty_if_nullptr_env(const char *checkvar, std::string &strvar) noex
   else
     strvar = checkvar;
 }
+
 /**
  * @brief Get an environment variable, which is either set to an empty string or filled with the content of an existent one
  * @warning Of course, because this is a environment function, the same warnings from the std::getenv apply here, until
@@ -66,19 +67,24 @@ inline std::string get_env(std::string const &var) noexcept
  * @param variable Variable to write into
  * @param contents Contents to write into `variable`
  * @param overwrite Weither or not to overwrite existing values in case the variable already exists
- *
+ * @return True, when the variable got set, `false` otherwise. Sets `errno` in case of `false`..
  *
  */
 inline bool set_env(const std::string &variable, const std::string &contents, const bool overwrite = true)
 {
   std::scoped_lock<std::mutex, std::mutex> WriteLock(EnvStateLock, EnvInputStringLock);
-  return setenv(variable.c_str(), contents.c_str(), static_cast<int>(overwrite));
+  return ( setenv(variable.c_str(), contents.c_str(), static_cast<int>(overwrite)) == -1 ) ? false : true ;
 }
 
+/**
+ * @brief unset_env Thread-Safe environment-variable deletion
+ * @param variable Variables name to delete(will lock `EnvInputStringLock`)
+ * @return `true` if everything worked, otherwise `false` and `errno` will be set.
+ */
 inline bool unset_env(const std::string &variable)
 {
-  std::scoped_lock<std::mutex> StateLock(EnvStateLock);
-  return unsetenv(variable.c_str());
+  std::scoped_lock<std::mutex, std::mutex> StateLock(EnvStateLock, EnvInputStringLock);
+  return ( unsetenv(variable.c_str()) == -1 ) ? false : true;
 }
 
 }
