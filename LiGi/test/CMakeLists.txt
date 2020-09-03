@@ -11,4 +11,4 @@ set("CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} --std=c++2a -g -pedantic-errors -Wuseles
 get_filename_component(PARENT_DIR ../ ABSOLUTE)
 include_directories(${PARENT_DIR})
 
-add_executable(test xdg_basedirs.cpp)
+add_executable(test xdg_basedirs.cpp ../Test.cpp)
