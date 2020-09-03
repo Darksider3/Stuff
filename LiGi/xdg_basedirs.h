@@ -53,10 +53,9 @@ public:
   std::string M_config_dirs;
   std::string M_cache_home;
 
-  xdg_basedirs(bool auto_populate = true) : Li::Singleton<xdg_basedirs>()
+  xdg_basedirs() : Li::Singleton<xdg_basedirs>()
   {
-    if(auto_populate)
-      xdg_basedir_populate();
+    xdg_basedir_populate();
   }
 
   /**
@@ -66,7 +65,7 @@ public:
    */
   void xdg_basedir_populate() noexcept
   {
-    M_home = Li::Env::get_env("HOME");
+    M_home = Li::Env::home_dir;
     M_data_home = Li::Env::get_env("XDG_DATA_HOME");
     M_config_home = Li::Env::get_env("XDG_CONFIG_HOME");
     M_data_dirs = Li::Env::get_env("XDG_DATA_DIRS");
@@ -114,7 +113,7 @@ public:
    */
   inline std::string Home() const noexcept
   {
-    return Li::Env::get_env("HOME");
+    return M_home;
   }
 
   /**

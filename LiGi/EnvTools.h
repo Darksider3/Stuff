@@ -87,6 +87,8 @@ inline bool unset_env(const std::string &variable)
   return ( unsetenv(variable.c_str()) == -1 ) ? false : true;
 }
 
+std::string home_dir = get_env("HOME");
+
 }
 }
 #endif // ENVTOOLS_H
