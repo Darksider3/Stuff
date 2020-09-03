@@ -2,10 +2,22 @@
 #define ENVTOOLS_H
 #include <string>
 #include <cstdlib> // char *std::getenv
-
+#include <mutex>
 namespace Li {
 namespace Env
 {
+
+/**
+ * @brief EnvStateLock locks whenever something get's requested from the current environment
+ */
+std::mutex EnvStateLock;
+
+
+/**
+ * @brief EnvInputStringLock Convenience lock for possible data races through the input strings(will be locked when read or written to)
+ */
+std::mutex EnvInputStringLock;
+
 
 /**
  * @brief empty_if_nullptr_env Is, as the name suggests, currently only a helper function
@@ -37,8 +49,36 @@ inline void empty_if_nullptr_env(const char *checkvar, std::string &strvar) noex
 inline std::string get_env(std::string const &var) noexcept
 {
   std::string ENV = "";
-  empty_if_nullptr_env(std::getenv(var.c_str()), ENV);
+  char *t;
+  // anonymous scope guarding environment state
+  {
+    std::scoped_lock<std::mutex, std::mutex> ReadLock(EnvStateLock, EnvInputStringLock);
+    t = std::getenv(var.c_str());
+  }
+
+  empty_if_nullptr_env(t, ENV);
   return ENV;
+}
+
+
+/**
+ * @brief set_env Thread-Safe set_env.
+ * @param variable Variable to write into
+ * @param contents Contents to write into `variable`
+ * @param overwrite Weither or not to overwrite existing values in case the variable already exists
+ *
+ *
+ */
+inline bool set_env(const std::string &variable, const std::string &contents, const bool overwrite = true)
+{
+  std::scoped_lock<std::mutex, std::mutex> WriteLock(EnvStateLock, EnvInputStringLock);
+  return setenv(variable.c_str(), contents.c_str(), static_cast<int>(overwrite));
+}
+
+inline bool unset_env(const std::string &variable)
+{
+  std::scoped_lock<std::mutex> StateLock(EnvStateLock);
+  return unsetenv(variable.c_str());
 }
 
 }
