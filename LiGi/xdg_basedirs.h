@@ -27,7 +27,7 @@ private:
    */
   std::string default_to(std::string &source, std::string to)
   {
-    if(source.empty() && !valid_xdg_var(source))
+    if(source.empty() || !valid_xdg_var(source))
     {
       return to;
     }
@@ -106,6 +106,15 @@ public:
     std::filesystem::path tmpPath(str);
     tmpPath = std::filesystem::path(str);
     return tmpPath.is_absolute();
+  }
+
+  /**
+   * @brief Get the Home of the current user
+   * @return HOME-Directory of the current user
+   */
+  inline std::string Home() const noexcept
+  {
+    return Li::Env::get_env("HOME");
   }
 
   /**
