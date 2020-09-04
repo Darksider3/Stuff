@@ -34,8 +34,18 @@ void initVM()
 
 static InterpretResult run()
 {
+  
 #define READ_BYTE() (*vm.ip++) // increment IP and get it
+
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()]) // read a following constants value
+
+#define BINARY_OP(op)                                                  \
+do {                                                                   \
+  double b = pop();                                                    \
+  double a = pop();                                                    \
+  push(a op b);                                                        \
+} while(false)
+
   for (;;) //run until we dont want you to run anymore!
   {
     uint8_t instruction; // current instruction
@@ -57,6 +67,12 @@ static InterpretResult run()
         push(constant);
         break;
       }
+      
+      case OP_ADD: BINARY_OP(+); break;
+      case OP_SUBTRACT: BINARY_OP(-); break;
+      case OP_MULTIPLY: BINARY_OP(*); break;
+      case OP_DIVIDE: BINARY_OP(/);
+    
       case OP_NEGATE: push(-pop()); break; //negate current value on top of the stack and push it directly back onto it
 
       case OP_RETURN: {
@@ -68,6 +84,7 @@ static InterpretResult run()
   }
 #undef READ_CONSTANT
 #undef READ_BYTE
+#undef BINARY_OP
 }
 
 InterpretResult interpret(Chunk *chunk)
