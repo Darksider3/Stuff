@@ -466,6 +466,11 @@ int main()
     AppView.Shortcut(*ShortcutWin);
     AppView.TitleBar(*TopPanel);
     AppView.Statistcs(*StatisticsWin);
+#ifndef NDEBUG
+    EraseSpecific(TopPanel, 0, COLS-30);
+    mvwaddstr(TopPanel, 0, COLS-30, std::string("Time L: " + std::to_string(Timer.getTimeLeft())).c_str());
+    wrefresh(TopPanel);
+#endif
     refresh();
     if(c == 'c')
     {
@@ -505,8 +510,6 @@ int main()
       // we have to do this actually, because the signal itself isn't really portable D:
       winch_handle(SIGWINCH);
     }
-
-    mvwaddstr(TopPanel, 0, COLS-20, std::string("Time L: " + std::to_string(Timer.getTimeLeft())).c_str());
 
     if(_INTERRUPTED_)
     {
