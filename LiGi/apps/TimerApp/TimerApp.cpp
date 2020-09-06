@@ -384,8 +384,8 @@ Timer background: #03A4BC, Timer Foreground: Black
 | (E)dit Settings | Statistics | ProgName |
 +-----------------+------------+----------+
 |                                         |
-|                 TIMER                   |
 |    -> MODE(Pause, Long, Short, Pomo)    |
+|                 TIMER                   |
 |                                         |
 +------------------+----------------------+
 | Shortcuts:       | Short Statistics, e.g|
