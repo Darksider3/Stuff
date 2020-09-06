@@ -20,7 +20,7 @@ struct TestCase : public Li::LLNode<TestCase>
   bool success {false};
   short error;
 
-  void setFunc(bool(*function)(TestCase *))
+  void setFunc(bool (*function)(TestCase *))
   {
     func = *function;
   }
