@@ -67,13 +67,14 @@ class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
 
-  uint64_t pauseLeft = 0;
+  uint64_t M_pauseLeft = 0;
 
   void run(Li::Literals::TimeValue auto Goal) noexcept
   {
     this->setGoal(Goal);
     this->ResetTime();
     this->RunTimer();
+    return;
   }
 public:
   class View
@@ -89,11 +90,13 @@ public:
     static void set_red(WINDOW &win)
     {
       wcolor_set(&win, 2, 0);
+      return;
     }
 
     static void set_white(WINDOW &win)
     {
       wcolor_set(&win, 1, 0);
+      return;
     }
 
     void Mode(WINDOW &win) const noexcept
@@ -112,6 +115,7 @@ public:
         mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
       else if(state == PomoState::STOP)
         mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
+      return;
     }
 
     void Mid(WINDOW &win) const noexcept
@@ -146,6 +150,7 @@ public:
           //  break;
       }
       set_white(win);
+      return;
     }
 
     void Shortcut(WINDOW &win) const noexcept
@@ -164,6 +169,7 @@ public:
       mvwaddstr(&win, 4, 2, "-> P(O)modoro");
       mvwaddstr(&win, 5, 2, "-> (L)ong Break");
       wrefresh(&win);
+      return;
     }
 
     void Statistcs(WINDOW &win) const noexcept
@@ -181,6 +187,7 @@ public:
       mvwaddstr(&win, 1, 1, pomo.c_str());
       mvwaddstr(&win, 2, 1, sbreaks.c_str());
       wrefresh(&win);
+      return;
     }
 
     void TitleBar(WINDOW &win) const noexcept
@@ -188,6 +195,7 @@ public:
       mvwaddstr(&win, 1, 1, "(E)dit settings");
       mvwhline(&win, 2, 0, ACS_HLINE, COLS);
       wrefresh(&win);
+      return;
     }
   };
 
@@ -209,10 +217,18 @@ public:
 
   void RunResume() noexcept
   {
+    if(M_pauseLeft == 0)
+    {
+      RunStop();
+      return;
+    }
+
     M_state.store(M_oldState);
-    run(pauseLeft);
+    setTimeLeft(M_pauseLeft);
+    Resume(); // utilize parent!
     M_oldState.store(M_state);
     M_state.store(PomoState::STOP);
+    return;
   }
 
   void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
@@ -221,6 +237,7 @@ public:
     run(Goal);
     M_oldState.store(M_state);
     M_state.store(PomoState::STOP);
+    return;
   }
 
   void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME) noexcept
@@ -229,6 +246,7 @@ public:
     run(Goal);
     M_oldState.store(M_state);
     M_state = PomoState::STOP;
+    return;
   }
 
   void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME) noexcept
@@ -237,6 +255,7 @@ public:
     run(Goal);
     M_oldState.store(M_state);
     M_state = PomoState::STOP;
+    return;
   }
 
   void RunPause(uint64_t Goal = PAUSE_STOP_VAL) noexcept
@@ -245,7 +264,8 @@ public:
     M_state = PomoState::PAUSE;
     run(Goal);
     M_state.store(M_oldState);
-    pauseLeft = oldTimeLeft;
+    M_pauseLeft = oldTimeLeft;
+    return;
   }
 
   void RunStop(uint64_t Goal = PAUSE_STOP_VAL)
@@ -253,6 +273,7 @@ public:
     M_oldState.store(M_state);
     M_state = PomoState::STOP;
     run(Goal);
+    return;
   }
 
   PomoState getState() const noexcept { return M_state.load();}
