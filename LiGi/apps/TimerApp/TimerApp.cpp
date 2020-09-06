@@ -35,6 +35,8 @@ WINDOW *FullWin; // full window; used to get dimensions
 WINDOW *TopPanel; // Subwindow in FullWin, used for the top bar
 WINDOW *MidWin; // also in the FullWindow, used for status and timer itself
 WINDOW *ShortcutWin; // and again in FullWindow, here for visibility of shortcuts
+WINDOW *StatisticsWin;
+
 
 int FULL_COORD_X, FULL_COORD_Y;
 
@@ -47,19 +49,19 @@ enum PomoState
   STOP
 };
 
-/*
+
 struct PomoStatistics
 {
 using N_I = uint16_t;
-  N_I ShortBreaks;
-  N_I LongBreaks;
-  N_I Pomodoros;
-  N_I TotalWorkingTime; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
-  N_I TotalShortBreakTime;
-  N_I TotalLongBreakTime;
-  N_I TotalPauseTime; // Logic to stop instead of default pause;
-  N_I TotalStopTime; // Difference to Pause is that we stopped instead of paused, @todo logic for that
-};*/
+  N_I ShortBreaks = 0;
+  N_I LongBreaks = 0;
+  N_I Pomodoros = 0;
+  uint64_t TotalWorkingTime = 0; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
+  uint64_t TotalShortBreakTime = 0;
+  uint64_t TotalLongBreakTime = 0;
+  uint64_t TotalPauseTime = 0; // Logic to stop instead of default pause;
+  uint64_t TotalStopTime = 0; // Difference to Pause is that we stopped instead of paused, @todo logic for that
+} Stats;
 
 class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
@@ -76,10 +78,11 @@ public:
   {
   private:
     PomodoroTimer const &M_Timer;
+    PomoStatistics &M_Stats;
 
   public:
 
-    explicit View(PomodoroTimer const &timer) : M_Timer(timer) {}
+    explicit View(PomodoroTimer const &timer, PomoStatistics &stat) : M_Timer(timer), M_Stats(stat) {}
 
     static void set_red(WINDOW &win)
     {
@@ -152,12 +155,29 @@ public:
 
       win_x = getmaxx(&win);
 
-      mvwaddstr(&win, 0, (win_x/2)-(title.length()-1), title.c_str());
+      mvwaddstr(&win, 0, static_cast<int>((win_x-(title.length()-1))/2), title.c_str());
       mvwaddstr(&win, 1, 2, "-> (C)lose");
       mvwaddstr(&win, 2, 2, "-> (B)reak");
       mvwaddstr(&win, 3, 2, "-> (P)ause/Un(P)ause");
       mvwaddstr(&win, 4, 2, "-> P(O)modoro");
       mvwaddstr(&win, 5, 2, "-> (L)ong Break");
+      wrefresh(&win);
+    }
+
+    void Statistcs(WINDOW &win) const noexcept
+    {
+      std::string title = "Statistics";
+      // TODO: Long "B's"
+      // TODO: Times total run in those modes
+      // TOOD: For the statistics themselfes, just support
+      std::string pomo =    "-> Pomodoros: " + std::to_string(M_Stats.Pomodoros);
+      std::string sbreaks = "-> Short B's: " + std::to_string(M_Stats.ShortBreaks);
+      int win_x = getmaxx(&win);
+
+      box(&win, 0, 0);
+      mvwaddstr(&win, 0, static_cast<int>((win_x-(title.length()-1))/2), title.c_str());
+      mvwaddstr(&win, 1, 1, pomo.c_str());
+      mvwaddstr(&win, 2, 1, sbreaks.c_str());
       wrefresh(&win);
     }
 
@@ -300,6 +320,14 @@ void init_windows()
   {
     std::cerr << "Error! Couldn't initialise shortcut window!" << std::endl;
   }
+
+  if((StatisticsWin = newwin(10, COLS/2, LINES-10, COLS/2)) == nullptr)
+  {
+    std::cerr << "Error! Couldn't initialise statistics window!" << std::endl;
+  }
+
+
+
   cbreak();
   noecho();
   nodelay(FullWin, true);
@@ -366,7 +394,7 @@ int main()
 
   // Timer - main functionality
   PomodoroTimer Timer{stop};
-  PomodoroTimer::View AppView(Timer);
+  PomodoroTimer::View AppView(Timer, Stats);
 
   auto interrupt_handle = [&]() {
       endwin();
@@ -403,6 +431,7 @@ int main()
     AppView.Mode(*MidWin);
     AppView.Shortcut(*ShortcutWin);
     AppView.TitleBar(*TopPanel);
+    AppView.Statistcs(*StatisticsWin);
     refresh();
     if(c == 'c')
     {
