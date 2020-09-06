@@ -142,8 +142,8 @@ public:
   void Stop()
   {
     u_.M_stopper = true;
-    u_.M_Pause();
-    u_.M_ResetTime();
+    u_.Pause();
+    u_.ResetTime();
   }
 
   void Resume()
@@ -155,7 +155,7 @@ public:
     // spectrum.
     if(u_c.M_timeLeft <= 0 || u_c.M_timeLeft == UINT64_MAX)
     {
-      u_.M_timeLeft = u_c.M_goal;
+      return;
     }
     u_.RunTimer();
   }
@@ -165,15 +165,8 @@ public:
     auto t_start = std::chrono::steady_clock::now();
     std::chrono::milliseconds t_delay(u_c.M_delay);
 
-    while(true)
+    while(!u_c.M_stopper)
     {
-      if(u_c.M_stopper)
-      {
-        // @TODO: Need 2 states here:
-        //        Either stopped by the global
-        //        OR     stopped by time running out(which is important for some tasks)
-        break;
-      }
       std::this_thread::sleep_for(
             std::chrono::milliseconds(u_c.M_sleep));
 

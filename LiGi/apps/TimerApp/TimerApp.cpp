@@ -67,6 +67,8 @@ class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
 
+  uint64_t pauseLeft = 0;
+
   void run(Li::Literals::TimeValue auto Goal) noexcept
   {
     this->setGoal(Goal);
@@ -193,21 +195,32 @@ public:
 
   std::atomic<PomoState> M_state;
   std::atomic<PomoState> M_oldState;
+
+  PomoStatistics &M_Stats;
+
   using Timer<PomodoroTimer>::Timer;
 
-  explicit PomodoroTimer(std::atomic_bool &stopper) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
+
+  explicit PomodoroTimer(std::atomic_bool &stopper, PomoStatistics &stat) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME), M_Stats(stat)
   {
     this->setDelay(50);
     this->setSleep(10);
   }
 
+  void RunResume() noexcept
+  {
+    M_state.store(M_oldState);
+    run(pauseLeft);
+    M_oldState.store(M_state);
+    M_state.store(PomoState::STOP);
+  }
 
   void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
   {
-    M_state = PomoState::POMODORO;
+    M_state.store(PomoState::POMODORO);
     run(Goal);
     M_oldState.store(M_state);
-    M_state = PomoState::STOP;
+    M_state.store(PomoState::STOP);
   }
 
   void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME) noexcept
@@ -232,7 +245,7 @@ public:
     M_state = PomoState::PAUSE;
     run(Goal);
     M_state.store(M_oldState);
-    setTimeLeft(oldTimeLeft);
+    pauseLeft = oldTimeLeft;
   }
 
   void RunStop(uint64_t Goal = PAUSE_STOP_VAL)
@@ -393,7 +406,7 @@ int main()
   init();
 
   // Timer - main functionality
-  PomodoroTimer Timer{stop};
+  PomodoroTimer Timer{stop, Stats};
   PomodoroTimer::View AppView(Timer, Stats);
 
   auto interrupt_handle = [&]() {
@@ -446,7 +459,7 @@ int main()
     }
     else if(c == 'p' && Timer.getState() == PomoState::PAUSE)
     {
-      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::Resume, std::ref(Timer)));
+      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunResume, std::ref(Timer)));
     }
     else if(c == 'o')
     {
@@ -460,8 +473,10 @@ int main()
     {
         StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
     }
-    else if(Timer.getState() == PomoState::STOP)
+    else if(Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP)
     {
+      mvwaddstr(TopPanel, 0, COLS-20, "HERE");
+      wrefresh(TopPanel);
       StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
     }
     else if(c == KEY_RESIZE)
@@ -469,6 +484,8 @@ int main()
       // we have to do this actually, because the signal itself isn't really portable D:
       winch_handle(SIGWINCH);
     }
+
+    mvwaddstr(TopPanel, 0, COLS-20, std::string("Time L: " + std::to_string(Timer.getTimeLeft())).c_str());
 
     if(_INTERRUPTED_)
     {
