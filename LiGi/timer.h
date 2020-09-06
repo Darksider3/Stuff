@@ -165,8 +165,15 @@ public:
     auto t_start = std::chrono::steady_clock::now();
     std::chrono::milliseconds t_delay(u_c.M_delay);
 
-    while(!u_c.M_stopper)
+    while(true)
     {
+      if(u_c.M_stopper)
+      {
+        // @TODO: Need 2 states here:
+        //        Either stopped by the global
+        //        OR     stopped by time running out(which is important for some tasks)
+        break;
+      }
       std::this_thread::sleep_for(
             std::chrono::milliseconds(u_c.M_sleep));
 
