@@ -68,11 +68,12 @@ do {                                                                   \
         break;
       }
       
+      // BINARY OPs:
       case OP_ADD: BINARY_OP(+); break;
       case OP_SUBTRACT: BINARY_OP(-); break;
       case OP_MULTIPLY: BINARY_OP(*); break;
-      case OP_DIVIDE: BINARY_OP(/);
-    
+      case OP_DIVIDE: BINARY_OP(/); break;
+
       case OP_NEGATE: push(-pop()); break; //negate current value on top of the stack and push it directly back onto it
 
       case OP_RETURN: {
