@@ -43,6 +43,29 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
  *  -> 4. Li::fs::Pipe        -> .^^
  *  -> 5. Followed by.. TBA
  */
+
+class Path
+{
+protected:
+  std::string M_Path;
+
+public:
+
+  explicit Path(std::string const &str) : M_Path(str.c_str())
+  {
+  }
+
+  explicit Path(std::string &&str) : M_Path(std::move(str))
+  {
+  }
+
+  explicit Path(const Path &&other) : M_Path(std::move(other.M_Path))
+  {
+  }
+
+  explicit Path(const Path &other) : M_Path(other.M_Path)
+  {}
+};
 }
 }
 
