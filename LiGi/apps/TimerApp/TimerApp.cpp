@@ -56,7 +56,7 @@ enum PomoState
 
 struct PomoStatistics
 {
-using N_I = uint16_t;
+  using N_I = uint16_t;
   N_I ShortBreaks = 0;
   N_I LongBreaks = 0;
   N_I Pomodoros = 0;
@@ -438,13 +438,13 @@ int main()
   SingleThreadLoop ThreadWrap(globalstop);
 
   auto interrupt_handle = [&]() {
-      endwin();
-      init();
-      refresh();
-      clear();
-      getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
-      refresh();
-      _INTERRUPTED_ = false;
+    endwin();
+    init();
+    refresh();
+    clear();
+    getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
+    refresh();
+    _INTERRUPTED_ = false;
   };
 
   auto EraseStateChangeRepaint = [&](){
@@ -498,15 +498,15 @@ int main()
     }
     else if(c == 'o')
     {
-        StateChange(Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
+      StateChange(Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
     }
     else if(c == 'b')
     {
-        StateChange(Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
+      StateChange(Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
     }
     else if(c == 'l')
     {
-        StateChange(Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
+      StateChange(Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
     }
     else if(Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP)
     {
