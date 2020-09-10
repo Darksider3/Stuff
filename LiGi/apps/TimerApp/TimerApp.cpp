@@ -17,9 +17,6 @@
  **/
 
 
-#include "timer.h"
-#include "TimerTools.h"
-#include "stack.h"
 #include <ncurses.h>
 #include <deque>
 #include <functional>
@@ -27,8 +24,15 @@
 #include <signal.h>
 #include <cstring> // memset...
 
+#include "timer.h"
+#include "TimerTools.h"
+#include "stack.h"
+
 #include "ApplicationDefaults.h"
 #include "Tools.h"
+
+#include "SingleThreadLoop.h"
+
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
 WINDOW *FullWin; // full window; used to get dimensions
@@ -424,11 +428,14 @@ int main()
   sigaction(SIGWINCH, &sa, NULL);
 
   std::atomic_bool stop = false;
+  std::atomic_bool globalstop = false;
   init();
 
   // Timer - main functionality
   PomodoroTimer Timer{stop, Stats};
   PomodoroTimer::View AppView(Timer, Stats);
+
+  SingleThreadLoop ThreadWrap(globalstop);
 
   auto interrupt_handle = [&]() {
       endwin();
@@ -446,17 +453,19 @@ int main()
     AppView.TitleBar(*TopPanel);
   };
 
-  auto StateChange = [&](std::thread &ThreadObj, PomodoroTimer &PomObj, std::function<void()> runFunc)
+  auto StateChange = [&](PomodoroTimer &PomObj, std::function<void()> runFunc)
   {
     PomObj.Pause();
-    ThreadObj.join();
-    ThreadObj = std::thread(runFunc);
+
+    App::delayedInsertion<std::chrono::milliseconds>(ThreadWrap, runFunc, 5);
+
     PomObj.Unpause();
     EraseStateChangeRepaint();
   };
 
 
-  std::thread PomoThread(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
+  std::shared_ptr<std::thread> ThreadCopy = ThreadWrap.RunThread(App::ShareThread());
+  ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
   while(true)
   {
     using namespace TimerApp;
@@ -475,35 +484,35 @@ int main()
     if(c == 'c')
     {
       Timer.Pause();
-      PomoThread.join();
+      //PomoThread.join();
       quitter();
       return(EXIT_SUCCESS);
     }
     else if(c == 'p' && Timer.getState() != PomoState::PAUSE)
     {
-      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL));
+      StateChange(Timer, std::bind(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL));
     }
     else if(c == 'p' && Timer.getState() == PomoState::PAUSE)
     {
-      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunResume, std::ref(Timer)));
+      StateChange(Timer, std::bind(&PomodoroTimer::RunResume, std::ref(Timer)));
     }
     else if(c == 'o')
     {
-        StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
+        StateChange(Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
     }
     else if(c == 'b')
     {
-        StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
+        StateChange(Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
     }
     else if(c == 'l')
     {
-        StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
+        StateChange(Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
     }
     else if(Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP)
     {
       mvwaddstr(TopPanel, 0, COLS-20, "HERE");
       wrefresh(TopPanel);
-      StateChange(PomoThread, Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
+      StateChange(Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
     }
     else if(c == KEY_RESIZE)
     {

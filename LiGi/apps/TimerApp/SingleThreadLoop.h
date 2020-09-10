@@ -1,3 +1,5 @@
+#ifndef LIGI_SINGLE_THREAD_LOOP
+#define LIGI_SINGLE_THREAD_LOOP
 #include <iostream>
 #include <thread>
 #include <atomic>
@@ -5,7 +7,7 @@
 #include <mutex>
 #include <deque>
 
-namespace Ap
+namespace App
 {
 struct ShareThread{};
 struct HoldThread{};
@@ -17,6 +19,9 @@ private:
   std::deque<std::function<void()>> funcQueue;
   std::mutex queueLock, statelock;
   std::atomic_bool &globalStop;
+
+  uint64_t WaitTime = 15;
+
   enum anonym
   {
     idle,
@@ -39,7 +44,7 @@ private:
       }
       else
       {
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));
       }
     }
   }
@@ -65,7 +70,7 @@ public:
 
 
 
-  std::shared_ptr<std::thread> RunThread(Ap::ShareThread)
+  std::shared_ptr<std::thread> RunThread(App::ShareThread)
   {
     // std::ref(*this): We want the Thread to have our data here...
     std::shared_ptr<std::thread> &&MovingThread = std::make_shared<std::thread>(&SingleThreadLoop::threadingFunction, std::ref(*this));
@@ -112,7 +117,19 @@ public:
   }
 };
 
+namespace App
+{
+template<typename ClockT>
+void delayedInsertion(SingleThreadLoop &obj, std::function<void()> &func, uint64_t delay=5)
 
+{
+  while(obj.is_running())
+    std::this_thread::sleep_for(ClockT(delay));
+  obj.insert(func);
+  return;
+}
+}
+/*
 int main()
 {
   auto blafunc = [](){
@@ -141,3 +158,5 @@ int main()
   Global = true;
   ThreadCopy->join();
 }
+*/
+#endif
