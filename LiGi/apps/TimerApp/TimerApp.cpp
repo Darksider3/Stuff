@@ -65,7 +65,7 @@ struct PomoStatistics
   uint64_t TotalLongBreakTime = 0;
   uint64_t TotalPauseTime = 0; // Logic to stop instead of default pause;
   uint64_t TotalStopTime = 0; // Difference to Pause is that we stopped instead of paused, @todo logic for that
-} Stats;
+};
 
 class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
@@ -85,11 +85,11 @@ public:
   {
   private:
     PomodoroTimer const &M_Timer;
-    PomoStatistics &M_Stats;
+    PomoStatistics M_Stats;
 
   public:
 
-    explicit View(PomodoroTimer const &timer, PomoStatistics &stat) : M_Timer(timer), M_Stats(stat) {}
+    explicit View(PomodoroTimer const &timer) : M_Timer(timer) {}
 
     static void set_red(WINDOW &win)
     {
@@ -208,12 +208,12 @@ public:
   std::atomic<PomoState> M_state;
   std::atomic<PomoState> M_oldState;
 
-  PomoStatistics &M_Stats;
+  PomoStatistics M_Stats;
 
   using Timer<PomodoroTimer>::Timer;
 
 
-  explicit PomodoroTimer(std::atomic_bool &stopper, PomoStatistics &stat) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME), M_Stats(stat)
+  explicit PomodoroTimer(std::atomic_bool &stopper) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
   {
     this->setDelay(50);
     this->setSleep(10);
@@ -432,8 +432,8 @@ int main()
   init();
 
   // Timer - main functionality
-  PomodoroTimer Timer{stop, Stats};
-  PomodoroTimer::View AppView(Timer, Stats);
+  PomodoroTimer Timer{stop};
+  PomodoroTimer::View AppView(Timer);
 
   SingleThreadLoop ThreadWrap(globalstop);
 
@@ -449,22 +449,44 @@ int main()
 
   auto EraseStateChangeRepaint = [&](){
     werase(MidWin);
+    werase(ShortcutWin);
+    werase(StatisticsWin);
+    werase(TopPanel);
     AppView.Shortcut(*ShortcutWin);
+    AppView.Statistcs(*StatisticsWin);
     AppView.TitleBar(*TopPanel);
   };
 
   auto StateChange = [&](PomodoroTimer &PomObj, std::function<void()> runFunc)
   {
     PomObj.Pause();
-
     App::delayedInsertion<std::chrono::milliseconds>(ThreadWrap, runFunc, 5);
-
     PomObj.Unpause();
     EraseStateChangeRepaint();
   };
 
+  auto StateToStr = [](PomoState const &state){
+    switch(state)
+    {
+      case PomoState::LONG:
+        return " LONG BREAK";
+      case PomoState::PAUSE:
+        return " PAUSE";
+      case PomoState::POMODORO:
+        return " POMODORO";
+      case PomoState::SHORT:
+        return " SHORT BREAK";
+      case PomoState::STOP:
+        return " STOPPED";
+      default:
+        return " none";
+    }
+  };
 
-  std::shared_ptr<std::thread> ThreadCopy = ThreadWrap.RunThread(App::ShareThread());
+
+  auto ThreadCopy = ThreadWrap.RunThread(App::ShareThread());
+
+
   ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
   while(true)
   {
@@ -477,7 +499,13 @@ int main()
     AppView.Statistcs(*StatisticsWin);
 #ifndef NDEBUG
     EraseSpecific(TopPanel, 0, COLS-30);
-    mvwaddstr(TopPanel, 0, COLS-30, std::string("Time L: " + std::to_string(Timer.getTimeLeft())).c_str());
+    std::string StateLine = "Time L: " + std::to_string(Timer.getTimeLeft());
+    mvwaddstr(TopPanel, 0, COLS-40, StateLine.c_str());
+    StateLine = "State: ";
+    StateLine += StateToStr(Timer.getState());
+    StateLine += " | Old: ";
+    StateLine += StateToStr(Timer.M_oldState);
+    mvwaddstr(TopPanel, 1, COLS-40, StateLine.c_str());
     wrefresh(TopPanel);
 #endif
     refresh();
