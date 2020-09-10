@@ -44,28 +44,30 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
  *  -> 5. Followed by.. TBA
  */
 
-class Path
+namespace fs
 {
-protected:
-  std::string M_Path;
+#ifndef __linux__
+static_assert (false, "Currently, just supporting linux here(pathes are not validated in that manner)");
+#endif
+  static bool is_absolute(std::string const &);
+  static std::string absolutise(std::string const &); // take current path, resolve ".." and ".", return
+  static bool is_canonical(std::string const &);
+  static std::string canonicalise(std::string const &); // do all of above(absolutise) and resolve links down to the root file
+  static bool is_relative(std::string const &); // anything that doesn't start with a / is relative
+  static bool exists(std::string const &); // auto guess type(dir, file) and check existence
 
-public:
+  static bool file_exists(std::string const &);
+  static bool dir_exists(std::string const &);
 
-  explicit Path(std::string const &str) : M_Path(str.c_str())
-  {
-  }
-
-  explicit Path(std::string &&str) : M_Path(std::move(str))
-  {
-  }
-
-  explicit Path(const Path &&other) : M_Path(std::move(other.M_Path))
-  {
-  }
-
-  explicit Path(const Path &other) : M_Path(other.M_Path)
-  {}
-};
+  static bool is_file(std::string const &);
+  static bool is_dir(std::string const &);
+  static bool is_pipe(std::string const &);
+  static bool is_fifo(std::string const &);
+  static bool can_write(std::string const &);
+  static bool can_read(std::string const &);
+  static bool can_exec(std::string const &);
+  static bool can_del(std::string const &);
+}
 }
 }
 
