@@ -180,7 +180,10 @@ public:
         u_.M_timeLeft = u_.M_timeLeft - t_elapsed.count();
 
         if(u_c.M_timeLeft <= 0 || u_c.M_timeLeft == UINT64_MAX)
-          break; // we done!
+        {
+          u_.M_timeLeft = 0; // possible overflow fixup
+          break; // we done
+        }
       }
     }
     return;
