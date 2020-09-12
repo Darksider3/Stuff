@@ -56,22 +56,56 @@ enum PomoState
 
 struct PomoStatistics
 {
-  using N_I = uint16_t;
-  N_I ShortBreaks = 0;
-  N_I LongBreaks = 0;
-  N_I Pomodoros = 0;
-  uint64_t TotalWorkingTime = 0; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
-  uint64_t TotalShortBreakTime = 0;
-  uint64_t TotalLongBreakTime = 0;
-  uint64_t TotalPauseTime = 0; // Logic to stop instead of default pause;
-  uint64_t TotalStopTime = 0; // Difference to Pause is that we stopped instead of paused, @todo logic for that
+protected:
+
+  template<typename T = uint64_t>
+  class N_I_Type
+  {
+  public:
+
+    explicit N_I_Type(int x) : val(x){};
+
+    void operator++()
+    {
+      std::scoped_lock L(M_RW_Lock);
+      val++;
+    }
+
+    void operator=(int x)
+    {
+      std::scoped_lock L(M_RW_Lock);
+      val=x;
+    }
+
+    T get()
+    {
+      std::scoped_lock K(M_RW_Lock);
+      return val;
+    }
+
+    private:
+      std::mutex M_RW_Lock;
+      T val;
+
+  };
+  std::mutex M_RW_Lock;
+public:
+  N_I_Type<> M_ShortBreaks {0};
+  N_I_Type<> M_LongBreaks{0};
+  N_I_Type<> M_Pomodoros{0};
+  N_I_Type<> M_TotalWorkingTime{0}; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
+  N_I_Type<> M_TotalShortBreakTime{0};
+  N_I_Type<> M_TotalLongBreakTime{0};
+  N_I_Type<> M_TotalPauseTime{0}; // Logic to stop instead of default pause;
+  N_I_Type<> M_TotalStopTime{0}; // Difference to Pause is that we stopped instead of paused, @todo logic for that
+
 };
 
 class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
 
-  uint64_t M_pauseLeft = 0;
+  uint64_t M_TimeLeftBeforePause = 0;
 
   void run(Li::Literals::TimeValue auto Goal) noexcept
   {
@@ -85,11 +119,11 @@ public:
   {
   private:
     PomodoroTimer const &M_Timer;
-    PomoStatistics M_Stats;
+    PomoStatistics &M_Stats;
 
   public:
 
-    explicit View(PomodoroTimer const &timer) : M_Timer(timer) {}
+    explicit View(PomodoroTimer const &timer, PomoStatistics &lal) : M_Timer(timer), M_Stats(lal){}
 
     static void set_red(WINDOW &win)
     {
@@ -182,8 +216,8 @@ public:
       // TODO: Long "B's"
       // TODO: Times total run in those modes
       // TOOD: For the statistics themselfes, just support
-      std::string pomo =    "-> Pomodoros: " + std::to_string(M_Stats.Pomodoros);
-      std::string sbreaks = "-> Short B's: " + std::to_string(M_Stats.ShortBreaks);
+      std::string pomo =    "-> Pomodoros: " + std::to_string(M_Stats.M_Pomodoros.get());
+      std::string sbreaks = "-> Short B's: " + std::to_string(M_Stats.M_ShortBreaks.get());
       int win_x = getmaxx(&win);
 
       box(&win, 0, 0);
@@ -221,14 +255,14 @@ public:
 
   void RunResume() noexcept
   {
-    if(M_pauseLeft == 0)
+    if(M_TimeLeftBeforePause == 0)
     {
       RunStop();
       return;
     }
 
     M_state.store(M_oldState);
-    setTimeLeft(M_pauseLeft);
+    setTimeLeft(M_TimeLeftBeforePause);
     Resume(); // utilize parent!
     M_oldState.store(M_state);
     M_state.store(PomoState::STOP);
@@ -264,11 +298,11 @@ public:
 
   void RunPause(uint64_t Goal = PAUSE_STOP_VAL) noexcept
   {
-    uint64_t oldTimeLeft = this->getTimeLeft();
+    uint64_t CurTimeLeft = this->getTimeLeft();
     M_state = PomoState::PAUSE;
     run(Goal);
     M_state.store(M_oldState);
-    M_pauseLeft = oldTimeLeft;
+    M_TimeLeftBeforePause = CurTimeLeft;
     return;
   }
 
@@ -432,8 +466,9 @@ int main()
   init();
 
   // Timer - main functionality
+  PomoStatistics Rawr;
   PomodoroTimer Timer{stop};
-  PomodoroTimer::View AppView(Timer);
+  PomodoroTimer::View AppView(Timer, Rawr);
 
   SingleThreadLoop ThreadWrap(globalstop);
 
