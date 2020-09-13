@@ -168,12 +168,10 @@ public:
         case(PomoState::PAUSE):
           TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
           mvwprintw(&win, midy, TimerApp::xMiddle(midx, 6), "Paused!");
-          wrefresh(&win);
           break;
         case(PomoState::STOP):
           TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
           mvwprintw(&win, midy, TimerApp::xMiddle(midx, 7), "STOPPED!");
-          wrefresh(&win);
           break;
         case(PomoState::LONG):
         case(PomoState::SHORT):
@@ -182,11 +180,11 @@ public:
           mvwprintw(&win, midy, TimerApp::xMiddle(midx, 8),
                     Li::TimerTools::Format::getFullTimeString(
                       M_Timer.getTimeLeft()).c_str());
-          wrefresh(&win);
           break;
           //default:
           //  break;
       }
+      wrefresh(&win);
       set_white(win);
       return;
     }
@@ -519,8 +517,12 @@ int main()
   };
 
 
-  auto ThreadCopy = ThreadWrap.RunThread(App::ShareThread());
-
+  if(!ThreadWrap.RunThread(App::HoldThread()))
+  {
+    quitter();
+    ThreadWrap.Stop();
+    std::cerr << "Couldn't allocate Thread!";
+  }
 
   ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
   while(true)
@@ -547,8 +549,9 @@ int main()
     if(c == 'c')
     {
       Timer.Pause();
-      //PomoThread.join();
       quitter();
+      if(ThreadWrap.is_running())
+        ThreadWrap.Stop();
       return(EXIT_SUCCESS);
     }
     else if(c == 'p' && Timer.getState() != PomoState::PAUSE)
