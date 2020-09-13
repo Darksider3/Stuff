@@ -19,6 +19,7 @@ private:
   std::deque<std::function<void()>> funcQueue;
   std::mutex queueLock, statelock;
   std::atomic_bool &globalStop;
+  std::unique_ptr<std::thread> M_Hold;
 
   uint64_t WaitTime = 15;
 
@@ -77,6 +78,15 @@ public:
     return std::move(MovingThread);
   }
 
+  bool RunThread(App::HoldThread)
+  {
+    if(M_Hold)
+      return false;
+    M_Hold = std::make_unique<std::thread>
+             (&SingleThreadLoop::threadingFunction, std::ref(*this));
+    return true;
+  }
+
 
 
   bool runFunc()
@@ -112,8 +122,15 @@ public:
     return (this->mState == running);
   }
 
+  void Stop()
+  {
+    globalStop = true;
+  }
+
   ~SingleThreadLoop()
   {
+    if(M_Hold)
+      M_Hold->join();
   }
 };
 
