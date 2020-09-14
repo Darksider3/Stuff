@@ -33,6 +33,7 @@
 
 #include "SingleThreadLoop.h"
 
+#include "ThreadsafePrimitive.h"
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
 WINDOW *FullWin; // full window; used to get dimensions
@@ -57,47 +58,25 @@ enum PomoState
 struct PomoStatistics
 {
 protected:
-
-  template<typename T = uint64_t>
-  class N_I_Type
+  //using N_I_Type = ThreadsafePrimitive<uint64_t>;
+  class N_I_Type : public ThreadsafePrimitive<uint64_t>
   {
   public:
+    explicit N_I_Type(uint64_t xy) : ThreadsafePrimitive(xy) {
 
-    explicit N_I_Type(int x) : val(x){};
-
-    void operator++()
-    {
-      std::scoped_lock L(M_RW_Lock);
-      val++;
     }
-
-    void operator=(int x)
-    {
-      std::scoped_lock L(M_RW_Lock);
-      val=x;
-    }
-
-    T get()
-    {
-      std::scoped_lock K(M_RW_Lock);
-      return val;
-    }
-
-    private:
-      std::mutex M_RW_Lock;
-      T val;
-
   };
+
   std::mutex M_RW_Lock;
 public:
-  N_I_Type<> M_ShortBreaks {0};
-  N_I_Type<> M_LongBreaks{0};
-  N_I_Type<> M_Pomodoros{0};
-  N_I_Type<> M_TotalWorkingTime{0}; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
-  N_I_Type<> M_TotalShortBreakTime{0};
-  N_I_Type<> M_TotalLongBreakTime{0};
-  N_I_Type<> M_TotalPauseTime{0}; // Logic to stop instead of default pause;
-  N_I_Type<> M_TotalStopTime{0}; // Difference to Pause is that we stopped instead of paused, @todo logic for that
+  N_I_Type M_ShortBreaks {0};
+  N_I_Type M_LongBreaks{0};
+  N_I_Type M_Pomodoros{0};
+  N_I_Type M_TotalWorkingTime{0}; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
+  N_I_Type M_TotalShortBreakTime{0};
+  N_I_Type M_TotalLongBreakTime{0};
+  N_I_Type M_TotalPauseTime{0}; // Logic to stop instead of default pause;
+  N_I_Type M_TotalStopTime{0}; // Difference to Pause is that we stopped instead of paused, @todo logic for that
 
 };
 
@@ -304,7 +283,7 @@ public:
     return;
   }
 
-  void RunStop(uint64_t Goal = PAUSE_STOP_VAL)
+  void RunStop(uint64_t Goal = PAUSE_STOP_VAL) noexcept
   {
     M_oldState.store(M_state);
     M_state = PomoState::STOP;
@@ -321,24 +300,8 @@ public:
     return Format::getMinutes(t)+":"+Format::getSeconds(t);
   }
 };
-template<class FunctorT>
-struct entry : Li::LLNode<entry<FunctorT>>
-{
-  std::function<FunctorT> functor;
-};
-template<class FunctorT>
-class FunctorStack : public Li::Stack<entry<FunctorT>>
-{
-public:
-  void append(std::function<FunctorT> funct)
-  {
-    auto bla = std::make_unique<entry<FunctorT>>();
-    bla->functor = funct;
-    this->pushd(bla);
-  }
-};
 
-void quitter()
+void quitter() noexcept
 {
   delwin(FullWin);
   delwin(MidWin);
@@ -347,7 +310,7 @@ void quitter()
   endwin();
 }
 
-void init_colors()
+void init_colors() noexcept
 {
   if(start_color() == ERR || !has_colors() || !can_change_color())
   {
@@ -358,7 +321,7 @@ void init_colors()
   init_pair(2, COLOR_RED, COLOR_BLACK);
 }
 
-void init_windows()
+void init_windows() noexcept
 {
   if((FullWin = initscr()) == nullptr)
   {
@@ -404,7 +367,7 @@ void init_windows()
   curs_set(0);
 }
 
-void init()
+void init() noexcept
 {
   init_windows();
   init_colors();
@@ -435,13 +398,13 @@ Timer background: #03A4BC, Timer Foreground: Black
 
 */
 
-void winch_handle(int sig)
+void winch_handle(int sig) noexcept
 {
   if(sig == SIGWINCH)
     _INTERRUPTED_ = true;
 }
 
-int dummy(int bla)
+int dummy(int bla) noexcept
 {
   std::cout << bla;
   return bla;
@@ -525,6 +488,7 @@ int main()
   }
 
   ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
+
   while(true)
   {
     using namespace TimerApp;

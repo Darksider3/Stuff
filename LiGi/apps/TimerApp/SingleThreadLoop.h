@@ -146,34 +146,4 @@ void delayedInsertion(SingleThreadLoop &obj, std::function<void()> &func, uint64
   return;
 }
 }
-/*
-int main()
-{
-  auto blafunc = [](){
-    for(size_t i = 10; i != 0; --i)
-    {
-      std::cout << "hello world" << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-    std::cout << "exiting func" << std::endl;
-  };
-
-  std::atomic_bool Global = false;
-  SingleThreadLoop ThreaderWrapper(Global);
-  std::shared_ptr<std::thread> ThreadCopy = ThreaderWrapper.RunThread(Ap::ShareThread());
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  ThreaderWrapper.insert<void()>(blafunc);
-  std::string asw = "";
-  while(asw != "q")
-  {
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-    if(!ThreaderWrapper.is_running())
-    {
-      ThreaderWrapper.insert<void()>(blafunc);
-    }
-  }
-  Global = true;
-  ThreadCopy->join();
-}
-*/
 #endif
