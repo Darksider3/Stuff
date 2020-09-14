@@ -23,10 +23,18 @@ public:
     return *this;
   }
 
-  void operator++()
+  ThreadsafePrimitive& operator++()
   {
     std::scoped_lock L(M_RW_Lock);
-    val++;
+    ++val;
+    return *this;
+  }
+
+  ThreadsafePrimitive operator++(int)
+  {
+    ThreadsafePrimitive<T> result(*this);
+    operator++();
+    return result;
   }
 
   void operator=(T const x)
@@ -35,13 +43,13 @@ public:
     val=x;
   }
 
-  T operator+(T const x) const
+  T operator+(T const x)
   {
     std::scoped_lock L(M_RW_Lock);
     return val + x;
   }
 
-  T operator-(T const x) const
+  T operator-(T const x)
   {
     std::scoped_lock L(M_RW_Lock);
     return val - x;

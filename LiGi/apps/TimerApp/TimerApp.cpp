@@ -57,17 +57,10 @@ enum PomoState
 
 struct PomoStatistics
 {
-protected:
+public:
   //using N_I_Type = ThreadsafePrimitive<uint64_t>;
-  class N_I_Type : public ThreadsafePrimitive<uint64_t>
-  {
-  public:
-    explicit N_I_Type(uint64_t xy) : ThreadsafePrimitive(xy) {
+  using N_I_Type = ThreadsafePrimitive<uint64_t>;
 
-    }
-  };
-
-  std::mutex M_RW_Lock;
 public:
   N_I_Type M_ShortBreaks {0};
   N_I_Type M_LongBreaks{0};
@@ -83,7 +76,6 @@ public:
 class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
 {
 private:
-
   uint64_t M_TimeLeftBeforePause = 0;
 
   void run(Li::Literals::TimeValue auto Goal) noexcept
@@ -93,6 +85,14 @@ private:
     this->RunTimer();
     return;
   }
+
+  void IncrIfNotStopped(PomoStatistics::N_I_Type &val)
+  {
+    if(!getStopper())
+      val++;
+    return;
+  }
+
 public:
   class View
   {
@@ -102,7 +102,7 @@ public:
 
   public:
 
-    explicit View(PomodoroTimer const &timer, PomoStatistics &lal) : M_Timer(timer), M_Stats(lal){}
+    explicit View(PomodoroTimer const &timer, PomoStatistics &outer) : M_Timer(timer), M_Stats(outer){}
 
     static void set_red(WINDOW &win)
     {
@@ -187,7 +187,7 @@ public:
       return;
     }
 
-    void Statistcs(WINDOW &win) const noexcept
+    void Statistcs(WINDOW &win) noexcept
     {
       std::string title = "Statistics";
       // TODO: Long "B's"
@@ -219,12 +219,12 @@ public:
   std::atomic<PomoState> M_state;
   std::atomic<PomoState> M_oldState;
 
-  PomoStatistics M_Stats;
+  PomoStatistics &M_Stats;
 
   using Timer<PomodoroTimer>::Timer;
 
 
-  explicit PomodoroTimer(std::atomic_bool &stopper) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
+  explicit PomodoroTimer(std::atomic_bool &stopper, PomoStatistics &stat) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME), M_Stats(stat)
   {
     this->setDelay(50);
     this->setSleep(10);
@@ -250,6 +250,7 @@ public:
   {
     M_state.store(PomoState::POMODORO);
     run(Goal);
+    IncrIfNotStopped(M_Stats.M_Pomodoros);
     M_oldState.store(M_state);
     M_state.store(PomoState::STOP);
     return;
@@ -259,6 +260,7 @@ public:
   {
     M_state = PomoState::SHORT;
     run(Goal);
+    IncrIfNotStopped(M_Stats.M_ShortBreaks);
     M_oldState.store(M_state);
     M_state = PomoState::STOP;
     return;
@@ -268,6 +270,7 @@ public:
   {
     M_state = PomoState::LONG;
     run(Goal);
+    IncrIfNotStopped(M_Stats.M_LongBreaks);
     M_oldState.store(M_state);
     M_state = PomoState::STOP;
     return;
@@ -427,9 +430,9 @@ int main()
   init();
 
   // Timer - main functionality
-  PomoStatistics Rawr;
-  PomodoroTimer Timer{stop};
-  PomodoroTimer::View AppView(Timer, Rawr);
+  PomoStatistics Stats;
+  PomodoroTimer Timer{stop, Stats};
+  PomodoroTimer::View AppView(Timer, Stats);
 
   SingleThreadLoop ThreadWrap(globalstop);
 
