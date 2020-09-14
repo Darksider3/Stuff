@@ -9,6 +9,9 @@ public:
 
   explicit ThreadsafePrimitive(T x) : val(x){};
 
+  ThreadsafePrimitive(const ThreadsafePrimitive &other) : val(other.val){}
+  ThreadsafePrimitive(ThreadsafePrimitive &&other) : val(other.val) {}
+
   ThreadsafePrimitive &operator=(const ThreadsafePrimitive &other)
   {
     return *this = ThreadsafePrimitive(other);
