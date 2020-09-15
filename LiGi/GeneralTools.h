@@ -1,27 +1,24 @@
 #ifndef GENERALTOOLS_H
 #define GENERALTOOLS_H
+
+#include <iostream>
+#include <sstream> // istringstream
 #include <string>
 #include <vector>
-#include <sstream> // istringstream
-#include <iostream>
 
-namespace Li
-{
-namespace GeneralTools
-{
+namespace Li {
+namespace GeneralTools {
 
 std::vector<std::string> split(const std::string& s, const char delimiter) noexcept
 {
-  std::vector<std::string> tokens;
-  std::string token;
-  std::istringstream tokenStream(s);
-  while (std::getline(tokenStream, token, delimiter))
-  {
-    tokens.push_back(token);
-  }
-  return tokens;
+    std::vector<std::string> tokens;
+    std::string token;
+    std::istringstream tokenStream(s);
+    while (std::getline(tokenStream, token, delimiter)) {
+        tokens.push_back(token);
+    }
+    return tokens;
 }
-
 
 /* @TODO: Generalized Parser for easy of use on the other parsers im going to write... ._,
  */
@@ -44,29 +41,28 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
  *  -> 5. Followed by.. TBA
  */
 
-namespace fs
-{
+namespace fs {
 #ifndef __linux__
-static_assert (false, "Currently, just supporting linux here(pathes are not validated in that manner)");
+static_assert(false, "Currently, just supporting linux here(pathes are not validated in that manner)");
 #endif
-  static bool is_absolute(std::string const &);
-  static std::string absolutise(std::string const &); // take current path, resolve ".." and ".", return
-  static bool is_canonical(std::string const &);
-  static std::string canonicalise(std::string const &); // do all of above(absolutise) and resolve links down to the root file
-  static bool is_relative(std::string const &); // anything that doesn't start with a / is relative
-  static bool exists(std::string const &); // auto guess type(dir, file) and check existence
+static bool is_absolute(std::string const&);
+static std::string absolutise(std::string const&); // take current path, resolve ".." and ".", return
+static bool is_canonical(std::string const&);
+static std::string canonicalise(std::string const&); // do all of above(absolutise) and resolve links down to the root file
+static bool is_relative(std::string const&);         // anything that doesn't start with a / is relative
+static bool exists(std::string const&);              // auto guess type(dir, file) and check existence
 
-  static bool file_exists(std::string const &);
-  static bool dir_exists(std::string const &);
+static bool file_exists(std::string const&);
+static bool dir_exists(std::string const&);
 
-  static bool is_file(std::string const &);
-  static bool is_dir(std::string const &);
-  static bool is_pipe(std::string const &);
-  static bool is_fifo(std::string const &);
-  static bool can_write(std::string const &);
-  static bool can_read(std::string const &);
-  static bool can_exec(std::string const &);
-  static bool can_del(std::string const &);
+static bool is_file(std::string const&);
+static bool is_dir(std::string const&);
+static bool is_pipe(std::string const&);
+static bool is_fifo(std::string const&);
+static bool can_write(std::string const&);
+static bool can_read(std::string const&);
+static bool can_exec(std::string const&);
+static bool can_del(std::string const&);
 }
 }
 }

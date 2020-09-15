@@ -1,11 +1,10 @@
 #ifndef ENVTOOLS_H
 #define ENVTOOLS_H
-#include <string>
 #include <cstdlib> // char *std::getenv
 #include <mutex>
+#include <string>
+namespace Env {
 namespace Li {
-namespace Env
-{
 
 /**
  * @brief EnvStateLock locks whenever something get's requested from the current environment

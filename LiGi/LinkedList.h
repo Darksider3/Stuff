@@ -87,7 +87,7 @@ template<typename T>
 class LLIterator
 {
 public:
-  LLIterator(T* ptr)
+  explicit LLIterator(T* ptr)
   {
     m_current = ptr;
   }

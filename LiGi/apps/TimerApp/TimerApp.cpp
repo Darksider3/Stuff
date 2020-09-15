@@ -16,17 +16,16 @@
  ** along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-
-#include <ncurses.h>
+#include <cstring> // memset...
 #include <deque>
 #include <functional>
 #include <locale.h>
+#include <ncurses.h>
 #include <signal.h>
-#include <cstring> // memset...
 
-#include "timer.h"
 #include "TimerTools.h"
 #include "stack.h"
+#include "timer.h"
 
 #include "ApplicationDefaults.h"
 #include "Tools.h"
@@ -36,345 +35,332 @@
 #include "ThreadsafePrimitive.h"
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
-WINDOW *FullWin; // full window; used to get dimensions
-WINDOW *TopPanel; // Subwindow in FullWin, used for the top bar
-WINDOW *MidWin; // also in the FullWindow, used for status and timer itself
-WINDOW *ShortcutWin; // and again in FullWindow, here for visibility of shortcuts
-WINDOW *StatisticsWin;
-
+WINDOW* FullWin;                        // full window; used to get dimensions
+WINDOW* TopPanel;                       // Subwindow in FullWin, used for the top bar
+WINDOW* MidWin;                         // also in the FullWindow, used for status and timer itself
+WINDOW* ShortcutWin;                    // and again in FullWindow, here for visibility of shortcuts
+WINDOW* StatisticsWin;
 
 int FULL_COORD_X, FULL_COORD_Y;
 
-enum PomoState
-{
-  POMODORO,
-  SHORT,
-  LONG,
-  PAUSE,
-  STOP
+enum PomoState {
+    POMODORO,
+    SHORT,
+    LONG,
+    PAUSE,
+    STOP
 };
 
-
-struct PomoStatistics
-{
+struct PomoStatistics {
 public:
-  //using N_I_Type = ThreadsafePrimitive<uint64_t>;
-  using N_I_Type = ThreadsafePrimitive<uint64_t>;
+    //using N_I_Type = ThreadsafePrimitive<uint64_t>;
+    using N_I_Type = ThreadsafePrimitive<uint64_t>;
 
 public:
-  N_I_Type M_ShortBreaks {0};
-  N_I_Type M_LongBreaks{0};
-  N_I_Type M_Pomodoros{0};
-  N_I_Type M_TotalWorkingTime{0}; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
-  N_I_Type M_TotalShortBreakTime{0};
-  N_I_Type M_TotalLongBreakTime{0};
-  N_I_Type M_TotalPauseTime{0}; // Logic to stop instead of default pause;
-  N_I_Type M_TotalStopTime{0}; // Difference to Pause is that we stopped instead of paused, @todo logic for that
-
+    N_I_Type M_ShortBreaks { 0 };
+    N_I_Type M_LongBreaks { 0 };
+    N_I_Type M_Pomodoros { 0 };
+    N_I_Type M_TotalWorkingTime { 0 }; // it's not deducable, because we're going to add *any* time here we've worked on pomodoros
+    N_I_Type M_TotalShortBreakTime { 0 };
+    N_I_Type M_TotalLongBreakTime { 0 };
+    N_I_Type M_TotalPauseTime { 0 }; // Logic to stop instead of default pause;
+    N_I_Type M_TotalStopTime { 0 };  // Difference to Pause is that we stopped instead of paused, @todo logic for that
 };
 
-class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t>
-{
+class PomodoroTimer : public Li::Timer<PomodoroTimer, uint64_t> {
 private:
-  uint64_t M_TimeLeftBeforePause = 0;
+    uint64_t M_TimeLeftBeforePause = 0;
 
-  void run(Li::Literals::TimeValue auto Goal) noexcept
-  {
-    this->setGoal(Goal);
-    this->ResetTime();
-    this->RunTimer();
-    return;
-  }
+    void run(Li::Literals::TimeValue auto Goal) noexcept
+    {
+        this->setGoal(Goal);
+        this->ResetTime();
+        this->RunTimer();
+        return;
+    }
 
-  void IncrIfNotStopped(PomoStatistics::N_I_Type &val)
-  {
-    if(!getStopper())
-      val++;
-    return;
-  }
+    void IncrIfNotStopped(PomoStatistics::N_I_Type& val)
+    {
+        if (!getStopper())
+            val++;
+        return;
+    }
 
 public:
-  class View
-  {
-  private:
-    PomodoroTimer const &M_Timer;
-    PomoStatistics &M_Stats;
+    class View {
+    private:
+        PomodoroTimer const& M_Timer;
+        PomoStatistics& M_Stats;
 
-  public:
+    public:
+        explicit View(PomodoroTimer const& timer, PomoStatistics& outer)
+            : M_Timer(timer)
+            , M_Stats(outer)
+        {
+        }
 
-    explicit View(PomodoroTimer const &timer, PomoStatistics &outer) : M_Timer(timer), M_Stats(outer){}
+        static void set_red(WINDOW& win)
+        {
+            wcolor_set(&win, 2, 0);
+            return;
+        }
 
-    static void set_red(WINDOW &win)
-    {
-      wcolor_set(&win, 2, 0);
-      return;
-    }
+        static void set_white(WINDOW& win)
+        {
+            wcolor_set(&win, 1, 0);
+            return;
+        }
 
-    static void set_white(WINDOW &win)
-    {
-      wcolor_set(&win, 1, 0);
-      return;
-    }
+        void Mode(WINDOW& win) const noexcept
+        {
+            const PomoState& state = M_Timer.getState();
+            int midy, midx;
+            getmaxyx(&win, midy, midx);
+            midy = midy / 2;
+            if (state == PomoState::SHORT)
+                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 14), "Taking a break");
+            else if (state == PomoState::LONG)
+                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 18), "Taking a big break!");
+            else if (state == PomoState::POMODORO)
+                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 22), "Working on a Pomodoro!");
+            else if (state == PomoState::PAUSE)
+                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
+            else if (state == PomoState::STOP)
+                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
+            return;
+        }
 
-    void Mode(WINDOW &win) const noexcept
-    {
-      const PomoState &state = M_Timer.getState();
-      int midy, midx;
-      getmaxyx(&win, midy, midx);
-      midy = midy /2;
-      if(state == PomoState::SHORT)
-        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 14), "Taking a break");
-      else if(state == PomoState::LONG)
-        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 18), "Taking a big break!");
-      else if(state == PomoState::POMODORO)
-        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 22), "Working on a Pomodoro!");
-      else if(state  == PomoState::PAUSE)
-        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
-      else if(state == PomoState::STOP)
-        mvwaddstr(&win, midy+2, TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
-      return;
-    }
+        void Mid(WINDOW& win) const noexcept
+        {
+            int midx, midy;
+            getmaxyx(&win, midy, midx);
+            midy = midy / 2;
 
-    void Mid(WINDOW &win) const noexcept
-    {
-      int midx, midy;
-      getmaxyx(&win, midy, midx);
-      midy = midy / 2;
-
-      set_red(win);
-      switch(M_Timer.getState())
-      {
-        case(PomoState::PAUSE):
-          TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
-          mvwprintw(&win, midy, TimerApp::xMiddle(midx, 6), "Paused!");
-          break;
-        case(PomoState::STOP):
-          TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
-          mvwprintw(&win, midy, TimerApp::xMiddle(midx, 7), "STOPPED!");
-          break;
-        case(PomoState::LONG):
-        case(PomoState::SHORT):
-        case(PomoState::POMODORO):
-          TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 10));
-          mvwprintw(&win, midy, TimerApp::xMiddle(midx, 8),
+            set_red(win);
+            switch (M_Timer.getState()) {
+            case (PomoState::PAUSE):
+                TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
+                mvwprintw(&win, midy, TimerApp::xMiddle(midx, 6), "Paused!");
+                break;
+            case (PomoState::STOP):
+                TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
+                mvwprintw(&win, midy, TimerApp::xMiddle(midx, 7), "STOPPED!");
+                break;
+            case (PomoState::LONG):
+            case (PomoState::SHORT):
+            case (PomoState::POMODORO):
+                TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 10));
+                mvwprintw(&win, midy, TimerApp::xMiddle(midx, 8),
                     Li::TimerTools::Format::getFullTimeString(
-                      M_Timer.getTimeLeft()).c_str());
-          break;
-          //default:
-          //  break;
-      }
-      wrefresh(&win);
-      set_white(win);
-      return;
-    }
+                        M_Timer.getTimeLeft())
+                        .c_str());
+                break;
+                //default:
+                //  break;
+            }
+            wrefresh(&win);
+            set_white(win);
+            return;
+        }
 
-    void Shortcut(WINDOW &win) const noexcept
+        void Shortcut(WINDOW& win) const noexcept
+        {
+
+            std::string title = "Shortcuts";
+            box(&win, 0, 0);
+            int win_x;
+
+            win_x = getmaxx(&win);
+
+            mvwaddstr(&win, 0, static_cast<int>((win_x - (title.length() - 1)) / 2), title.c_str());
+            mvwaddstr(&win, 1, 2, "-> (C)lose");
+            mvwaddstr(&win, 2, 2, "-> (B)reak");
+            mvwaddstr(&win, 3, 2, "-> (P)ause/Un(P)ause");
+            mvwaddstr(&win, 4, 2, "-> P(O)modoro");
+            mvwaddstr(&win, 5, 2, "-> (L)ong Break");
+            wrefresh(&win);
+            return;
+        }
+
+        void Statistcs(WINDOW& win) noexcept
+        {
+            std::string title = "Statistics";
+            // TODO: Long "B's"
+            // TODO: Times total run in those modes
+            // TOOD: For the statistics themselfes, just support
+            std::string pomo = "-> Pomodoros: " + std::to_string(M_Stats.M_Pomodoros.get());
+            std::string sbreaks = "-> Short B's: " + std::to_string(M_Stats.M_ShortBreaks.get());
+            int win_x = getmaxx(&win);
+
+            box(&win, 0, 0);
+            mvwaddstr(&win, 0, static_cast<int>((win_x - (title.length() - 1)) / 2), title.c_str());
+            mvwaddstr(&win, 1, 1, pomo.c_str());
+            mvwaddstr(&win, 2, 1, sbreaks.c_str());
+            wrefresh(&win);
+            return;
+        }
+
+        void TitleBar(WINDOW& win) const noexcept
+        {
+            mvwaddstr(&win, 1, 1, "(E)dit settings");
+            mvwhline(&win, 2, 0, ACS_HLINE, COLS);
+            wrefresh(&win);
+            return;
+        }
+    };
+
+    friend View;
+
+    std::atomic<PomoState> M_state;
+    std::atomic<PomoState> M_oldState;
+
+    PomoStatistics& M_Stats;
+
+    using Timer<PomodoroTimer>::Timer;
+
+    explicit PomodoroTimer(std::atomic_bool& stopper, PomoStatistics& stat)
+        : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME)
+        , M_Stats(stat)
     {
-
-      std::string title = "Shortcuts";
-      box(&win, 0, 0);
-      int win_x;
-
-      win_x = getmaxx(&win);
-
-      mvwaddstr(&win, 0, static_cast<int>((win_x-(title.length()-1))/2), title.c_str());
-      mvwaddstr(&win, 1, 2, "-> (C)lose");
-      mvwaddstr(&win, 2, 2, "-> (B)reak");
-      mvwaddstr(&win, 3, 2, "-> (P)ause/Un(P)ause");
-      mvwaddstr(&win, 4, 2, "-> P(O)modoro");
-      mvwaddstr(&win, 5, 2, "-> (L)ong Break");
-      wrefresh(&win);
-      return;
+        this->setDelay(50);
+        this->setSleep(10);
     }
 
-    void Statistcs(WINDOW &win) noexcept
+    void RunResume() noexcept
     {
-      std::string title = "Statistics";
-      // TODO: Long "B's"
-      // TODO: Times total run in those modes
-      // TOOD: For the statistics themselfes, just support
-      std::string pomo =    "-> Pomodoros: " + std::to_string(M_Stats.M_Pomodoros.get());
-      std::string sbreaks = "-> Short B's: " + std::to_string(M_Stats.M_ShortBreaks.get());
-      int win_x = getmaxx(&win);
+        if (M_TimeLeftBeforePause == 0) {
+            RunStop();
+            return;
+        }
 
-      box(&win, 0, 0);
-      mvwaddstr(&win, 0, static_cast<int>((win_x-(title.length()-1))/2), title.c_str());
-      mvwaddstr(&win, 1, 1, pomo.c_str());
-      mvwaddstr(&win, 2, 1, sbreaks.c_str());
-      wrefresh(&win);
-      return;
+        M_state.store(M_oldState);
+        setTimeLeft(M_TimeLeftBeforePause);
+        Resume(); // utilize parent!
+        M_oldState.store(M_state);
+        M_state.store(PomoState::STOP);
+        return;
     }
 
-    void TitleBar(WINDOW &win) const noexcept
+    void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
     {
-      mvwaddstr(&win, 1, 1, "(E)dit settings");
-      mvwhline(&win, 2, 0, ACS_HLINE, COLS);
-      wrefresh(&win);
-      return;
+        M_state.store(PomoState::POMODORO);
+        run(Goal);
+        IncrIfNotStopped(M_Stats.M_Pomodoros);
+        M_oldState.store(M_state);
+        M_state.store(PomoState::STOP);
+        return;
     }
-  };
 
-  friend View;
-
-  std::atomic<PomoState> M_state;
-  std::atomic<PomoState> M_oldState;
-
-  PomoStatistics &M_Stats;
-
-  using Timer<PomodoroTimer>::Timer;
-
-
-  explicit PomodoroTimer(std::atomic_bool &stopper, PomoStatistics &stat) : Li::Timer<PomodoroTimer, uint64_t>(stopper, POMODORO_TIME), M_Stats(stat)
-  {
-    this->setDelay(50);
-    this->setSleep(10);
-  }
-
-  void RunResume() noexcept
-  {
-    if(M_TimeLeftBeforePause == 0)
+    void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME) noexcept
     {
-      RunStop();
-      return;
+        M_state = PomoState::SHORT;
+        run(Goal);
+        IncrIfNotStopped(M_Stats.M_ShortBreaks);
+        M_oldState.store(M_state);
+        M_state = PomoState::STOP;
+        return;
     }
 
-    M_state.store(M_oldState);
-    setTimeLeft(M_TimeLeftBeforePause);
-    Resume(); // utilize parent!
-    M_oldState.store(M_state);
-    M_state.store(PomoState::STOP);
-    return;
-  }
+    void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME) noexcept
+    {
+        M_state = PomoState::LONG;
+        run(Goal);
+        IncrIfNotStopped(M_Stats.M_LongBreaks);
+        M_oldState.store(M_state);
+        M_state = PomoState::STOP;
+        return;
+    }
 
-  void RunPomo(uint64_t Goal = POMODORO_TIME) noexcept
-  {
-    M_state.store(PomoState::POMODORO);
-    run(Goal);
-    IncrIfNotStopped(M_Stats.M_Pomodoros);
-    M_oldState.store(M_state);
-    M_state.store(PomoState::STOP);
-    return;
-  }
+    void RunPause(uint64_t Goal = PAUSE_STOP_VAL) noexcept
+    {
+        uint64_t CurTimeLeft = this->getTimeLeft();
+        M_state = PomoState::PAUSE;
+        run(Goal);
+        M_state.store(M_oldState);
+        M_TimeLeftBeforePause = CurTimeLeft;
+        return;
+    }
 
-  void RunShortBreak(uint64_t Goal = SHORT_BREAK_TIME) noexcept
-  {
-    M_state = PomoState::SHORT;
-    run(Goal);
-    IncrIfNotStopped(M_Stats.M_ShortBreaks);
-    M_oldState.store(M_state);
-    M_state = PomoState::STOP;
-    return;
-  }
+    void RunStop(uint64_t Goal = PAUSE_STOP_VAL) noexcept
+    {
+        M_oldState.store(M_state);
+        M_state = PomoState::STOP;
+        run(Goal);
+        return;
+    }
 
-  void RunBigBreak(uint64_t Goal = BIG_BREAK_TIME) noexcept
-  {
-    M_state = PomoState::LONG;
-    run(Goal);
-    IncrIfNotStopped(M_Stats.M_LongBreaks);
-    M_oldState.store(M_state);
-    M_state = PomoState::STOP;
-    return;
-  }
+    PomoState getState() const noexcept { return M_state.load(); }
 
-  void RunPause(uint64_t Goal = PAUSE_STOP_VAL) noexcept
-  {
-    uint64_t CurTimeLeft = this->getTimeLeft();
-    M_state = PomoState::PAUSE;
-    run(Goal);
-    M_state.store(M_oldState);
-    M_TimeLeftBeforePause = CurTimeLeft;
-    return;
-  }
-
-  void RunStop(uint64_t Goal = PAUSE_STOP_VAL) noexcept
-  {
-    M_oldState.store(M_state);
-    M_state = PomoState::STOP;
-    run(Goal);
-    return;
-  }
-
-  PomoState getState() const noexcept { return M_state.load();}
-
-  const std::string getTimeStr() const noexcept
-  {
-    namespace Format = Li::TimerTools::Format;
-    Li::Literals::TimeValue  auto t = this->getTimeLeft();
-    return Format::getMinutes(t)+":"+Format::getSeconds(t);
-  }
+    const std::string getTimeStr() const noexcept
+    {
+        namespace Format = Li::TimerTools::Format;
+        Li::Literals::TimeValue auto t = this->getTimeLeft();
+        return Format::getMinutes(t) + ":" + Format::getSeconds(t);
+    }
 };
 
 void quitter() noexcept
 {
-  delwin(FullWin);
-  delwin(MidWin);
-  delwin(TopPanel);
-  delwin(ShortcutWin);
-  endwin();
+    delwin(FullWin);
+    delwin(MidWin);
+    delwin(TopPanel);
+    delwin(ShortcutWin);
+    endwin();
 }
 
 void init_colors() noexcept
 {
-  if(start_color() == ERR || !has_colors() || !can_change_color())
-  {
-    std::cerr << "Couldn't setup coloring!" << std::endl;
-    quitter();
-  }
-  init_pair(1, COLOR_WHITE, COLOR_BLACK);
-  init_pair(2, COLOR_RED, COLOR_BLACK);
+    if (start_color() == ERR || !has_colors() || !can_change_color()) {
+        std::cerr << "Couldn't setup coloring!" << std::endl;
+        quitter();
+    }
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    init_pair(2, COLOR_RED, COLOR_BLACK);
 }
 
 void init_windows() noexcept
 {
-  if((FullWin = initscr()) == nullptr)
-  {
-    std::cerr << "Error! Couldn't initialise ncurses!" << std::endl;
-    quitter();
-  }
-  atexit(quitter);
+    if ((FullWin = initscr()) == nullptr) {
+        std::cerr << "Error! Couldn't initialise ncurses!" << std::endl;
+        quitter();
+    }
+    atexit(quitter);
 
-  getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
+    getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
 
-  if(FULL_COORD_Y < MIN_Y || FULL_COORD_X < MIN_X)
-  {
-    std::cerr << "Sorry, but your window isnt big enough!" << std::endl;
-    exit(ERR);
-  }
+    if (FULL_COORD_Y < MIN_Y || FULL_COORD_X < MIN_X) {
+        std::cerr << "Sorry, but your window isnt big enough!" << std::endl;
+        exit(ERR);
+    }
 
-  if((TopPanel = newwin(3, FULL_COORD_X, 0, 0)) == nullptr)
-  {
-    std::cerr << "Error! Couldn't intiialise top panel!"  << std::endl;
-    exit(ERR);
-  }
-  if((MidWin = newwin(FULL_COORD_Y-13, FULL_COORD_X, 3, 1)) == nullptr)
-  {
-    std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
-    exit(ERR);
-  }
+    if ((TopPanel = newwin(3, FULL_COORD_X, 0, 0)) == nullptr) {
+        std::cerr << "Error! Couldn't intiialise top panel!" << std::endl;
+        exit(ERR);
+    }
+    if ((MidWin = newwin(FULL_COORD_Y - 13, FULL_COORD_X, 3, 1)) == nullptr) {
+        std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
+        exit(ERR);
+    }
 
-  if((ShortcutWin = newwin(10, COLS/2, LINES-10, 0)) == nullptr)
-  {
-    std::cerr << "Error! Couldn't initialise shortcut window!" << std::endl;
-  }
+    if ((ShortcutWin = newwin(10, COLS / 2, LINES - 10, 0)) == nullptr) {
+        std::cerr << "Error! Couldn't initialise shortcut window!" << std::endl;
+    }
 
-  if((StatisticsWin = newwin(10, COLS/2, LINES-10, COLS/2)) == nullptr)
-  {
-    std::cerr << "Error! Couldn't initialise statistics window!" << std::endl;
-  }
+    if ((StatisticsWin = newwin(10, COLS / 2, LINES - 10, COLS / 2)) == nullptr) {
+        std::cerr << "Error! Couldn't initialise statistics window!" << std::endl;
+    }
 
-
-
-  cbreak();
-  noecho();
-  nodelay(FullWin, true);
-  curs_set(0);
+    cbreak();
+    noecho();
+    nodelay(FullWin, true);
+    curs_set(0);
 }
 
 void init() noexcept
 {
-  init_windows();
-  init_colors();
-  curs_set(0);
+    init_windows();
+    init_colors();
+    curs_set(0);
 }
 
 //general Layout Idea
@@ -403,163 +389,141 @@ Timer background: #03A4BC, Timer Foreground: Black
 
 void winch_handle(int sig) noexcept
 {
-  if(sig == SIGWINCH)
-    _INTERRUPTED_ = true;
+    if (sig == SIGWINCH)
+        _INTERRUPTED_ = true;
 }
 
 int dummy(int bla) noexcept
 {
-  std::cout << bla;
-  return bla;
+    std::cout << bla;
+    return bla;
 }
 
 int main()
 {
-  /**
+    /**
    * Here lies dragons - actually handling WINCH/Resizing without segfaults. o.o
    */
 
-  setlocale(LC_ALL, "");
-  struct sigaction sa;
-  std::memset(&sa, 0, sizeof(struct sigaction));
-  sa.sa_handler = winch_handle;
-  sigaction(SIGWINCH, &sa, NULL);
+    setlocale(LC_ALL, "");
+    struct sigaction sa;
+    std::memset(&sa, 0, sizeof(struct sigaction));
+    sa.sa_handler = winch_handle;
+    sigaction(SIGWINCH, &sa, NULL);
 
-  std::atomic_bool stop = false;
-  std::atomic_bool globalstop = false;
-  init();
-
-  // Timer - main functionality
-  PomoStatistics Stats;
-  PomodoroTimer Timer{stop, Stats};
-  PomodoroTimer::View AppView(Timer, Stats);
-
-  SingleThreadLoop ThreadWrap(globalstop);
-
-  auto interrupt_handle = [&]() {
-    endwin();
+    std::atomic_bool stop = false;
+    std::atomic_bool globalstop = false;
     init();
-    refresh();
-    clear();
-    getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
-    refresh();
-    _INTERRUPTED_ = false;
-  };
 
-  auto EraseStateChangeRepaint = [&](){
-    werase(MidWin);
-    werase(ShortcutWin);
-    werase(StatisticsWin);
-    werase(TopPanel);
-    AppView.Shortcut(*ShortcutWin);
-    AppView.Statistcs(*StatisticsWin);
-    AppView.TitleBar(*TopPanel);
-  };
+    // Timer - main functionality
+    PomoStatistics Stats;
+    PomodoroTimer Timer { stop, Stats };
+    PomodoroTimer::View AppView(Timer, Stats);
 
-  auto StateChange = [&](PomodoroTimer &PomObj, std::function<void()> runFunc)
-  {
-    PomObj.Pause();
-    App::delayedInsertion<std::chrono::milliseconds>(ThreadWrap, runFunc, 5);
-    PomObj.Unpause();
-    EraseStateChangeRepaint();
-  };
+    SingleThreadLoop ThreadWrap(globalstop);
 
-  auto StateToStr = [](PomoState const &state){
-    switch(state)
-    {
-      case PomoState::LONG:
-        return " LONG BREAK";
-      case PomoState::PAUSE:
-        return " PAUSE";
-      case PomoState::POMODORO:
-        return " POMODORO";
-      case PomoState::SHORT:
-        return " SHORT BREAK";
-      case PomoState::STOP:
-        return " STOPPED";
-      default:
-        return " none";
-    }
-  };
+    auto interrupt_handle = [&]() {
+        endwin();
+        init();
+        refresh();
+        clear();
+        getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
+        refresh();
+        _INTERRUPTED_ = false;
+    };
 
+    auto EraseStateChangeRepaint = [&]() {
+        werase(MidWin);
+        werase(ShortcutWin);
+        werase(StatisticsWin);
+        werase(TopPanel);
+        AppView.Shortcut(*ShortcutWin);
+        AppView.Statistcs(*StatisticsWin);
+        AppView.TitleBar(*TopPanel);
+    };
 
-  if(!ThreadWrap.RunThread(App::HoldThread()))
-  {
-    quitter();
-    ThreadWrap.Stop();
-    std::cerr << "Couldn't allocate Thread!";
-  }
+    auto StateChange = [&](PomodoroTimer& PomObj, std::function<void()> runFunc) {
+        PomObj.Pause();
+        App::delayedInsertion<std::chrono::milliseconds>(ThreadWrap, runFunc, 5);
+        PomObj.Unpause();
+        EraseStateChangeRepaint();
+    };
 
-  ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
+    auto StateToStr = [](PomoState const& state) {
+        switch (state) {
+        case PomoState::LONG:
+            return " LONG BREAK";
+        case PomoState::PAUSE:
+            return " PAUSE";
+        case PomoState::POMODORO:
+            return " POMODORO";
+        case PomoState::SHORT:
+            return " SHORT BREAK";
+        case PomoState::STOP:
+            return " STOPPED";
+        default:
+            return " none";
+        }
+    };
 
-  while(true)
-  {
-    using namespace TimerApp;
-    int c = wgetch(stdscr);
-    AppView.Mid(*MidWin);
-    AppView.Mode(*MidWin);
-    AppView.Shortcut(*ShortcutWin);
-    AppView.TitleBar(*TopPanel);
-    AppView.Statistcs(*StatisticsWin);
-#ifndef NDEBUG
-    EraseSpecific(TopPanel, 0, COLS-30);
-    std::string StateLine = "Time L: " + std::to_string(Timer.getTimeLeft());
-    mvwaddstr(TopPanel, 0, COLS-40, StateLine.c_str());
-    StateLine = "State: ";
-    StateLine += StateToStr(Timer.getState());
-    StateLine += " | Old: ";
-    StateLine += StateToStr(Timer.M_oldState);
-    mvwaddstr(TopPanel, 1, COLS-40, StateLine.c_str());
-    wrefresh(TopPanel);
-#endif
-    refresh();
-    if(c == 'c')
-    {
-      Timer.Pause();
-      quitter();
-      if(ThreadWrap.is_running())
+    if (!ThreadWrap.RunThread(App::HoldThread())) {
+        quitter();
         ThreadWrap.Stop();
-      return(EXIT_SUCCESS);
-    }
-    else if(c == 'p' && Timer.getState() != PomoState::PAUSE)
-    {
-      StateChange(Timer, std::bind(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL));
-    }
-    else if(c == 'p' && Timer.getState() == PomoState::PAUSE)
-    {
-      StateChange(Timer, std::bind(&PomodoroTimer::RunResume, std::ref(Timer)));
-    }
-    else if(c == 'o')
-    {
-      StateChange(Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
-    }
-    else if(c == 'b')
-    {
-      StateChange(Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
-    }
-    else if(c == 'l')
-    {
-      StateChange(Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
-    }
-    else if(Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP)
-    {
-      mvwaddstr(TopPanel, 0, COLS-20, "HERE");
-      wrefresh(TopPanel);
-      StateChange(Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
-    }
-    else if(c == KEY_RESIZE)
-    {
-      // we have to do this actually, because the signal itself isn't really portable D:
-      winch_handle(SIGWINCH);
+        std::cerr << "Couldn't allocate Thread!";
     }
 
-    if(_INTERRUPTED_)
-    {
-      interrupt_handle();
+    ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
+
+    while (true) {
+        using namespace TimerApp;
+        int c = wgetch(stdscr);
+        AppView.Mid(*MidWin);
+        AppView.Mode(*MidWin);
+        AppView.Shortcut(*ShortcutWin);
+        AppView.TitleBar(*TopPanel);
+        AppView.Statistcs(*StatisticsWin);
+#ifndef NDEBUG
+        EraseSpecific(TopPanel, 0, COLS - 30);
+        std::string StateLine = "Time L: " + std::to_string(Timer.getTimeLeft());
+        mvwaddstr(TopPanel, 0, COLS - 40, StateLine.c_str());
+        StateLine = "State: ";
+        StateLine += StateToStr(Timer.getState());
+        StateLine += " | Old: ";
+        StateLine += StateToStr(Timer.M_oldState);
+        mvwaddstr(TopPanel, 1, COLS - 40, StateLine.c_str());
+        wrefresh(TopPanel);
+#endif
+        refresh();
+        if (c == 'c') {
+            Timer.Pause();
+            quitter();
+            if (ThreadWrap.is_running())
+                ThreadWrap.Stop();
+            return (EXIT_SUCCESS);
+        } else if (c == 'p' && Timer.getState() != PomoState::PAUSE) {
+            StateChange(Timer, std::bind(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL));
+        } else if (c == 'p' && Timer.getState() == PomoState::PAUSE) {
+            StateChange(Timer, std::bind(&PomodoroTimer::RunResume, std::ref(Timer)));
+        } else if (c == 'o') {
+            StateChange(Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
+        } else if (c == 'b') {
+            StateChange(Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
+        } else if (c == 'l') {
+            StateChange(Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
+        } else if (Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP) {
+            mvwaddstr(TopPanel, 0, COLS - 20, "HERE");
+            wrefresh(TopPanel);
+            StateChange(Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
+        } else if (c == KEY_RESIZE) {
+            // we have to do this actually, because the signal itself isn't really portable D:
+            winch_handle(SIGWINCH);
+        }
+
+        if (_INTERRUPTED_) {
+            interrupt_handle();
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
     }
-    else{
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    }
-  }
-  return(0);
+    return (0);
 }
