@@ -21,7 +21,7 @@ private:
     std::atomic_bool& globalStop;
     std::unique_ptr<std::thread> M_Hold;
 
-    uint64_t WaitTime = 15;
+    uint64_t M_WaitTime = 15;
 
     enum anonym {
         idle,
@@ -41,7 +41,7 @@ private:
             if (!ss) {
                 runFunc();
             } else {
-                std::this_thread::sleep_for(std::chrono::milliseconds(15));
+                std::this_thread::sleep_for(std::chrono::milliseconds(M_WaitTime));
             }
         }
     }
