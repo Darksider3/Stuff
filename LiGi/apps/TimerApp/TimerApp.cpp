@@ -23,16 +23,15 @@
 #include <ncurses.h>
 #include <signal.h>
 
-#include "TimerTools.h"
-#include "stack.h"
-#include "timer.h"
+#include "LiGi/ThreadsafePrimitive.h"
+#include "LiGi/TimerTools.h"
+#include "LiGi/stack.h"
+#include "LiGi/timer.h"
 
 #include "ApplicationDefaults.h"
+#include "SingleThreadLoop.h"
 #include "Tools.h"
 
-#include "SingleThreadLoop.h"
-
-#include "ThreadsafePrimitive.h"
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
 std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
 WINDOW* FullWin;                        // full window; used to get dimensions

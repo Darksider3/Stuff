@@ -24,7 +24,7 @@ if(NOT CMAKE_USE_PTHREADS_INIT)
 endif()
 
 # Set include directory
-get_filename_component(PARENT_DIR ../.. ABSOLUTE)
+get_filename_component(PARENT_DIR ../../.. ABSOLUTE)
 include_directories(${PARENT_DIR}/)
 
 add_executable(Pomocurses TimerApp.cpp)
