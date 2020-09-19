@@ -46,19 +46,6 @@ namespace fs {
 static_assert(false, "Currently, just supporting linux here(pathes are not validated in that manner)");
 #endif
 
-class PathBuilder {
-private:
-    std::string M_Path;
-
-public:
-    explicit PathBuilder(std::string_view const& Path)
-        : M_Path(Path)
-    {
-    }
-
-    PathBuilder() = default;
-};
-
 static bool is_absolute(std::string_view const& path)
 {
     if (!path.starts_with("/"))
