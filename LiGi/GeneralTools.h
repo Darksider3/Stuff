@@ -45,24 +45,43 @@ namespace fs {
 #ifndef __linux__
 static_assert(false, "Currently, just supporting linux here(pathes are not validated in that manner)");
 #endif
-static bool is_absolute(std::string const&);
-static std::string absolutise(std::string const&); // take current path, resolve ".." and ".", return
-static bool is_canonical(std::string const&);
-static std::string canonicalise(std::string const&); // do all of above(absolutise) and resolve links down to the root file
-static bool is_relative(std::string const&);         // anything that doesn't start with a / is relative
-static bool exists(std::string const&);              // auto guess type(dir, file) and check existence
 
-static bool file_exists(std::string const&);
-static bool dir_exists(std::string const&);
+class PathBuilder {
+private:
+    std::string M_Path;
 
-static bool is_file(std::string const&);
-static bool is_dir(std::string const&);
-static bool is_pipe(std::string const&);
-static bool is_fifo(std::string const&);
-static bool can_write(std::string const&);
-static bool can_read(std::string const&);
-static bool can_exec(std::string const&);
-static bool can_del(std::string const&);
+public:
+    explicit PathBuilder(std::string_view const& Path)
+        : M_Path(Path)
+    {
+    }
+
+    PathBuilder() = default;
+};
+
+static bool is_absolute(std::string_view const& path)
+{
+    if (!path.starts_with("/"))
+        return false;
+    return true;
+}
+static std::string absolutise(std::string_view const&); // take current path, resolve ".." and ".", return
+static bool is_canonical(std::string_view const&);
+static std::string canonicalise(std::string_view const&); // do all of above(absolutise) and resolve links down to the root file
+static bool is_relative(std::string_view const&);         // anything that doesn't start with a / is relative
+static bool exists(std::string_view const&);              // auto guess type(dir, file) and check existence
+
+static bool file_exists(std::string_view const&);
+static bool dir_exists(std::string_view const&);
+
+static bool is_file(std::string_view const&);
+static bool is_dir(std::string_view const&);
+static bool is_pipe(std::string_view const&);
+static bool is_fifo(std::string_view const&);
+static bool can_write(std::string_view const&);
+static bool can_read(std::string_view const&);
+static bool can_exec(std::string_view const&);
+static bool can_del(std::string_view const&);
 }
 }
 }

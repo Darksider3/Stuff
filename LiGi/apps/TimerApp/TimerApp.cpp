@@ -451,17 +451,17 @@ int main()
     auto StateToStr = [](PomoState const& state) {
         switch (state) {
         case PomoState::LONG:
-            return " LONG BREAK";
+            return std::string_view(" LONG BREAK");
         case PomoState::PAUSE:
-            return " PAUSE";
+            return std::string_view(" PAUSE");
         case PomoState::POMODORO:
-            return " POMODORO";
+            return std::string_view(" POMODORO");
         case PomoState::SHORT:
-            return " SHORT BREAK";
+            return std::string_view(" SHORT BREAK");
         case PomoState::STOP:
-            return " STOPPED";
+            return std::string_view(" STOPPED");
         default:
-            return " none";
+            return std::string_view(" none");
         }
     };
 
