@@ -1,6 +1,7 @@
 #ifndef GENERALTOOLS_H
 #define GENERALTOOLS_H
 
+#include <cstring>
 #include <dirent.h> // stat
 #include <iostream>
 #include <sstream> // istringstream
@@ -99,17 +100,36 @@ bool exists(std::string const& path) // auto guess type(dir, file) and check exi
 {
     if (is_dir(path)) {
         return true;
+    } else {
+        return file_exists(path);
     }
-
-    return file_exists(path);
 }
 
-bool can_write(std::string_view const&);
+bool can_write(std::string_view const&)
+{
+}
 bool can_read(std::string_view const&);
 bool can_exec(std::string_view const&);
 bool can_del(std::string_view const&);
-}
-}
-}
+std::pair<std::pair<bool, std::string_view>, FILE*> error_or_fp(std::string const& path)
+{
+    FILE* fp = fopen64(path.c_str(), "rw");
+    std::pair<bool, std::string_view> first_part;
+    std::pair<std::pair<bool, std::string_view>, FILE*> result;
+    if (fp == nullptr) {
+        first_part.first = false;
+        first_part.second = strerror(errno);
+    } else {
+        first_part.first = true;
+        first_part.second = "";
+    }
 
+    result.first = first_part;
+    result.second = fp;
+
+    return result;
+}
+}
+}
+}
 #endif // GENERALTOOLS_H
