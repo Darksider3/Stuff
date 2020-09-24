@@ -275,6 +275,7 @@ public:
         uint64_t CurTimeLeft = this->getTimeLeft();
         M_state = PomoState::PAUSE;
         run(Goal);
+        M_Stats.M_TotalPauseTime = M_Stats.M_TotalPauseTime + this->getTimeLeft();
         M_state.store(M_oldState);
         M_TimeLeftBeforePause = CurTimeLeft;
         return;
