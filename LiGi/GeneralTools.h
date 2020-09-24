@@ -1,9 +1,12 @@
 #ifndef GENERALTOOLS_H
 #define GENERALTOOLS_H
 
+#include <dirent.h> // stat
 #include <iostream>
 #include <sstream> // istringstream
 #include <string>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <vector>
 
 namespace Li {
@@ -46,6 +49,27 @@ namespace fs {
 static_assert(false, "Currently, just supporting linux here(pathes are not validated in that manner)");
 #endif
 #include <unistd.h>
+bool is_file(std::string const& path)
+{
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0 && st.st_mode & S_IFMT) // ignore wether being a regular or any other type of file
+    {
+        return true;
+    }
+
+    return false;
+}
+bool is_dir(std::string const& path)
+{
+    struct stat st;
+    if (stat(path.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+        return true;
+    }
+
+    return false;
+}
+bool is_pipe(std::string_view const&);
+bool is_fifo(std::string_view const&);
 
 bool is_absolute(std::string_view const& path)
 {
@@ -63,19 +87,23 @@ bool is_relative(std::string_view const& path)     // anything that doesn't star
 
 bool file_exists(std::string const& path)
 {
-    if (access(path.c_str(), F_OK) != -1)
-        return true;
-    return false;
+    return is_file(path);
 }
 
-bool dir_exists(std::string_view const&);
+bool dir_exists(std::string const& path)
+{
+    return is_dir(path);
+}
 
-bool exists(std::string_view const&); // auto guess type(dir, file) and check existence
+bool exists(std::string const& path) // auto guess type(dir, file) and check existence
+{
+    if (is_dir(path)) {
+        return true;
+    }
 
-bool is_file(std::string_view const&);
-bool is_dir(std::string_view const&);
-bool is_pipe(std::string_view const&);
-bool is_fifo(std::string_view const&);
+    return file_exists(path);
+}
+
 bool can_write(std::string_view const&);
 bool can_read(std::string_view const&);
 bool can_exec(std::string_view const&);
