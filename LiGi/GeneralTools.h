@@ -49,11 +49,15 @@ namespace fs {
 #ifndef __linux__
 static_assert(false, "Currently, just supporting linux here(pathes are not validated in that manner)");
 #endif
-#include <unistd.h>
+bool exists(std::string const& path) // auto guess type(dir, file) and check existence
+{
+    struct stat st;
+    return (stat(path.c_str(), &st) == 0);
+}
 bool is_file(std::string const& path)
 {
     struct stat st;
-    if (stat(path.c_str(), &st) == 0 && st.st_mode & S_IFMT) // ignore wether being a regular or any other type of file
+    if (exists(path) && st.st_mode & S_IFMT) // ignore wether being a regular or any other type of file
     {
         return true;
     }
@@ -69,6 +73,15 @@ bool is_dir(std::string const& path)
 
     return false;
 }
+
+bool is_link(std::string const& path)
+{
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0)
+        return false;
+    return S_ISLNK(st.st_mode) != 0;
+}
+
 bool is_pipe(std::string_view const&);
 bool is_fifo(std::string_view const&);
 
@@ -78,8 +91,20 @@ bool is_absolute(std::string_view const& path)
         return false;
     return true;
 }
-std::string absolutise(std::string_view const&); // take current path, resolve "..", "~" and ".", return
-bool is_canonical(std::string_view const&);
+bool is_canonical(std::string const& path)
+{
+    if (!fs::is_absolute(path)) { // canonical pathes must be absolute
+        return false;
+    }
+
+    if (fs::is_link(path)) { // canonical links are no symlinks!
+        return false;
+    }
+
+    return true;
+}
+
+std::string absolutise(std::string_view const&);   // take current path, resolve "..", "~" and ".", return
 std::string canonicalise(std::string_view const&); // do all of above(absolutise) and resolve links down to the root file
 bool is_relative(std::string_view const& path)     // anything that doesn't start with a / is relative
 {
@@ -96,21 +121,11 @@ bool dir_exists(std::string const& path)
     return is_dir(path);
 }
 
-bool exists(std::string const& path) // auto guess type(dir, file) and check existence
-{
-    if (is_dir(path)) {
-        return true;
-    } else {
-        return file_exists(path);
-    }
-}
-
-bool can_write(std::string_view const&)
-{
-}
+bool can_write(std::string_view const&);
 bool can_read(std::string_view const&);
 bool can_exec(std::string_view const&);
 bool can_del(std::string_view const&);
+
 std::pair<std::pair<bool, std::string_view>, FILE*> error_or_fp(std::string const& path)
 {
     FILE* fp = fopen64(path.c_str(), "rw");
