@@ -84,7 +84,8 @@ bool is_canonical(std::string const& path)
 
 std::string absolutise(std::string_view const& path) // take current path, resolve "..", "~" and ".", return
 {
-    std::string ResultingString;
+    std::string ResultingString, tmp;
+    char buff[PATH_MAX];
     if (fs::is_absolute(path)) {
         // already absolute
         ResultingString = path;
@@ -92,23 +93,29 @@ std::string absolutise(std::string_view const& path) // take current path, resol
         // parent directory reference
     } else if (path.starts_with("./")) {
         // current directory reference
+        if (getcwd(buff, sizeof(buff)) != nullptr) {
+            // buff has cwd
+            tmp = std::string(path).erase(0, 1);
+            ResultingString = buff;
+            ResultingString.append(tmp);
+        }
     }
 
     return ResultingString;
 }
 
-void canonicalise(std::string_view const& path); // do all of above(absolutise) and resolve links down to the root file
-bool is_relative(std::string_view const& path)   // anything that doesn't start with a / is relative
+void canonicalise(std::string_view const& path);      // do all of above(absolutise) and resolve links down to the root file
+inline bool is_relative(std::string_view const& path) // anything that doesn't start with a / is relative
 {
     return !is_absolute(path);
 }
 
-bool file_exists(std::string const& path)
+inline bool file_exists(std::string const& path)
 {
     return is_file(path);
 }
 
-bool dir_exists(std::string const& path)
+inline bool dir_exists(std::string const& path)
 {
     return is_dir(path);
 }
