@@ -2,10 +2,15 @@
 #define FILETOOLS_H
 #include <cstring>
 #include <dirent.h>
+#include <iostream>
+#include <list>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include "GeneralTools.h"
 
 namespace Li {
 namespace GeneralTools {
@@ -27,6 +32,7 @@ namespace fs {
 #ifndef __linux__
 static_assert(false, "Currently, just supporting linux here(pathes are not validated in that manner)");
 #endif
+
 bool exists(std::string const& path) // auto guess type(dir, file) and check existence
 {
     struct stat st;
@@ -143,6 +149,99 @@ std::pair<std::pair<bool, std::string_view>, FILE*> error_or_fp(std::string cons
 
     return result;
 }
+
+class FSObj {
+private:
+    std::string m_Name;
+
+public:
+    explicit FSObj(std::string_view const& t)
+        : m_Name { t }
+    {
+    }
+
+    void debugOut()
+    {
+        std::cout << m_Name;
+    }
+
+    static std::unique_ptr<FSObj> create(std::string_view const& t)
+    {
+        return std::make_unique<FSObj>(t);
+    }
+};
+
+std::list<std::string> TokenizePath(std::string const& Path, bool preserveSlashes = true)
+{
+    std::list<std::string> L;
+
+    std::string token;
+    std::string SafePath = Path;
+    if (Path[0] == '/') {
+        SafePath = SafePath.erase(0, 1);
+    }
+
+    std::istringstream Stream(SafePath);
+
+    while (std::getline(Stream, token, '/')) {
+        if (preserveSlashes)
+            token = '/' + token;
+
+        L.push_back(token);
+    }
+
+    return L;
+}
+
+class Path {
+private:
+    struct Properties {
+        bool absolute = false;
+    } m_Properties;
+
+    std::list<std::unique_ptr<FSObj>> m_Path;
+    std::string m_Path_String;
+
+public:
+    explicit Path(std::string const& Path)
+        : m_Path_String { Path }
+    {
+        for (auto& item : Li::GeneralTools::splitPreserveDelimiter(Path, '/')) {
+            m_Path.push_back(FSObj::create(item));
+        }
+        if (is_absolute(Path)) {
+            m_Properties.absolute = true;
+        }
+    }
+
+    bool exists() const
+    {
+        return (fs::exists(m_Path_String));
+    }
+
+    std::string ToString() const
+    {
+        return m_Path_String;
+    }
+
+    operator std::string() const
+    {
+        return m_Path_String;
+    }
+
+    operator const std::string()
+    {
+        return m_Path_String;
+    }
+
+    void debugOut() const
+    {
+        for (auto& b : m_Path) {
+            b->debugOut();
+        }
+        std::cout << std::endl;
+    }
+};
 }
 }
 }
