@@ -89,10 +89,6 @@ int main()
     Li::GeneralTools::fs::Path rund("/etc/./world/has/gone/over/lol.cpp/../");
     rund.debugOut();
 
-    std::cout << "----> TokenizePath" << std::endl;
-    for (auto& B : Li::GeneralTools::fs::TokenizePath("/etc/world")) {
-        std::cout << B;
-    }
     std::cout << std::endl
               << "----> split" << std::endl;
     auto List = Li::GeneralTools::splitPreserveDelimiter("/ich/habe/keine/Ahnung", '/');

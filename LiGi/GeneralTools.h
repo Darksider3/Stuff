@@ -24,8 +24,8 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
     }
     return tokens;
 }
-
-std::list<std::string> splitPreserveDelimiter(std::string const& source, char delimitier)
+template<typename Characters = std::string, typename Stack = std::list<Characters>>
+Stack splitPreserveDelimiter(std::string const& source, char delimitier)
 {
     std::list<std::string> ret;
     std::string token;
