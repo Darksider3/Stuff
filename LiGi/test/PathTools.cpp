@@ -1,4 +1,5 @@
 #include "FileTools.h"
+#include "GeneralTools.h"
 #include "Test.h"
 
 #include <iostream>
@@ -84,6 +85,21 @@ int main()
     tester->append(TestFPOrError.get());
     tester->append(TestAbsolutise.get());
     tester->exec();
+
+    Li::GeneralTools::fs::Path rund("/etc/./world/has/gone/over/lol.cpp/../");
+    rund.debugOut();
+
+    std::cout << "----> TokenizePath" << std::endl;
+    for (auto& B : Li::GeneralTools::fs::TokenizePath("/etc/world")) {
+        std::cout << B;
+    }
+    std::cout << std::endl
+              << "----> split" << std::endl;
+    auto List = Li::GeneralTools::splitPreserveDelimiter("/ich/habe/keine/Ahnung", '/');
+
+    for (auto& b : List) {
+        std::cout << b;
+    }
 
     std::cout << tester->errors();
     return 0;
