@@ -4,6 +4,7 @@
 #include <cstring>
 #include <dirent.h> // stat
 #include <iostream>
+#include <list>
 #include <sstream> // istringstream
 #include <string>
 #include <sys/stat.h>
@@ -24,6 +25,22 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
     return tokens;
 }
 
+std::list<std::string> splitPreserveDelimiter(std::string const& source, char delimitier)
+{
+    std::list<std::string> ret;
+    std::string token;
+    for (auto& c : source) {
+        token.push_back(c);
+        if (c == delimitier) {
+            ret.push_back(token);
+            token.clear();
+        }
+    }
+    if (!token.empty())
+        ret.push_back(token);
+
+    return ret;
+}
 /* @TODO: Generalized Parser for easy of use on the other parsers im going to write... ._,
  */
 /* @TODO: URN, URI, URL-Parser
