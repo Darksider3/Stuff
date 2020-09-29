@@ -171,28 +171,6 @@ public:
     }
 };
 
-std::list<std::string> TokenizePath(std::string const& Path, bool preserveSlashes = true)
-{
-    std::list<std::string> L;
-
-    std::string token;
-    std::string SafePath = Path;
-    if (Path[0] == '/') {
-        SafePath = SafePath.erase(0, 1);
-    }
-
-    std::istringstream Stream(SafePath);
-
-    while (std::getline(Stream, token, '/')) {
-        if (preserveSlashes)
-            token = '/' + token;
-
-        L.push_back(token);
-    }
-
-    return L;
-}
-
 class Path {
 private:
     struct Properties {
