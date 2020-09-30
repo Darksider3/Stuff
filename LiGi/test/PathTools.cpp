@@ -13,7 +13,7 @@ bool test_absolutise(Li::TestCase* tcase)
     std::string teststr = "./world.cpp";
     std::string resultstr = Li::GeneralTools::fs::absolutise(teststr);
 
-    if (teststr != "ww") {
+    if (teststr == resultstr) {
         tcase->error = 1;
         returner = false;
         tcase->errorDesc = resultstr;
@@ -69,6 +69,35 @@ bool test_fp_or_error(Li::TestCase* tcase)
     return returner;
 }
 
+bool testPathLib(Li::TestCase* tcase)
+{
+    bool returner = true;
+    tcase->name = "Test Path Lib";
+    tcase->descr = "Testing various functions in the Path lib";
+
+    auto F = Li::GeneralTools::fs::Path("/non_existant/path");
+    if ((std::string)F != "/non_existant/path") {
+        tcase->errorDesc += (std::string)F + "\n";
+        tcase->error = 1;
+        returner = false;
+    }
+
+    if (F.exists()) {
+        tcase->errorDesc += "F is somehow valid albeit it really should not!\n";
+        tcase->error = 1;
+        returner = false;
+    }
+
+    F = Li::GeneralTools::fs::Path("/usr/bin");
+    if (!F.exists()) {
+        tcase->errorDesc += "/usr/bin isn't existant? It MUST be.\n";
+        tcase->error = 2;
+        returner = false;
+    }
+
+    return returner;
+}
+
 int main()
 {
     Li::Test* tester = Li::Test::instance();
@@ -76,18 +105,22 @@ int main()
     std::shared_ptr<Li::TestCase> TestFileExists = std::make_shared<Li::TestCase>();
     std::shared_ptr<Li::TestCase> TestAbsolutise = std::make_shared<Li::TestCase>();
     std::shared_ptr<Li::TestCase> TestFPOrError = std::make_shared<Li::TestCase>();
+    std::shared_ptr<Li::TestCase> TestPathLib = std::make_shared<Li::TestCase>();
 
     TestFileExists->func = *test_file_exists;
     TestFPOrError->func = *test_fp_or_error;
     TestAbsolutise->func = *test_absolutise;
+    TestPathLib->func = *testPathLib;
 
     tester->append(TestFileExists.get());
     tester->append(TestFPOrError.get());
     tester->append(TestAbsolutise.get());
+    tester->append(TestPathLib.get());
     tester->exec();
 
     Li::GeneralTools::fs::Path rund("/etc/./world/has/gone/over/lol.cpp/../");
     rund.debugOut();
+    std::cout << "\nExists? -> " << rund.exists() << "\n";
 
     std::cout << std::endl
               << "----> split" << std::endl;
@@ -97,6 +130,7 @@ int main()
         std::cout << b;
     }
 
+    std::cout << "\nParent: " << Li::GeneralTools::strip(rund.Parent(), '/') << "\n";
     std::cout << tester->errors();
     return 0;
 }
