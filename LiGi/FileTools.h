@@ -151,10 +151,9 @@ std::pair<std::pair<bool, std::string_view>, FILE*> error_or_fp(std::string cons
 }
 
 class FSObj {
-private:
+public:
     std::string m_Name;
 
-public:
     explicit FSObj(std::string_view const& t)
         : m_Name { t }
     {
@@ -175,26 +174,47 @@ class Path {
 private:
     struct Properties {
         bool absolute = false;
+        bool exists = false;
     } m_Properties;
 
-    std::list<std::unique_ptr<FSObj>> m_Path;
+    std::vector<std::unique_ptr<FSObj>> m_Path;
     std::string m_Path_String;
 
 public:
     explicit Path(std::string const& Path)
         : m_Path_String { Path }
     {
-        for (auto& item : Li::GeneralTools::splitPreserveDelimiter(Path, '/')) {
-            m_Path.push_back(FSObj::create(item));
-        }
+        auto list = Li::GeneralTools::splitPreserveDelimiter(Path, '/');
+
+        auto insertSplitsIntoList = [=](std::string const& item) {
+            return FSObj::create(item);
+        };
+
+        std::transform(list.begin(), list.end(), std::back_inserter(m_Path), insertSplitsIntoList);
         if (is_absolute(Path)) {
             m_Properties.absolute = true;
         }
+        __exists();
     }
 
-    bool exists() const
+    void
+    __exists()
     {
-        return (fs::exists(m_Path_String));
+        m_Properties.exists = fs::exists(m_Path_String);
+    }
+
+    bool exists()
+    {
+        return m_Properties.exists;
+    }
+
+    std::string Parent()
+    {
+        if (m_Path.size() < 2) {
+            return m_Path_String;
+        }
+
+        return m_Path[m_Path.size() - 2]->m_Name;
     }
 
     std::string ToString() const
