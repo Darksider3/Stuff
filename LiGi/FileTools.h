@@ -3,10 +3,14 @@
 #include <cstring>
 #include <dirent.h>
 #include <iostream>
+
 #include <list>
+#include <numeric>
+
 #include <memory>
 #include <sstream>
 #include <string>
+
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -179,6 +183,7 @@ private:
 
     std::vector<std::unique_ptr<FSObj>> m_Path;
     std::string m_Path_String;
+    bool m_dirty_Path = false;
 
 public:
     explicit Path(std::string const& Path)
@@ -208,28 +213,52 @@ public:
         return m_Properties.exists;
     }
 
+    void __createStrFromPath()
+    {
+        m_Path_String.clear();
+        for (auto& str : m_Path) {
+            m_Path_String += str->m_Name;
+        }
+    }
+
+    void __dirtyCleanup()
+    {
+        if (m_dirty_Path) {
+            __createStrFromPath();
+            __exists();
+            m_dirty_Path = false;
+        }
+    }
+
+    std::string get()
+    {
+        __dirtyCleanup();
+        return m_Path_String;
+    }
+
     std::string Parent()
     {
+        __dirtyCleanup();
         if (m_Path.size() < 2) {
             return m_Path_String;
         }
-
         return m_Path[m_Path.size() - 2]->m_Name;
     }
 
-    std::string ToString() const
+    std::string ToString()
     {
-        return m_Path_String;
+        return get();
     }
 
-    operator std::string() const
+    operator std::string()
     {
-        return m_Path_String;
+        return get();
     }
 
-    operator const std::string()
+    friend std::ostream& operator<<(std::ostream& ostr, Path& p)
     {
-        return m_Path_String;
+        ostr << p.get();
+        return ostr;
     }
 
     void debugOut() const
