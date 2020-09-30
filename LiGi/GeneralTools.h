@@ -41,6 +41,19 @@ Stack splitPreserveDelimiter(std::string const& source, char delimitier)
 
     return ret;
 }
+
+template<typename Characters = std::string, typename Delimiter = char>
+Characters strip(const Characters& Input, const Delimiter& CharToStrip)
+{
+    Characters result;
+    for (auto& b : Input) {
+        if (b == CharToStrip)
+            continue;
+        result += b;
+    }
+
+    return result;
+}
 /* @TODO: Generalized Parser for easy of use on the other parsers im going to write... ._,
  */
 /* @TODO: URN, URI, URL-Parser
