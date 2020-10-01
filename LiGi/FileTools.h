@@ -202,8 +202,8 @@ public:
         __exists();
     }
 
-    void
-    __exists()
+    //refactor exists
+    void __exists()
     {
         m_Properties.exists = fs::exists(m_Path_String);
     }
@@ -225,9 +225,25 @@ public:
     {
         if (m_dirty_Path) {
             __createStrFromPath();
+            m_Properties.absolute = is_absolute(m_Path_String);
             __exists();
             m_dirty_Path = false;
         }
+
+        return;
+    }
+
+    void append(std::string const& path)
+    {
+        __dirtyCleanup();
+        auto ext_List = Li::GeneralTools::splitPreserveDelimiter(path, '/');
+
+        for (auto& item : ext_List) {
+            m_Path.insert(m_Path.end(), FSObj::create(item));
+        }
+
+        m_dirty_Path = true;
+        __dirtyCleanup();
     }
 
     std::string get()
@@ -267,6 +283,11 @@ public:
             b->debugOut();
         }
         std::cout << std::endl;
+    }
+
+    size_t stacksize()
+    {
+        return m_Path.size();
     }
 };
 }
