@@ -119,16 +119,7 @@ int main()
     tester->exec();
 
     Li::GeneralTools::fs::Path rund("/etc/./world/has/gone/over/lol.cpp/../");
-    rund.debugOut();
-    std::cout << "\nExists? -> " << rund.exists() << "\n";
-
-    std::cout << std::endl
-              << "----> split" << std::endl;
-    auto List = Li::GeneralTools::splitPreserveDelimiter("/ich/habe/keine/Ahnung", '/');
-
-    for (auto& b : List) {
-        std::cout << b;
-    }
+    std::cout << "\n-----\n get() -> " << rund.get() << "\n------\n";
 
     std::cout << "\nParent: " << Li::GeneralTools::strip(rund.Parent(), '/') << "\n";
     std::cout << tester->errors();
