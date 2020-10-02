@@ -17,7 +17,6 @@
 #include "GeneralTools.h"
 
 namespace Li {
-namespace GeneralTools {
 namespace fs {
 
 /* @TODO: Filesystem: dynamic is_absolute(), is_relative() just for excercise
@@ -290,7 +289,6 @@ public:
         return m_Path.size();
     }
 };
-}
 }
 }
 #endif // FILETOOLS_H
