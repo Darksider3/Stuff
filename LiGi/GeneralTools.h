@@ -25,12 +25,28 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
     return tokens;
 }
 template<typename Characters = std::string, typename Stack = std::list<Characters>>
-Stack splitPreserveDelimiter(std::string const& source, char delimitier)
+Stack splitPreserveDelimiter(std::string const& source, const char delimitier, const char escape = ';')
 {
     std::list<std::string> ret;
     std::string token;
+    bool escaped = false;
     for (auto& c : source) {
         token.push_back(c);
+        if (escaped) {
+#ifndef NDEBUG
+            std::cout << "Escaped character was indeed found and ignored!";
+#endif
+            escaped = false;
+            continue;
+        }
+
+        else if (c == escape) {
+#ifndef NDEBUG
+            std::cout << "Found escape char - '" << escape << "'. \n";
+#endif
+            escaped = true;
+        }
+
         if (c == delimitier) {
             ret.push_back(token);
             token.clear();
