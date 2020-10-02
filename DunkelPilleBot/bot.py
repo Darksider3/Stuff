@@ -66,21 +66,21 @@ async def event_message(ctx):
     if "!beef" in ctx.content: 
         if EARLIEST_NEXT_BEEF < datetime.datetime.now():
             EARLIEST_NEXT_BEEF = datetime.datetime.now() +\
-                datetime.timedelta(minutes=6)
+                datetime.timedelta(minutes=10)
             sleeper(True)
             await ctx.channel.send(random.choice(BEEF_STRINGS))
             print(f"{datetime.datetime.now()} - DEBUG: BEEF TRIGGERED")
     if "!kart" in ctx.content: 
         if EARLIEST_NEXT_KART < datetime.datetime.now():
             EARLIEST_NEXT_KART = datetime.datetime.now() +\
-                datetime.timedelta(minutes=10)
+                datetime.timedelta(minutes=20)
             sleeper(True)
             await ctx.channel.send("!kart")
             print(f"{datetime.datetime.now()} - DEBUG: BEEF TRIGGERED")
     if "!karaoke" in ctx.content:
         if EARLIEST_NEXT_KARAOKE < datetime.datetime.now():
             EARLIEST_NEXT_KARAOKE = datetime.datetime.now() + \
-                datetime.timedelta(minutes=10)
+                datetime.timedelta(minutes=20)
             sleeper(True)
             await ctx.channel.send("!karaoke 666")
             print(f"{datetime.datetime.now()} - DEBUG: KARAOKE TRIGGERED")
