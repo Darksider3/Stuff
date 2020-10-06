@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 #include "GeneralTools.h"
-
+#include "creational.h"
 namespace Li {
 namespace fs {
 
@@ -153,7 +153,7 @@ std::pair<std::pair<bool, std::string_view>, FILE*> error_or_fp(std::string cons
     return result;
 }
 
-class FSObj {
+class FSObj : public Li::constructTPL::construct_unique<FSObj> {
 public:
     std::string m_Name;
 
@@ -165,11 +165,6 @@ public:
     void debugOut()
     {
         std::cout << m_Name;
-    }
-
-    static std::unique_ptr<FSObj> create(std::string_view const& t)
-    {
-        return std::make_unique<FSObj>(t);
     }
 };
 
