@@ -153,7 +153,7 @@ std::pair<std::pair<bool, std::string_view>, FILE*> error_or_fp(std::string cons
     return result;
 }
 
-class FSObj : public Li::constructTPL::construct_unique<FSObj> {
+class FSObj : public Li::creational::construct_unique<FSObj> {
 public:
     std::string m_Name;
 
