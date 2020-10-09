@@ -5,8 +5,7 @@
 #include <memory>
 
 namespace Li {
-namespace constructTPL {
-
+namespace creational {
 template<typename creationT>
 struct construct_unique {
 
