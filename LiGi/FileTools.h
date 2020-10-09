@@ -283,6 +283,13 @@ public:
     {
         return m_Path.size();
     }
+
+    void clear()
+    {
+        m_Path.clear();
+        m_Path_String.clear();
+        m_dirty_Path = true;
+    }
 };
 }
 }
