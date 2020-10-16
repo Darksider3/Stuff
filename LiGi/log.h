@@ -1,45 +1,85 @@
 #ifndef LOG_H
 #define LOG_H
 #include "Singleton.h"
+#include "creational.h"
 #include <chrono>
+#include <fstream>
 #include <iostream>
-#include <locale>
 
 #ifndef NDEBUG
 
-class GeneralDebug {
+// general
+
+class LogProviders {
+public:
+    virtual std::ostream& print(std::string_view __attribute__((unused)) s) = 0;
+    virtual std::ostream& operator<<(std::string_view __attribute__((unused)) s) = 0;
+    virtual ~LogProviders() = default;
+};
+
+class GeneralOutputProvider : LogProviders {
 private:
     std::ostream& m_out;
 
 public:
-    explicit GeneralDebug(std::ostream& o)
+    explicit GeneralOutputProvider(std::ostream& o)
         : m_out(o)
     {
     }
 
-    virtual std::ostream& print(std::string_view out)
+    std::ostream& print(std::string_view out) override
     {
         m_out << out;
         return m_out;
     }
 
-    virtual std::ostream& operator<<(std::string_view output)
+    std::ostream& operator<<(std::string_view output) override
     {
         return print(output);
     }
-
-    virtual ~GeneralDebug() = default;
+    virtual ~GeneralOutputProvider() = default;
 };
 
-class Dbg : public GeneralDebug {
+class FileLogProvider : public LogProviders
+    , public Li::creational::construct_unique<FileLogProvider> {
+private:
+    std::ofstream f;
+
+public:
+    FileLogProvider(std::string const& path, std::ios_base::openmode mode = std::ios_base::out)
+        : f(path, mode)
+    {
+    }
+
+    std::ostream& print(std::string_view str) override
+    {
+        *this << str;
+        return f;
+    }
+
+    std::ostream& operator<<(std::string_view str) override
+    {
+        f << std::string(str);
+        f.flush();
+        return f;
+    }
+
+    ~FileLogProvider()
+    {
+        f.flush();
+        f.close();
+    }
+};
+
+class Dbg : public GeneralOutputProvider {
 public:
     Dbg()
-        : GeneralDebug(std::cerr)
+        : GeneralOutputProvider(std::cerr)
     {
     }
 
     Dbg(std::ostream& opt)
-        : GeneralDebug(opt)
+        : GeneralOutputProvider(opt)
     {
     }
 
