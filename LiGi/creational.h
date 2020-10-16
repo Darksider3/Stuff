@@ -38,6 +38,23 @@ struct construct_shared {
     static const bool is_shared_constructible { true };
     static const bool is_weak_constructible { false };
     static const bool is_plainptr_constructible { false };
+
+    static std::shared_ptr<creationT> create()
+    {
+        return std::move(std::make_shared<creationT>());
+    }
+
+    template<typename F>
+    static std::shared_ptr<creationT> create(F var)
+    {
+        return std::move(std::make_shared<creationT>(std::forward<F>(var)));
+    }
+
+    template<typename... F>
+    static std::shared_ptr<creationT> create(F... variables)
+    {
+        return std::move(std::make_shared<creationT>(std::forward<F>(variables)...));
+    }
 };
 
 template<typename creationT>
