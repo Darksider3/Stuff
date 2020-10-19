@@ -24,8 +24,9 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
     }
     return tokens;
 }
+
 template<typename Characters = std::string, typename Stack = std::list<Characters>>
-Stack splitPreserveDelimiter(std::string const& source, const char delimitier, const char escape = ';')
+Stack splitPreserveDelimiter(std::string const& source, const char delimitier, const char escape = '\\')
 {
     std::list<std::string> ret;
     std::string token;
@@ -33,17 +34,11 @@ Stack splitPreserveDelimiter(std::string const& source, const char delimitier, c
     for (auto& c : source) {
         token.push_back(c);
         if (escaped) {
-#ifndef NDEBUG
-            std::cout << "Escaped character was indeed found and ignored!";
-#endif
-            escaped = false;
+            escaped = false; // escape flag clear
             continue;
         }
 
         else if (c == escape) {
-#ifndef NDEBUG
-            std::cout << "Found escape char - '" << escape << "'. \n";
-#endif
             escaped = true;
         }
 
@@ -70,6 +65,7 @@ Characters strip(const Characters& Input, const Delimiter& CharToStrip)
 
     return result;
 }
+
 /* @TODO: Generalized Parser for easy of use on the other parsers im going to write... ._,
  */
 /* @TODO: URN, URI, URL-Parser
@@ -77,7 +73,6 @@ Characters strip(const Characters& Input, const Delimiter& CharToStrip)
  * URL: Edit-Distance maybe helpfull by misspelling?
  * URN: Scheme://authority:AuthorityPort/PathOnAuthority?query=Value#Fragment
  */
-
 }
 }
 #endif // GENERALTOOLS_H
