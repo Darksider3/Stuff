@@ -134,7 +134,7 @@ int main()
     Li::fs::Path rund("/etc/./;/world/has/gone/over/lol.cpp/../");
     std::cout << "\n-----\n get() -> " << rund.get() << "\n------\n";
 
-    std::cout << "\nParent: " << Li::GeneralTools::strip(rund.Parent(), '/') << "\n";
+    std::cout << "\nParent: " << Li::common::strip(rund.Parent(), '/') << "\n";
     std::cout << Global->errors();
     return 0;
 }

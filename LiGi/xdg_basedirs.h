@@ -165,10 +165,10 @@ public:
    */
   std::vector<std::string> DataDirs(Dirs_List)
   {
-    std::vector<std::string> potRet = Li::GeneralTools::split(M_data_dirs, M_list_delim);
+    std::vector<std::string> potRet = Li::common::split(M_data_dirs, M_list_delim);
 
     if(potRet.empty())
-      potRet = Li::GeneralTools::split(DataDirs(), M_list_delim);
+      potRet = Li::common::split(DataDirs(), M_list_delim);
 
     return potRet;
   }
@@ -182,7 +182,7 @@ public:
    */
   std::vector<std::string> ConfigDirs(Dirs_List)
   {
-    std::vector<std::string> potRet = Li::GeneralTools::split(M_config_dirs, M_list_delim);
+    std::vector<std::string> potRet = Li::common::split(M_config_dirs, M_list_delim);
     if(potRet.empty())
       potRet.emplace_back(ConfigDirs());
 

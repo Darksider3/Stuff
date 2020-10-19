@@ -183,7 +183,7 @@ public:
     explicit Path(std::string const& Path)
         : m_Path_String { Path }
     {
-        auto list = Li::GeneralTools::splitPreserveDelimiter(Path, '/');
+        auto list = Li::common::splitPreserveDelimiter(Path, '/');
 
         auto insertSplitsIntoList = [=](std::string const& item) {
             return FSObj::create(item);
@@ -230,7 +230,7 @@ public:
     void append(std::string const& path)
     {
         __dirtyCleanup();
-        auto ext_List = Li::GeneralTools::splitPreserveDelimiter(path, '/');
+        auto ext_List = Li::common::splitPreserveDelimiter(path, '/');
 
         for (auto& item : ext_List) {
             m_Path.insert(m_Path.end(), FSObj::create(item));

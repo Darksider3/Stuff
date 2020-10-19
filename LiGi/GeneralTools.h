@@ -12,7 +12,7 @@
 #include <vector>
 
 namespace Li {
-namespace GeneralTools {
+namespace common {
 
 std::vector<std::string> split(const std::string& s, const char delimiter) noexcept
 {
