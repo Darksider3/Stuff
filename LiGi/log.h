@@ -1,12 +1,13 @@
 #ifndef LOG_H
-#define LOG_H
-#include "Singleton.h"
-#include "creational.h"
-#include <chrono>
-#include <fstream>
-#include <iostream>
+#    define LOG_H
+#    include "Singleton.h"
+#    include "creational.h"
+#    include <cassert>
+#    include <chrono>
+#    include <fstream>
+#    include <iostream>
 
-#ifndef NDEBUG
+#    if !defined(NDEBUG) || !defined(DBG_LOG_OUTPUT)
 
 // general
 
@@ -46,7 +47,7 @@ private:
     std::ofstream f;
 
 public:
-    FileLogProvider(std::string const& path, std::ios_base::openmode mode = std::ios_base::out)
+    explicit FileLogProvider(std::string const& path, std::ios_base::openmode mode = std::ios_base::out)
         : f(path, mode)
     {
     }
@@ -78,7 +79,7 @@ public:
     {
     }
 
-    Dbg(std::ostream& opt)
+    explicit Dbg(std::ostream& opt)
         : GeneralOutputProvider(opt)
     {
     }
@@ -98,7 +99,27 @@ public:
 class DbgSingle : public Dbg
     , public Li::Singleton<DbgSingle> {
 };
-#else
+
+#        define DBG *DbgSingle::instance()
+#        ifdef LINEDBG
+#            undef DBG
+class SourceFileDBG : public Dbg
+    , public Li::Singleton<DbgSingle> {
+private:
+public:
+    std::ostream& print(std::string_view str, size_t line, const char* file)
+    {
+        Dbg::print(file);
+        Dbg::print(":");
+        Dbg::print(std::to_string(line));
+        Dbg::print(": ");
+
+        return Dbg::operator<<(str);
+    }
+};
+#            define DBG *SourceFileDBG::instance()
+#        endif
+#    else
 class DbgSingle : public Li::Singleton<DbgSingle> {
 private:
 public:
@@ -112,6 +133,12 @@ public:
     {
     }
 };
-#endif
-static DbgSingle& DBG = *DbgSingle::instance();
+#    endif
 #endif // LOG_H
+
+/*
+ * @TODO A class with the interface ProviderMetaClass *logoutput = CapabilitieChooser(cap::LINE, cap::FILE, cap::STRING);
+ * logoutput << "bla" --> Results in "LINE:FILE: bla"
+ * Executes the Arguments in order it got it, functions bound in a vector. std::vector<std::function<void()>(func)
+ * The list gets parsed in the constructor once
+ */
