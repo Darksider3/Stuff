@@ -18,4 +18,30 @@ void freeValueArray(ValueArray* array);
 
 void printValue(Value value);
 
+
+class ValueObj {
+private:
+
+  typedef struct {
+    using ValueType = double;
+    size_t capacity;
+    size_t count;
+    ValueType* values;
+  } ValArray;
+  
+  ValArray *arr;
+  
+public:
+  ValueObj(ValArray *Arr) : arr(Arr) {
+    // INIT STUFF
+  }
+  void write(ValArray *array, Value Val);
+  
+  ~ValueObj() {
+    // DELETE STUFF
+  }
+    
+
+};
+
 #endif // VALUE_H
