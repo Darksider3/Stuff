@@ -31,11 +31,13 @@ typedef struct {
  * @param chunk
  */
 void initChunk(Chunk* chunk);
+
 /**
  * @brief deallocate a chunk *and* NULL it
  * @param chunk
  */
 void freeChunk(Chunk* chunk);
+
 /**
  * @brief Interface to write a chunk
  * @param chunk
@@ -43,6 +45,7 @@ void freeChunk(Chunk* chunk);
  * @param line
  */
 void writeChunk(Chunk* chunk, uint8_t byte, int line);
+
 /**
  * @brief Add a constant value to the chunk-list
  * @param chunk
@@ -50,4 +53,23 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line);
  * @return
  */
 int addConstant(Chunk *chunk, Value value);
+
+class ChunkObj {
+private:
+  struct CodeChunk {
+    size_t count;
+    size_t capacity;
+    uint8_t *code;
+    int* lines; // see clox chapter
+    ValueObj constants;
+  };
+  
+public:
+  ChunkObj() {
+    // init shit
+  }
+  
+  
+};
+
 #endif

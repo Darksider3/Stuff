@@ -32,7 +32,7 @@ private:
   ValArray *arr;
   
 public:
-  ValueObj(ValArray *Arr) : arr(Arr) {
+  ValueObj(ValArray *Arr) : arr(Arr) { // configure ValArray in ctor
     // INIT STUFF
   }
   void write(ValArray *array, Value Val);
