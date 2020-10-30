@@ -8,22 +8,21 @@
  */
 
 typedef enum {
-  OP_CONSTANT,
-  OP_ADD,
-  OP_SUBTRACT,
-  OP_MULTIPLY,
-  OP_DIVIDE,
-  OP_NEGATE,
-  OP_RETURN, // return from current function
+    OP_CONSTANT,
+    OP_ADD,
+    OP_SUBTRACT,
+    OP_MULTIPLY,
+    OP_DIVIDE,
+    OP_NEGATE,
+    OP_RETURN, // return from current function
 } OpCode;
 
-
 typedef struct {
-  int count;
-  int capacity;
-  uint8_t *code;
-  int* lines; // @TODO: just write the line when actually on a new one; needs to refit all code effectivly writing to the lines parameter
-  ValueArray constants;
+    int count;
+    int capacity;
+    uint8_t* code;
+    int* lines; // @TODO: just write the line when actually on a new one; needs to refit all code effectivly writing to the lines parameter
+    ValueArray constants;
 } Chunk;
 
 /**
@@ -52,24 +51,23 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line);
  * @param value
  * @return
  */
-int addConstant(Chunk *chunk, Value value);
+int addConstant(Chunk* chunk, Value value);
 
 class ChunkObj {
 private:
-  struct CodeChunk {
-    size_t count;
-    size_t capacity;
-    uint8_t *code;
-    int* lines; // see clox chapter
-    ValueObj constants;
-  };
-  
+    struct CodeChunk {
+        size_t count;
+        size_t capacity;
+        uint8_t* code;
+        int* lines; // see clox chapter
+        ValueObj constants;
+    };
+
 public:
-  ChunkObj() {
-    // init shit
-  }
-  
-  
+    ChunkObj()
+    {
+        // init shit
+    }
 };
 
 #endif

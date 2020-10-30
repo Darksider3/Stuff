@@ -1,42 +1,41 @@
 #include "vm.h"
 #include "common.h"
-#include "debug.h"
 #include "compiler.h"
+#include "debug.h"
 #include <cstdio>
 
 class VirtualMachine {
 private:
-    Chunk *chunk;
-    uint8_t *ip; // instruction pointer, we could also call it PC for program counter
+    Chunk* chunk;
+    uint8_t* ip; // instruction pointer, we could also call it PC for program counter
     Value stack[STACK_MAX];
-    Value *stackTop;
+    Value* stackTop;
 
 public:
-    explicit VirtualMachine(Chunk *chunk)
+    explicit VirtualMachine(Chunk* chunk)
     {
         this->reset();
         this->chunk = chunk;
     }
-    
+
     void reset()
     {
         stackTop = stack;
     }
-    
+
     void push(Value val)
     {
         *this->stackTop = val;
         ++this->stackTop;
     }
-    
+
     Value pop()
     {
         --this->stackTop;
         return *stackTop;
     }
-    
+
     InterpretResult run();
-    
 };
 // for convenience, define it here.
 // we'll have to pass it around the whole file probably
@@ -116,13 +115,15 @@ static InterpretResult run()
             BINARY_OP(/);
             break;
 
-        case OP_NEGATE: push(-pop()); break; //negate current value on top of the stack and push it directly back onto it
+        case OP_NEGATE:
+            push(-pop());
+            break; //negate current value on top of the stack and push it directly back onto it
 
-      case OP_RETURN: {
-                printValue(pop());
-                printf("\n");
-                return INTERPRET_OK;
-      }
+        case OP_RETURN: {
+            printValue(pop());
+            printf("\n");
+            return INTERPRET_OK;
+        }
         }
     }
 #undef READ_CONSTANT
@@ -134,17 +135,17 @@ InterpretResult interpret(const char* source)
 {
     Chunk chunk;
     initChunk(&chunk);
-    
-    if(!compile(source, &chunk)) {
+
+    if (!compile(source, &chunk)) {
         freeChunk(&chunk);
         return INTERPRET_COMPILE_ERROR;
     }
-    
+
     vm.chunk = &chunk;
     vm.ip = vm.chunk->code;
-    
+
     InterpretResult result = run();
-    
+
     freeChunk(&chunk);
     return result;
 }
