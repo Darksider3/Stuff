@@ -15,10 +15,10 @@ BEEF_STRINGS = ["!beef bastelRage2", "!beef", "!beef pillebMOPS", "!beef Clap",
 MOPS_STRINGS = ["!mops bastelRage2", "!mops", "!mops pillebMOPS", "!mops Clap",
         "!mops monkaS", "!mops monkaT", "!mops", "!mops ROLLMOPS "]
 
-EARLIEST_NEXT_BEEF = datetime.datetime.now() + datetime.timedelta(minutes=2)
-EARLIEST_NEXT_KART = datetime.datetime.now() + datetime.timedelta(minutes=3)
-EARLIEST_NEXT_KARAOKE = datetime.datetime.now() + datetime.timedelta(minutes=3)
-EARLIEST_NEXT_MOPS = datetime.datetime.now() + datetime.timedelta(minutes=1)
+EARLIEST_NEXT_BEEF = datetime.datetime.now() + datetime.timedelta(minutes=8)
+EARLIEST_NEXT_KART = datetime.datetime.now() + datetime.timedelta(minutes=30)
+EARLIEST_NEXT_KARAOKE = datetime.datetime.now() + datetime.timedelta(minutes=10)
+EARLIEST_NEXT_MOPS = datetime.datetime.now() + datetime.timedelta(minutes=2)
 
 assert(EARLIEST_NEXT_BEEF > datetime.datetime.now())
 
@@ -77,6 +77,7 @@ async def event_message(ctx):
             sleeper(True)
             await ctx.channel.send("!kart")
             print(f"{datetime.datetime.now()} - DEBUG: BEEF TRIGGERED")
+            
     if "!karaoke" in ctx.content:
         if EARLIEST_NEXT_KARAOKE < datetime.datetime.now():
             EARLIEST_NEXT_KARAOKE = datetime.datetime.now() + \
