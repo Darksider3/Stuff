@@ -20,6 +20,8 @@ __pycache__/
 *.includes
 *.creator.user
 *.cxxflags
+*compile_commands.json*
+*.clangd/
 *.o
 *CMake*
 *venv*
