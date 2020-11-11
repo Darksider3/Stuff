@@ -1,9 +1,11 @@
+#lang scheme
+
 (define DBG 0)
 
 (define (DBG_OUT x)
   (cond
     ( (= DBG 0) (println x) )
-    (else)
+    (else #f)
   )
 )
 
@@ -36,7 +38,7 @@
 
 (define (rdepth xtimes counter)
   (cond
-    ((= xtimes counter) (println "done"))
+    ((= xtimes (- counter 1)) (println "done"))
     (else (rdepth xtimes (+ counter 1)) (println counter ))
   )
 )
@@ -45,6 +47,8 @@
         ((= x 0) 0)
         ((< x 0) (- x))))
 
+; Tail-Recursion: Every step we note the multiplier(current * origin) to implement
+; a PowerOf function
 (define (RecursivePowDownCount number original times)
   (cond
     ((<  times 0) (/ 1 (rpow number (abs times))) ) ; handle negative exponent
@@ -54,8 +58,7 @@
     (else (RecursivePowDownCount (* number original) original (- times 1)))
   )
 )
-;  1      2      3           4            5            6              7
-; 2+2 => 4+4 => 8+8(16) => 16+16(32) => 32+32(64) => 64+64(128) => 128+128 => 
+
 (define (rpow number exponent)
   (RecursivePowDownCount number number exponent)
 )
