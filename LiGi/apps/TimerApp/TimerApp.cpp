@@ -113,7 +113,7 @@ public:
         void Mode(WINDOW& win) const noexcept
         {
             const PomoState& state = M_Timer.getState();
-            int midy, midx;
+            size_t midy, midx;
             getmaxyx(&win, midy, midx);
             midy = midy / 2;
             if (state == PomoState::SHORT)
@@ -131,7 +131,7 @@ public:
 
         void Mid(WINDOW& win) const noexcept
         {
-            int midx, midy;
+            size_t midx, midy;
             getmaxyx(&win, midy, midx);
             midy = midy / 2;
 

@@ -11,11 +11,11 @@ int xMiddle(size_t const& full, size_t const& sub) noexcept
     return static_cast<int>(x);
 }
 
-void EraseSpecific(WINDOW* win, int Y, int X)
+void EraseSpecific(WINDOW* win, size_t Y, size_t X)
 {
     int Old_y, Old_x;
     getyx(win, Old_y, Old_x);
-    wmove(win, Y, X);
+    wmove(win, static_cast<int>(Y), static_cast<int>(X));
     wclrtoeol(win);
     wmove(win, Old_y, Old_x);
     wrefresh(win);
