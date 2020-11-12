@@ -25,6 +25,14 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
     return tokens;
 }
 
+template<typename StrT>
+std::pair<StrT, StrT> SplitPair(StrT str, char delim)
+{
+	auto split_pos = std::find(str.begin(), str.end(), delim);
+	auto second_begin = split_pos != str.end() ? std::next(split_pos) : split_pos;
+	return { { str.begin(), split_pos }, { second_begin, str.end() } };
+}
+
 template<typename Characters = std::string, typename Stack = std::list<Characters>>
 Stack splitPreserveDelimiter(std::string const& source, const char delimitier, const char escape = '\\')
 {
