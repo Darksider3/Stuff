@@ -24,6 +24,7 @@ template<typename T>
 }
 #endif
 
+// @TODO: Li::Diagnosis
 enum Reporting_Level {
 	Warn,
 	Err,
@@ -73,7 +74,7 @@ public:
 
 	~Diagnosis()
 	{
-#if !defined(NDEBUG) || !defined(LI_NO_DIAGNOSIS)
+#if !defined(NDEBUG) || !defined(LI_RUNTIME_DIAGNOSIS)
 		if (Reports.empty())
 			return;
 		std::cerr << "\n\n\t===================\n";
@@ -140,7 +141,16 @@ std::string FieldTrim(StringT str)
 
 std::optional<InvalidField> ReadFields(std::istream& ins, Field_Map& FM)
 {
-	auto strToLower = [](unsigned const char& c) {
+	// @TODO: Li::string_helper::to_lower(std::string str) -->
+	/*
+	 * std::transform(str.begin(), str.end(), str.begin(), [](unsigned const char &c) -> int {return std::tolower(c);};
+	 *
+	 * AND
+	 * Li::string_helper::to_lower(std::string str)
+	 * std::transform(str.begin(), str.end(), str.begin(), [](const char &c) -> char {return static_cast<char>(static_cast<unsigned char>(c));};
+	 */
+
+	auto strToLower = [](unsigned const char& c) -> int {
 		return std::tolower(c);
 	};
 

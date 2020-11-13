@@ -16,6 +16,11 @@ int main(int argc, char** argv)
 			  << "\n";
 	std::unique_ptr<std::ifstream> file = std::make_unique<std::ifstream>(std::string(argv[1]));
 	std::istream* is = file.get();
+	if (!is->good() && !file->good()) {
+		std::cout << "Couldn't open " << argv[1] << ": "
+				  << std::strerror(errno);
+		std::exit(1);
+	}
 
 	std::string ver {};
 	Field_Map MAPP;
