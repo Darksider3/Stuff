@@ -7,8 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # additional debug flags... ^o^
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++2a -g -pedantic-errors -Wuseless-cast -Wall -Wpedantic -Wextra -Wsuggest-final-methods -Wsuggest-final-types -Wsuggest-override -Wno-redundant-move -Wno-pessimizing-move -Wnon-virtual-dtor -Wconversion")
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++2a -g -pedantic-errors -Wuseless-cast -Wall -Wpedantic -Wextra -Wsuggest-final-methods -Wsuggest-final-types -Wsuggest-override -Wno-redundant-move -Wno-pessimizing-move -Wnon-virtual-dtor -Wconversion -Weffc++")
 # @TODO: NcursesW?
 #SET(CURSES_USE_NCURSESW TRUE)
 
@@ -26,8 +25,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++2a -g -pedantic-errors -Wuseles
 # Set include directory
 #get_filename_component(PARENT_DIR ../../.. ABSOLUTE)
 #include_directories(${PARENT_DIR}/)
-
 add_executable(ligiwarc parser.cpp)
-
+target_compile_options(ligiwarc PUBLIC -Wpedantic -g -pedantic-errors -Wall -Weffc++)
 #target_link_libraries(Pomocurses ${CURSES_LIBRARIES} Threads::Threads)
 #file(RENAME build/compile_commands.json compile_commands.json)

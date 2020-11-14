@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	std::string ver {};
 	Field_Map MAPP;
 	ReadVersion(*is, ver);
-	ReadFields(*is, MAPP);
+	ReadSubsequentFields(*is, MAPP);
 	std::cout << "Version: "
 			  << ver
 			  << " \nKeyStore: \n";

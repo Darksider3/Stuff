@@ -139,7 +139,7 @@ std::string FieldTrim(StringT str)
 	return StringT(begin, end);
 }
 
-std::optional<InvalidField> ReadFields(std::istream& ins, Field_Map& FM)
+std::optional<InvalidField> ReadSubsequentFields(std::istream& ins, Field_Map& FM)
 {
 	// @TODO: Li::string_helper::to_lower(std::string str) -->
 	/*
@@ -159,14 +159,14 @@ std::optional<InvalidField> ReadFields(std::istream& ins, Field_Map& FM)
 	while (!line.empty() && line != "\r") {
 		auto [name, value] = Li::common::SplitPair(line, ':'); // std::string, std::string
 		if (name.empty() || value.empty()) {
-			return InvalidField { line };
+			return InvalidField { std::move(line) };
 		}
 
 		name = FieldTrim(name);
 		value = FieldTrim(value);
-
 		std::transform(name.begin(), name.end(), name.begin(), strToLower);
-		FM[std::string(name.begin(), name.end())] = std::string(value.begin(), value.end()); // FM["fieldname"] = "FieldValue"
+
+		FM[std::move(name)] = std::move(value); // FM["fieldname"] = "FieldValue"
 		std::getline(ins, line);
 	}
 
