@@ -239,6 +239,24 @@ public:
 		return has_(Type_str) && has_(ContentLength_str) && has_(RecordID_str) && has_(Date_str);
 	}
 
+	bool validType()
+	{
+		std::optional<std::string> type_opt = field("warc-type");
+
+		if (!type_opt.has_value())
+			return false;
+
+		std::string_view type = type_opt.value();
+		return (type == "warcinfo"
+			|| type == "response"
+			|| type == "resource"
+			|| type == "request"
+			|| type == "metadata"
+			|| type == "revisit"
+			|| type == "conversion"
+			|| type == "continuation");
+	}
+
 	std::size_t content_length() const
 	{
 		std::string value = m_FM.at(ContentLength_str);
