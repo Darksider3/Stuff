@@ -269,11 +269,6 @@ public:
 		}
 	}
 
-	WarcRecord* is()
-	{
-		return this;
-	}
-
 	inline std::string&& content() { return std::move(m_content); }
 	inline std::string const& content() const { return m_content; }
 
@@ -324,6 +319,8 @@ Result ReadRecords(std::istream& in)
 	skipSpaces(in);
 	return Result(record);
 }
+
+constexpr bool holds(Result const& result) { return std::holds_alternative<WarcRecord>(result); }
 
 std::string const WarcRecord::Type_str = "warc-type";
 std::string const WarcRecord::RecordID_str = "warc-record-id";
