@@ -115,12 +115,11 @@ struct MissingRequiredField {
 struct IncompleteRecord {
 };
 
+class WarcRecord;
+
 using WarcError = std::variant<VersionNotSupported, InvalidField,
 	MissingRequiredField, IncompleteRecord>;
-
-class WarcRecord;
 using Result = std::variant<WarcRecord, WarcError>;
-
 using Field_Map = std::unordered_map<std::string, std::string>;
 
 template<typename StringT>
@@ -137,6 +136,13 @@ std::string FieldTrim(StringT str)
 	});
 
 	return StringT(begin, end);
+}
+
+inline void skipSpaces(std::istream& ins)
+{
+	while (std::isspace(ins.peek())) {
+		ins.ignore(1);
+	}
 }
 
 std::optional<InvalidField> ReadSubsequentFields(std::istream& ins, Field_Map& FM)
@@ -156,7 +162,7 @@ std::optional<InvalidField> ReadSubsequentFields(std::istream& ins, Field_Map& F
 
 	std::string line;
 	std::getline(ins, line);
-	while (!line.empty() && line != "\r") {
+	while (!line.empty() && line != "\r") {                    // Spec want's an empty line between record and data
 		auto [name, value] = Li::common::SplitPair(line, ':'); // std::string, std::string
 		if (name.empty() || value.empty()) {
 			return InvalidField { std::move(line) };
@@ -166,7 +172,7 @@ std::optional<InvalidField> ReadSubsequentFields(std::istream& ins, Field_Map& F
 		value = FieldTrim(value);
 		std::transform(name.begin(), name.end(), name.begin(), strToLower);
 
-		FM[std::move(name)] = std::move(value); // FM["fieldname"] = "FieldValue"
+		FM[std::move(name)] = std::move(value);
 		std::getline(ins, line);
 	}
 
@@ -195,6 +201,123 @@ FunctionT for_each(RangeT& range, FunctionT& f)
 {
 	return std::for_each(std::begin(range), std::end(range), f);
 }
+
+class WarcRecord {
+private:
+	using MapIterator = std::unordered_map<std::string, std::string>::iterator;
+
+	// Mandatory fields as of Spec Version 1.1
+	static std::string const Type_str;
+	static std::string const RecordID_str;
+	static std::string const ContentLength_str;
+	static std::string const Date_str;
+	static std::string const TargetURI;
+
+	Field_Map m_FM {};
+
+	std::string m_version {};
+
+	std::string m_content {};
+
+	std::pair<size_t, size_t> start_end {};
+
+public:
+	WarcRecord() = default;
+
+	explicit WarcRecord(std::string_view version)
+		: m_version(std::move(version))
+	{
+	}
+
+	bool has_(std::string const& field_name) const noexcept
+	{
+		return m_FM.find(field_name) != m_FM.end();
+	}
+
+	bool Valid()
+	{
+		return has_(Type_str) && has_(ContentLength_str) && has_(RecordID_str) && has_(Date_str);
+	}
+
+	size_t content_length() const
+	{
+		std::string value = m_FM.at(ContentLength_str);
+		try {
+			return std::stoi(value);
+		} catch (std::invalid_argument& err) {
+			std::ostringstream os;
+			os << "Could not convert content_length value '" << value << "'.";
+			throw std::runtime_error(os.str());
+		}
+	}
+
+	WarcRecord* is()
+	{
+		return this;
+	}
+
+	std::string&& content() { return std::move(m_content); }
+	std::string const& content() const { return m_content; }
+
+	std::string&& url() { return std::move(m_FM.at(TargetURI)); }
+	std::string const& url() const { return m_FM.at(TargetURI); }
+
+	std::optional<std::string> field(std::string const& n)
+	{
+		if (MapIterator pos = m_FM.find(n); pos != m_FM.end()) {
+			return pos->second;
+		}
+
+		return std::nullopt;
+	}
+	void dumpMap()
+	{
+		std::cout << start_end.first << "<- Start End -> " << start_end.second << "\n";
+		for (auto& buck : m_FM) {
+			std::cout << "Key: " << buck.first
+					  << "Val: " << buck.second
+					  << "\n";
+		}
+	}
+
+	friend Result ReadRecords(std::istream&);
+};
+
+Result ReadRecords(std::istream& in)
+{
+	WarcRecord record;
+
+	ptrdiff_t start = in.tellg();
+
+	if (auto error = ReadVersion(in, record.m_version); error) {
+		return Result(*error);
+	} else {
+		record.start_end.first = start;
+	}
+
+	if (auto error = ReadSubsequentFields(in, record.m_FM); error)
+		return Result(*error);
+
+	if (!record.Valid())
+		return Result(MissingRequiredField {});
+
+	if (record.content_length() > 0) {
+		std::size_t len = record.content_length();
+		record.m_content.resize(len);
+		if (!in.read(&record.m_content[0], len)) {
+			return Result(IncompleteRecord {});
+		}
+	}
+	skipSpaces(in);
+	record.start_end.second = in.tellg();
+	return Result(record);
+}
+
+std::string const WarcRecord::Type_str = "warc-type";
+std::string const WarcRecord::RecordID_str = "warc-record-id";
+std::string const WarcRecord::ContentLength_str = "content-length";
+std::string const WarcRecord::Date_str = "warc-date";
+std::string const WarcRecord::TargetURI = "warc-target-uri";
 
 void testfunc()
 {

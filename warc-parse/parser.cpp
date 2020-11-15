@@ -24,7 +24,8 @@ int main(int argc, char** argv)
 
 	std::string ver {};
 	Field_Map MAPP;
-	ReadVersion(*is, ver);
+
+	/*ReadVersion(*is, ver);
 	ReadSubsequentFields(*is, MAPP);
 	std::cout << "Version: "
 			  << ver
@@ -35,6 +36,14 @@ int main(int argc, char** argv)
 	};
 
 	for_each(MAPP, DisplayKV);
+	*/
+
+	auto Thus = ReadRecords(*is);
+	std::get<WarcRecord>(Thus).dumpMap();
+	std::cout << "Content: \n"
+			  << std::get<WarcRecord>(Thus).content();
+	if (std::is_same_v<decltype(Thus), VersionNotSupported>)
+		std::cout << "Error!";
 
 	std::cout << std::endl;
 
