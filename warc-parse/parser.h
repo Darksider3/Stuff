@@ -47,7 +47,7 @@ class Diagnosis {
 public:
 	void addReport(LevelT level, std::string_view msg)
 	{
-		auto ptr = std::make_shared<T>();
+		auto ptr = std::make_unique<T>();
 		ptr->Level = level;
 		ptr->Msg = msg;
 		Reports.emplace_back(std::move(ptr));
@@ -93,7 +93,7 @@ public:
 	}
 
 private:
-	std::vector<std::shared_ptr<T>> Reports;
+	std::vector<std::unique_ptr<T>> Reports;
 	LevelT printBarrier = static_cast<LevelT>(0);
 };
 
