@@ -219,7 +219,7 @@ private:
 
 	std::string m_content {};
 
-	std::pair<size_t, size_t> start_end {};
+	std::pair<std::size_t, std::size_t> start_end {};
 
 public:
 	WarcRecord() = default;
@@ -229,17 +229,17 @@ public:
 	{
 	}
 
-	bool has_(std::string const& field_name) const noexcept
+	inline bool has_(std::string const& field_name) const noexcept
 	{
 		return m_FM.find(field_name) != m_FM.end();
 	}
 
-	bool Valid()
+	inline bool Valid()
 	{
 		return has_(Type_str) && has_(ContentLength_str) && has_(RecordID_str) && has_(Date_str);
 	}
 
-	size_t content_length() const
+	std::size_t content_length() const
 	{
 		std::string value = m_FM.at(ContentLength_str);
 		try {
@@ -256,11 +256,11 @@ public:
 		return this;
 	}
 
-	std::string&& content() { return std::move(m_content); }
-	std::string const& content() const { return m_content; }
+	inline std::string&& content() { return std::move(m_content); }
+	inline std::string const& content() const { return m_content; }
 
-	std::string&& url() { return std::move(m_FM.at(TargetURI)); }
-	std::string const& url() const { return m_FM.at(TargetURI); }
+	inline std::string&& url() { return std::move(m_FM.at(TargetURI)); }
+	inline std::string const& url() const { return m_FM.at(TargetURI); }
 
 	std::optional<std::string> field(std::string const& n)
 	{
@@ -272,10 +272,9 @@ public:
 	}
 	void dumpMap()
 	{
-		std::cout << start_end.first << "<- Start End -> " << start_end.second << "\n";
 		for (auto& buck : m_FM) {
-			std::cout << "Key: " << buck.first
-					  << "Val: " << buck.second
+			std::cout << " Key: " << buck.first
+					  << " Val: " << buck.second
 					  << "\n";
 		}
 	}
@@ -287,12 +286,8 @@ Result ReadRecords(std::istream& in)
 {
 	WarcRecord record;
 
-	ptrdiff_t start = in.tellg();
-
 	if (auto error = ReadVersion(in, record.m_version); error) {
 		return Result(*error);
-	} else {
-		record.start_end.first = start;
 	}
 
 	if (auto error = ReadSubsequentFields(in, record.m_FM); error)
@@ -309,7 +304,6 @@ Result ReadRecords(std::istream& in)
 		}
 	}
 	skipSpaces(in);
-	record.start_end.second = in.tellg();
 	return Result(record);
 }
 
