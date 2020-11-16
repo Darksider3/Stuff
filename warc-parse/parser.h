@@ -273,18 +273,37 @@ Result ReadRecords(std::istream& in)
 			return Result(IncompleteRecord {});
 		}
 	}
-	skipSpaces(in);
+	detail::SkipSuperfluousWhitespace(in);
 	return Result(record);
 }
 
-constexpr bool holds(Result const& result) { return std::holds_alternative<WarcRecord>(result); }
+constexpr bool holds(Result const& result) noexcept { return std::holds_alternative<Record>(result); }
 
-std::string const WarcRecord::Type_str = "warc-type";
-std::string const WarcRecord::RecordID_str = "warc-record-id";
-std::string const WarcRecord::ContentLength_str = "content-length";
-std::string const WarcRecord::Date_str = "warc-date";
-std::string const WarcRecord::TargetURI = "warc-target-uri";
+std::string const Record::Type_str = "warc-type";
+std::string const Record::RecordID_str = "warc-record-id";
+std::string const Record::ContentLength_str = "content-length";
+std::string const Record::Date_str = "warc-date";
+std::string const Record::TargetURI = "warc-target-uri";
 
+template<typename Result = Warc::Result, typename RecordHandle, typename ErrHandler>
+auto match(Result const&& result, RecordHandle const&& record_handler, ErrHandler const&& err_handler)
+{
+	if (Record const* record = std::get_if<Record>(&result); record != nullptr) {
+		if constexpr (std::is_same_v<decltype(record_handler(*record)), void>) { // if return-type of (compile-time) record_handler == void, return nothing
+			record_handler(*record);
+		} else { // else, return whatever record_handler want's to return
+			return record_handler(*record);
+		}
+	} else {
+		Error const* err = std::get_if<Error>(&result);
+		if constexpr (std::is_same_v<decltype(err_handler(*err)), void>) {
+			err_handler(*err);
+		} else {
+			return err_handler(*err);
+		}
+	}
+}
+}
 void testfunc()
 {
 }
