@@ -3,10 +3,12 @@
 #include "../LiGi/GeneralTools.h" // splitPair
 #include <cassert>
 #include <cstring>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <ostream>
+
+#include <unordered_map>
+#include <variant>
 #include <vector>
 
 #ifndef NDEBUG
@@ -25,9 +27,7 @@ template<typename T>
 #endif
 
 // @TODO: Li::Diagnosis
-
-#include <unordered_map>
-#include <variant>
+namespace Warc {
 
 struct VersionNotSupported {
 	std::string details;
@@ -38,18 +38,20 @@ struct InvalidField {
 };
 
 struct MissingRequiredField {
-	std::vector<std::string> list;
+	std::string detail;
 };
 
 struct IncompleteRecord {
 };
 
-class WarcRecord;
+class Record;
 
-using WarcError = std::variant<VersionNotSupported, InvalidField,
+using Error = std::variant<VersionNotSupported, InvalidField,
 	MissingRequiredField, IncompleteRecord>;
-using Result = std::variant<WarcRecord, WarcError>;
+using Result = std::variant<Record, Error>;
 using Field_Map = std::unordered_map<std::string, std::string>;
+
+namespace detail {
 
 template<typename StringT>
 std::string FieldTrim(StringT str)
@@ -67,7 +69,7 @@ std::string FieldTrim(StringT str)
 	return StringT(begin, end);
 }
 
-inline void skipSpaces(std::istream& ins)
+inline void SkipSuperfluousWhitespace(std::istream& ins)
 {
 	while (std::isspace(ins.peek())) {
 		ins.ignore(1);
@@ -131,7 +133,37 @@ FunctionT for_each(RangeT& range, FunctionT& f)
 	return std::for_each(std::begin(range), std::end(range), f);
 }
 
-class WarcRecord {
+struct Validator {
+	Field_Map args;
+
+	virtual bool valid() = 0;
+
+	void Plug_Args(Field_Map const& pl)
+	{
+		args = pl;
+	}
+
+	bool have_args()
+	{
+		return args.begin() != args.end();
+	}
+
+	virtual ~Validator() = default;
+};
+
+struct WarcInfoValidator : Validator {
+	bool valid() override
+	{
+		if (!have_args())
+			return false;
+
+		return true; // spec says everything is optional, so, any content is fine
+	}
+};
+
+} // detail
+
+class Record {
 private:
 	using MapIterator = std::unordered_map<std::string, std::string>::iterator;
 
@@ -143,17 +175,13 @@ private:
 	static std::string const TargetURI;
 
 	Field_Map m_FM {};
-
 	std::string m_version {};
-
 	std::string m_content {};
 
-	std::pair<std::size_t, std::size_t> start_end {};
-
 public:
-	WarcRecord() = default;
+	Record() = default;
 
-	explicit WarcRecord(std::string_view version)
+	explicit Record(std::string_view version)
 		: m_version(std::move(version))
 	{
 	}
@@ -226,13 +254,13 @@ public:
 
 Result ReadRecords(std::istream& in)
 {
-	WarcRecord record;
+	Record record;
 
-	if (auto error = ReadVersion(in, record.m_version); error) {
+	if (auto error = detail::ReadVersion(in, record.m_version); error) {
 		return Result(*error);
 	}
 
-	if (auto error = ReadSubsequentFields(in, record.m_FM); error)
+	if (auto error = detail::ReadSubsequentFields(in, record.m_FM); error)
 		return Result(*error);
 
 	if (!record.Valid())
