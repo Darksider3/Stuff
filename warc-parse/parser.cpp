@@ -38,12 +38,22 @@ int main(int argc, char** argv)
 	for_each(MAPP, DisplayKV);
 	*/
 
-	auto Thus = ReadRecords(*is);
-	std::get<WarcRecord>(Thus).dumpMap();
-	std::cout << "Content: \n"
-			  << std::get<WarcRecord>(Thus).content();
-	if (std::is_same_v<decltype(Thus), VersionNotSupported>)
-		std::cout << "Error!";
+	while (is->good()) {
+		auto Thus = ReadRecords(*is);
+		if (!holds(Thus)) {
+			std::cout << "No valid record.."
+					  << "\n";
+			continue;
+		}
+
+		std::string content = std::get<WarcRecord>(Thus).content();
+		std::cout << std::string(2, '\n')
+				  << std::string(20, '=')
+				  << "\nContent-Len: " << content.length() << "\n"
+				  << std::string(20, '=') << std::string(2, '\n')
+				  << content;
+		std::cout << "\n";
+	}
 
 	std::cout << std::endl;
 
