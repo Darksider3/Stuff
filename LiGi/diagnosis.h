@@ -28,6 +28,10 @@ template<typename T = Report, typename LevelT = Reporting_Level>
 class Diagnosis {
 public:
 	Diagnosis() = default;
+	explicit Diagnosis(LevelT L)
+		: printBarrier { L }
+	{
+	}
 
 	void addReport(LevelT, std::string_view);
 
