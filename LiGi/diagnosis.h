@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 namespace Li {
 namespace Reporting {
 
@@ -19,12 +20,13 @@ std::string Reporting_Level_Str[] = {
 	"EINFO"
 };
 
+extern "C" {
 struct Report {
-	Reporting_Level Level;
-	std::string Msg;
+	Reporting_Level Level {};
+	std::string Msg {};
 };
-
-template<typename T = Report, typename LevelT = Reporting_Level>
+}
+template<typename T, typename LevelT>
 class Diagnosis {
 public:
 	Diagnosis() = default;
@@ -35,7 +37,7 @@ public:
 
 	void addReport(LevelT, std::string_view);
 
-	void PrintReports();
+	void PrintReports() const;
 
 	bool has(LevelT l);
 
@@ -62,9 +64,47 @@ public:
 	}
 
 private:
-	std::vector<std::unique_ptr<T>> Reports;
+	std::vector<std::unique_ptr<T>> Reports = {};
 	LevelT printBarrier = static_cast<LevelT>(0);
 };
 }
 }
+
+namespace Li {
+namespace Reporting {
+
+template<typename T, typename LevelT>
+void Diagnosis<T, LevelT>::addReport(LevelT level, std::string_view msg)
+{
+	auto ptr = std::make_unique<T>();
+	ptr->Level = level;
+	ptr->Msg = msg;
+	Reports.emplace_back(std::move(ptr));
+}
+
+template<typename T, typename LevelT>
+void Diagnosis<T, LevelT>::PrintReports() const
+{
+	for (auto& bucket : Reports) {
+		std::cout << bucket->Msg << "\n";
+	}
+}
+
+template<typename T, typename LevelT>
+bool Diagnosis<T, LevelT>::has(LevelT l)
+{
+	return std::any_of(Reports.begin(), Reports.end(), [Level = l](auto const& thing) -> bool {
+		return (Level == thing->Level);
+	});
+}
+
+template<typename T, typename LevelT>
+void Diagnosis<T, LevelT>::setReportingBarrier(LevelT min)
+{
+	this->printBarrier = min;
+}
+
+}
+}
+
 #endif // DIAGNOSIS_H

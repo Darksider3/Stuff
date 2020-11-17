@@ -1,7 +1,9 @@
 OBJS = \
 	Assertions.o \
 	Test.o \
-	testings.o
+	diagnosis.o
+
+
 APP = a.out
 
 
