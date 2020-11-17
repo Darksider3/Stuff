@@ -1,4 +1,6 @@
 #include "parser.h"
+#define LI_RUNTIME_DIAGNOSIS
+#include "../LiGi/diagnosis.h"
 #include <fstream>
 #include <iostream>
 #include <istream>
@@ -6,6 +8,10 @@
 
 int main(int argc, char** argv)
 {
+	Li::Reporting::Reporting_Level b = Li::Reporting::Reporting_Level::Inf;
+	Li::Reporting::Diagnosis<Li::Reporting::Report, Li::Reporting::Reporting_Level> Reps { b };
+	Reps.addReport(b, "LAls");
+	Reps.PrintReports();
 	if (argc < 1) {
 		std::cerr << "Cant be called without a warc file as first parameter!";
 		std::exit(1);

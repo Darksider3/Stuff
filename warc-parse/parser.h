@@ -133,34 +133,6 @@ FunctionT for_each(RangeT& range, FunctionT& f)
 	return std::for_each(std::begin(range), std::end(range), f);
 }
 
-struct Validator {
-	Field_Map args;
-
-	virtual bool valid() = 0;
-
-	void Plug_Args(Field_Map const& pl)
-	{
-		args = pl;
-	}
-
-	bool have_args()
-	{
-		return args.begin() != args.end();
-	}
-
-	virtual ~Validator() = default;
-};
-
-struct WarcInfoValidator : Validator {
-	bool valid() override
-	{
-		if (!have_args())
-			return false;
-
-		return true; // spec says everything is optional, so, any content is fine
-	}
-};
-
 } // detail
 
 class Record {
