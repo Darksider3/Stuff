@@ -275,7 +275,53 @@ auto match(Result const&& result, RecordHandle const&& record_handler, ErrHandle
 		}
 	}
 }
+
+template<typename VNS_F, typename IF_F, typename MRF_F, typename IR_F>
+auto match(Warc::Error const&& err, IR_F const&& irf, MRF_F const&& mrff, IF_F const&& iff, VNS_F const&& vnsf)
+{
+	if (auto* iv = std::get_if<VersionNotSupported>(&err); iv != nullptr) {
+		if constexpr (std::is_same_v<decltype(vnsf(*iv)), void>) {
+			vnsf(*iv);
+		} else {
+			return vnsf(*iv);
+		}
+	}
+
+	if (auto* i_f = std::get_if<InvalidField>(&err); i_f != nullptr) {
+		if constexpr (std::is_same_v<decltype(iff(*i_f)), void>) {
+			iff(*i_f);
+		} else {
+			return iff(*i_f);
+		}
+	}
+
+	if (auto* mrf_f = std::get_if<MissingRequiredField>(&err); mrf_f != nullptr) {
+		if constexpr (std::is_same_v<decltype(mrff(*mrf_f)), void>) {
+			mrff(*mrf_f);
+		} else {
+			return mrff(*mrf_f);
+		}
+	}
+
+	if (auto* irf_f = std::get_if<IncompleteRecord>(&err); irf_f != nullptr) {
+		if constexpr (std::is_same_v<decltype(irf(*irf_f)), void>) {
+			irf(*irf_f);
+		} else {
+			return irf(*irf_f);
+		}
+	}
 }
+
+namespace ProvidedVerifier {
+
+}
+
+namespace ProvidedHandler {
+
+}
+
+}
+
 void testfunc()
 {
 }
