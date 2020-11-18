@@ -276,38 +276,44 @@ auto match(Result const&& result, RecordHandle const&& record_handler, ErrHandle
 	}
 }
 
-template<typename VNS_F, typename IF_F, typename MRF_F, typename IR_F>
-auto match(Warc::Error const&& err, IR_F const&& irf, MRF_F const&& mrff, IF_F const&& iff, VNS_F const&& vnsf)
+template<
+	typename VersionNotSupported_F, typename InvalidField_F,
+	typename MissingRequiredField_F, typename InvalidRecord_F>
+auto match(Warc::Error const&& Err,
+	InvalidRecord_F const&& InvalidRecord_Handler,
+	MissingRequiredField_F const&& MissingRequired_Handler,
+	InvalidField_F const&& InvalidField_Handler,
+	VersionNotSupported_F const&& VersionNotSupported_Handler)
 {
-	if (auto* iv = std::get_if<VersionNotSupported>(&err); iv != nullptr) {
-		if constexpr (std::is_same_v<decltype(vnsf(*iv)), void>) {
-			vnsf(*iv);
+	if (auto* VNS = std::get_if<VersionNotSupported>(&Err); VNS != nullptr) {
+		if constexpr (std::is_same_v<decltype(VersionNotSupported_Handler(*VNS)), void>) {
+			VersionNotSupported_Handler(*VNS);
 		} else {
-			return vnsf(*iv);
+			return VersionNotSupported_Handler(*VNS);
 		}
 	}
 
-	if (auto* i_f = std::get_if<InvalidField>(&err); i_f != nullptr) {
-		if constexpr (std::is_same_v<decltype(iff(*i_f)), void>) {
-			iff(*i_f);
+	if (auto* IF = std::get_if<InvalidField>(&Err); IF != nullptr) {
+		if constexpr (std::is_same_v<decltype(InvalidField_Handler(*IF)), void>) {
+			InvalidField_Handler(*IF);
 		} else {
-			return iff(*i_f);
+			return InvalidField_Handler(*IF);
 		}
 	}
 
-	if (auto* mrf_f = std::get_if<MissingRequiredField>(&err); mrf_f != nullptr) {
-		if constexpr (std::is_same_v<decltype(mrff(*mrf_f)), void>) {
-			mrff(*mrf_f);
+	if (auto* MRF = std::get_if<MissingRequiredField>(&Err); MRF != nullptr) {
+		if constexpr (std::is_same_v<decltype(MissingRequired_Handler(*MRF)), void>) {
+			MissingRequired_Handler(*MRF);
 		} else {
-			return mrff(*mrf_f);
+			return MissingRequired_Handler(*MRF);
 		}
 	}
 
-	if (auto* irf_f = std::get_if<IncompleteRecord>(&err); irf_f != nullptr) {
-		if constexpr (std::is_same_v<decltype(irf(*irf_f)), void>) {
-			irf(*irf_f);
+	if (auto* IR = std::get_if<IncompleteRecord>(&Err); IR != nullptr) {
+		if constexpr (std::is_same_v<decltype(InvalidRecord_Handler(*IR)), void>) {
+			InvalidRecord_Handler(*IR);
 		} else {
-			return irf(*irf_f);
+			return InvalidRecord_Handler(*IR);
 		}
 	}
 }
