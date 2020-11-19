@@ -10,10 +10,11 @@ set("CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} --std=c++2a -g -pedantic-errors -Wuseles
 
 get_filename_component(PARENT_DIR ../ ABSOLUTE)
 include_directories(${PARENT_DIR})
-add_library(diagnosis_thingy SHARED
-	../diagnosis.cpp ../diagnosis.h)
 
 add_executable(xdg_test xdg_basedirs.cpp ../Test.cpp)
 
 add_executable(pathtools_test PathTools.cpp ../Test.cpp)
-target_link_libraries(pathtools_test diagnosis_thingy)
+target_link_libraries(pathtools_test)
+
+
+add_executable(concepts_additions concepts_additions.cpp)
