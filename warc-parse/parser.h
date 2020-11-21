@@ -7,6 +7,8 @@
 #include <optional>
 #include <ostream>
 
+#include "../LiGi/diagnosis.h"
+
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -320,6 +322,38 @@ auto match(Warc::Error const&& Err,
 }
 
 namespace ProvidedVerifier {
+class Verifier {
+public:
+	explicit Verifier(Warc::Record const& Record)
+		: m_Record(Record)
+	{
+		m_valid = verify();
+	}
+
+	bool valid()
+	{
+		return m_valid;
+	}
+
+	virtual bool verify();
+
+	virtual ~Verifier() = default;
+
+protected:
+	Warc::Record const& m_Record;
+	Li::Reporting::Diagnosis<Li::Reporting::Report, Li::Reporting::Reporting_Level> Diag {};
+
+private:
+	bool m_valid = false;
+};
+
+class WarcinfoVerifier : public Verifier {
+	bool verify() override
+	{
+
+		return true;
+	}
+};
 
 }
 
