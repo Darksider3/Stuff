@@ -29,21 +29,21 @@ class LinkedList;
 template<typename T>
 class LLNode {
 public:
-    LLNode()
+	LLNode()
     {
         setnull();
     }
-    T* next()
+	T* next()
     {
         return static_cast<T*>(this)->m_next;
     }
 
-    T* prev()
+	T* prev()
     {
         return static_cast<T*>(this)->m_prev;
     }
 
-    bool comparer(T& other)
+	bool comparer(T& other)
     {
         return static_cast<const T&>(*this)->cmpr(other);
     }

@@ -38,13 +38,19 @@ static_assert(false, "Currently, just supporting linux here(pathes are not valid
 
 bool exists(std::string const& path) // auto guess type(dir, file) and check existence
 {
-    struct stat st;
+	if (path.length() == 0)
+		return false;
+	struct stat st;
     return (stat(path.c_str(), &st) == 0);
 }
 bool is_file(std::string const& path)
 {
-    struct stat st;
-    if (exists(path) && st.st_mode & S_IFMT) // ignore wether being a regular or any other type of file
+	struct stat st;
+	if (path.length() == 0)
+		return false;
+	if (stat(path.c_str(), &st) != 0)
+		return false;
+	if (exists(path) && st.st_mode & S_IFMT) // ignore wether being a regular or any other type of file
     {
         return true;
     }
@@ -148,8 +154,7 @@ std::pair<std::pair<bool, std::string_view>, FILE*> error_or_fp(std::string cons
     }
 
     result.first = first_part;
-    result.second = fp;
-
+	result.second = fp;
     return result;
 }
 
