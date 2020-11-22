@@ -267,6 +267,10 @@ public:
 private:
     T* m_tail { nullptr };
 	T* m_head { nullptr };
+
+protected:
+	LinkedList<T>() { }
+	friend T;
 };
 
 }
