@@ -20,10 +20,30 @@
 #ifndef LIGILL_H
 #    define LIGILL_H
 #    include "Assertions.h"
+#    include <concepts>
 #    include <memory>
 
 namespace Li {
 template<typename T>
+class LLNode;
+
+// -----------------------------------------------------------------------------
+//    ↓ - Concepts - ↓
+// -----------------------------------------------------------------------------
+
+namespace concepts {
+template<typename T>
+concept LLChild = std::derived_from<T, Li::LLNode<T>>;
+
+//             ↓ - Example - ↓
+// -> LLChild = std::derived_from<ExampleNode, Li::LLNode<ExampleNode> -
+
+}
+
+// -----------------------------------------------------------------------------
+//     - Impl -
+// -----------------------------------------------------------------------------
+template<concepts::LLChild T>
 class LinkedList;
 
 template<typename T>
@@ -128,7 +148,7 @@ private:
     T* m_current;
 };
 
-template<typename T>
+template<concepts::LLChild T>
 class LinkedList {
 public:
     bool empty()
