@@ -1,211 +1,199 @@
-#pragma once
 #ifndef LIGISINGLYLIST_H
 #define LIGISINGLYLIST_H
 #include <memory>
-#include "Assertions.h"
 
-namespace Li
-{
+namespace Li {
 template<typename T>
-class SingleNode
-{
+class SingleNode {
 public:
+	SingleNode()
+	{
+		setnull();
+	}
+	T* next()
+	{
+		return static_cast<T*>(this)->m_next;
+	}
 
-  SingleNode()
-  {
-    setnull();
-  }
-  T* next()
-  {
-    return static_cast<T*>(this)->m_next;
-  }
+	bool comparer(T& other) const
+	{
+		return static_cast<const T&>(*this)->cmpr(other);
+	}
 
-  bool comparer(T &other)
-  {
-    return static_cast<const T&>(*this)->cmpr(other);
-  }
+	bool bigger(T& other) const
+	{
+		return static_cast<const T&>(*this)->bigger(other);
+	}
 
-  bool bigger(T &other)
-  {
-    return static_cast<const T&>(*this)->bigger(other);
-  }
-
-  void set_next(T* r)
-  {
-    static_cast<T*>(this)->m_next = r;
-  }
+	void set_next(T* r) const
+	{
+		static_cast<T*>(this)->m_next = r;
+	}
 
 public:
-  void setnull()
-  {
-    static_cast<T*>(this)->set_next(nullptr);
-  }
-  static std::unique_ptr<T> newPtr(T &data)
-  {
-    return std::make_unique(data);
-  }
+	void setnull()
+	{
+		static_cast<T*>(this)->set_next(nullptr);
+	}
+
+	static std::unique_ptr<T> newPtr(T& data)
+	{
+		return std::make_unique(data);
+	}
+
 private:
-  T* m_next;
+	T* m_next;
 };
 
 template<typename T>
 class SinglyLinkedList;
 
 template<typename T>
-class SinglyLinkedListIterator
-{
+class SinglyLinkedListIterator {
 public:
-  SinglyLinkedListIterator(T* ptr)
-  {
-    m_current = ptr;
-  }
+	SinglyLinkedListIterator(T* ptr)
+	{
+		m_current = ptr;
+	}
 
-  SinglyLinkedListIterator& operator=(SingleNode<T> *ptr)
-  {
-    m_current = static_cast<SingleNode<T*>>(ptr);
-    return *this;
-  }
+	SinglyLinkedListIterator& operator=(SingleNode<T>* ptr)
+	{
+		m_current = static_cast<SingleNode<T*>>(ptr);
+		return *this;
+	}
 
-  SinglyLinkedListIterator& operator++()
-  {
-    if(m_current)
+	SinglyLinkedListIterator& operator++()
     {
-      m_current = m_current->next();
+		if (m_current) {
+			m_current = m_current->next();
+		}
+		return *this;
     }
-    return *this;
-  }
 
-  SinglyLinkedListIterator& operator++(int) // postfix?
-  {
-    operator++();
-    return *this;
-  }
+	SinglyLinkedListIterator& operator++(int) // postfix?
+	{
+		operator++();
+		return *this;
+	}
 
-  bool operator!=(const SinglyLinkedListIterator<T> &it)
-  {
-    return m_current != it.m_current;
-  }
+	bool operator!=(const SinglyLinkedListIterator<T>& it) const
+	{
+		return m_current != it.m_current;
+	}
 
-  T& operator*()
-  {
-    return *m_current;
-  }
+	T& operator*() const
+	{
+		return *m_current;
+	}
 
-  T* operator->()
-  {
-    return m_current;
-  }
+	T* operator->() const
+	{
+		return m_current;
+	}
 
 private:
-  friend SinglyLinkedList<T>;
+	friend SinglyLinkedList<T>;
 
-  T* m_current;
+	T* m_current;
 };
 
 template<typename T>
-class SinglyLinkedList
-{
+class SinglyLinkedList {
 public:
-  bool empty()
-  {
-    return (m_head == nullptr);
-  }
+	bool empty()
+	{
+		return (m_head == nullptr);
+	}
 
-  T* head() { return m_head; }
-  T* tail() { return m_tail; }
+	T* head() { return m_head; }
+	T* tail() { return m_tail; }
 
-  using Iterator = SinglyLinkedListIterator<T>;
-  friend Iterator;
+	using Iterator = SinglyLinkedListIterator<T>;
+	friend Iterator;
 
-  Iterator begin()
-  {
-    return Iterator(m_head);
-  }
+	Iterator begin()
+	{
+		return Iterator(m_head);
+	}
 
-  Iterator end()
-  {
-    return Iterator(nullptr);
-  }
+	Iterator end()
+	{
+		return Iterator(nullptr);
+	}
 
-  using ConstIt = SinglyLinkedListIterator<const T>;
-  friend ConstIt;
+	using ConstIt = SinglyLinkedListIterator<const T>;
+	friend ConstIt;
 
-  ConstIt begin() const
-  {
-    return ConstIt(m_head);
-  }
+	ConstIt begin() const
+	{
+		return ConstIt(m_head);
+	}
 
-  ConstIt end() const
-  {
-    return ConstIt(nullptr);
-  }
+	ConstIt end() const
+	{
+		return ConstIt(nullptr);
+	}
 
+	void append(std::unique_ptr<T> Node)
+	{
+		T* ins = Node.get();
+		append(ins);
+	}
 
+	void prepend(std::unique_ptr<T> Node)
+	{
+		T* ins = Node.get();
+		prepend(ins);
+	}
 
-  void append(std::unique_ptr<T> Node)
-  {
-    T* ins = Node.get();
-    append(ins);
-  }
-
-  void prepend(std::unique_ptr<T> Node)
-  {
-    T* ins = Node.get();
-    prepend(ins);
-  }
-
-  void append(T* Node)
-  {
-    if(m_head == nullptr)
+	void append(T* Node)
     {
-      m_head = Node;
-      m_tail = Node;
-      m_head->setnull();
-      return ;
-    }
-    assert(m_tail);
-    m_tail->set_next(Node);
-    Node->set_next(nullptr);
-    m_tail = Node;
-  }
-
-  void prepend(T* Node)
-  {
-    if(!m_head)
-    {
-      m_head = Node;
-      m_tail = Node;
-      m_head->setnull();
-      return;
+		if (m_head == nullptr) {
+			m_head = Node;
+			m_tail = Node;
+			m_head->setnull();
+			return;
+		}
+		assert(m_tail);
+		m_tail->set_next(Node);
+		Node->set_next(nullptr);
+		m_tail = Node;
     }
 
-    assert(m_head);
-    Node->set_next(m_head);
-    m_head = Node;
-  }
-
-  virtual size_t size()
-  {
-    size_t count = 0;
-    for(T* p = m_head; p; p = p->next())
+	void prepend(T* Node)
     {
-      ++count;
-    }
-    return count;
-  }
+		if (!m_head) {
+			m_head = Node;
+			m_tail = Node;
+			m_head->setnull();
+			return;
+		}
 
-  void sort()
-  {
-    /*
+		assert(m_head);
+		Node->set_next(m_head);
+		m_head = Node;
+    }
+
+	virtual size_t size() const
+    {
+		size_t count = 0;
+		for (T* p = m_head; p; p = p->next()) {
+			++count;
+		}
+		return count;
+    }
+
+	void sort()
+	{
+		/*
      * Use Node<T>->comparer delivered by the struct
     */
-  }
+	}
+
 private:
-  T* m_tail { nullptr };
-  T* m_head { nullptr };
-
+	T* m_tail { nullptr };
+	T* m_head { nullptr };
 };
-
 
 }
 

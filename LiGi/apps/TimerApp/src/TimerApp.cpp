@@ -422,7 +422,7 @@ int main()
     PomodoroTimer Timer { stop, Stats };
     PomodoroTimer::View AppView(Timer, Stats);
 
-    SingleThreadLoop ThreadWrap(globalstop);
+	SingleThreadLoop TimerThreadLoop(globalstop);
 
     auto interrupt_handle = [&]() {
         endwin();
@@ -446,7 +446,7 @@ int main()
 
 	auto ThreadReflectStateChanges = [&](PomodoroTimer& PomObj, std::function<void()> runFunc) {
         PomObj.Pause();
-        App::delayedInsertion<std::chrono::milliseconds>(ThreadWrap, runFunc, 5);
+		App::delayedInsertion<std::chrono::milliseconds>(TimerThreadLoop, runFunc, 5);
         PomObj.Unpause();
         EraseStateChangeRepaint();
     };
@@ -468,13 +468,13 @@ int main()
         }
     };
 
-    if (!ThreadWrap.RunThread(App::HoldThread())) {
+	if (!TimerThreadLoop.RunThread(App::HoldThread())) {
         quitter();
-        ThreadWrap.Stop();
+		TimerThreadLoop.Stop();
         std::cerr << "Couldn't allocate Thread!";
     }
 
-    ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
+	TimerThreadLoop.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
 
 	while (true) {
 #define BIND(func, r, state) std::bind(&func, std::ref(r), state)
@@ -502,8 +502,8 @@ int main()
         if (c == 'c') {
             Timer.Pause();
             quitter();
-            if (ThreadWrap.is_running())
-                ThreadWrap.Stop();
+			if (TimerThreadLoop.is_running())
+				TimerThreadLoop.Stop();
             return (EXIT_SUCCESS);
         } else if (c == 'p' && Timer.getState() != PomoState::PAUSE) {
 			REFLECT(Timer, PomodoroTimer::RunPause, Timer, PAUSE_STOP_VAL);
@@ -517,8 +517,6 @@ int main()
 			REFLECT(Timer, PomodoroTimer::RunBigBreak, Timer, BIG_BREAK_TIME);
 		} else if (Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP) {
 			/* ^ dont stark threads over and over again. Accomplished by ^this^ check*/
-			mvwaddstr(AppState.TopPanel, 0, COLS - 20, "HERE");
-			wrefresh(AppState.TopPanel);
 			REFLECT(Timer, PomodoroTimer::RunStop, Timer, PAUSE_STOP_VAL);
         } else if (c == KEY_RESIZE) {
             // we have to do this actually, because the signal itself isn't really portable D:

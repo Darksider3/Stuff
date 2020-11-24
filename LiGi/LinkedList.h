@@ -58,17 +58,17 @@ public:
         return static_cast<T*>(this)->m_next;
     }
 
-	T* prev()
+	T* prev() const
     {
         return static_cast<T*>(this)->m_prev;
     }
 
-	bool comparer(T& other)
+	bool comparer(T& other) const
     {
         return static_cast<const T&>(*this)->cmpr(other);
     }
 
-    bool bigger(T& other)
+	bool bigger(T& other) const
     {
         return static_cast<const T&>(*this)->bigger(other);
     }
@@ -89,7 +89,7 @@ public:
         static_cast<T*>(this)->set_next(nullptr);
         static_cast<T*>(this)->set_prev(nullptr);
     }
-    static std::unique_ptr<T> newPtr(T& data)
+	static std::unique_ptr<T> newPtr(T& data)
     {
         return std::make_unique(data);
     }
@@ -102,18 +102,18 @@ private:
 template<typename T>
 class LLIterator {
 public:
-    explicit LLIterator(T* ptr)
+	constexpr explicit LLIterator(T* ptr)
     {
         m_current = ptr;
     }
 
-    LLIterator& operator=(LLNode<T>* ptr)
+	constexpr LLIterator& operator=(LLNode<T>* ptr)
     {
         m_current = static_cast<LLNode<T*>>(ptr);
         return *this;
     }
 
-    LLIterator& operator++()
+	constexpr LLIterator& operator++()
     {
         if (m_current) {
             m_current = m_current->next();
@@ -121,23 +121,23 @@ public:
         return *this;
     }
 
-    LLIterator& operator++(int) // postfix?
+	constexpr LLIterator& operator++(int) // postfix?
     {
         operator++();
         return *this;
     }
 
-    bool operator!=(const LLIterator<T>& it)
+	constexpr bool operator!=(const LLIterator<T>& it) const
     {
         return m_current != it.m_current;
     }
 
-    T& operator*()
+	constexpr T& operator*() const
     {
         return *m_current;
     }
 
-    T* operator->()
+	constexpr T* operator->() const
     {
         return m_current;
     }
@@ -151,23 +151,23 @@ private:
 template<concepts::LLChild T>
 class LinkedList {
 public:
-    bool empty()
+	bool empty()
     {
         return (m_head == nullptr);
     }
 
-    T* head() { return m_head; }
-    T* tail() { return m_tail; }
+	T* head() { return m_head; }
+	T* tail() { return m_tail; }
 
     using Iterator = LLIterator<T>;
     friend Iterator;
 
-    Iterator begin()
+	Iterator begin()
     {
         return Iterator(m_head);
     }
 
-    Iterator end()
+	Iterator end()
     {
         return Iterator(nullptr);
     }
@@ -175,12 +175,12 @@ public:
     using ConstIt = LLIterator<const T>;
     friend ConstIt;
 
-    ConstIt begin() const
+	ConstIt begin() const
     {
         return ConstIt(m_head);
     }
 
-    ConstIt end() const
+	ConstIt end() const
     {
         return ConstIt(nullptr);
     }
@@ -228,7 +228,7 @@ public:
         m_head = Node;
     }
 
-    virtual size_t size()
+	virtual size_t size() const
     {
         size_t count = 0;
         for (T* p = m_head; p; p = p->next()) {
@@ -263,14 +263,14 @@ public:
         }
     }
 
-    T* remove_head()
+	T* remove_head()
     {
         T* Node = head();
         if (Node != nullptr) {
             remove(Node);
         }
 
-        return Node;
+		return Node;
     }
 
     T* remove_tail()
