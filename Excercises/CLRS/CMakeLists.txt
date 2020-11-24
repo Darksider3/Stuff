@@ -30,4 +30,4 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++2a -g -pedantic-errors -Wuseles
 add_executable(insertion-sort insertion_sort.cpp)
 
 #target_link_libraries(Pomocurses ${CURSES_LIBRARIES} Threads::Threads)
-file(RENAME build/compile_commands.json compile_commands.json)
+#file(RENAME build/compile_commands.json compile_commands.json)
