@@ -5,10 +5,10 @@
 
 namespace TimerApp {
 
-int xMiddle(size_t const& full, size_t const& sub) noexcept
+size_t xMiddle(size_t const& full, size_t const& sub) noexcept
 {
     size_t x = (full - sub) / 2;
-    return static_cast<int>(x);
+	return x;
 }
 
 void EraseSpecific(WINDOW* win, size_t Y, size_t X)

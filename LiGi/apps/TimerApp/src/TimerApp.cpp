@@ -119,15 +119,15 @@ public:
             getmaxyx(&win, midy, midx);
             midy = midy / 2;
             if (state == PomoState::SHORT)
-				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 14), "Taking a break");
+				mvwaddstr(&win, static_cast<int>(midy + 2), static_cast<int>(TimerApp::xMiddle(midx, 14)), "Taking a break");
             else if (state == PomoState::LONG)
-				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 18), "Taking a big break!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), static_cast<int>(TimerApp::xMiddle(midx, 18)), "Taking a big break!");
             else if (state == PomoState::POMODORO)
-				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 22), "Working on a Pomodoro!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), static_cast<int>(TimerApp::xMiddle(midx, 22)), "Working on a Pomodoro!");
             else if (state == PomoState::PAUSE)
-				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), static_cast<int>(TimerApp::xMiddle(midx, 22)), "Taking a manual pause!");
             else if (state == PomoState::STOP)
-				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), static_cast<int>(TimerApp::xMiddle(midx, 25)), "Waiting for input what to run!!");
             return;
         }
 
@@ -140,18 +140,18 @@ public:
             set_red(win);
             switch (M_Timer.getState()) {
             case (PomoState::PAUSE):
-				TimerApp::EraseSpecific(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 7));
-				mvwprintw(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 6), "Paused!");
+				TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
+				mvwprintw(&win, static_cast<int>(midy), static_cast<int>(TimerApp::xMiddle(midx, 6)), "Paused!");
                 break;
             case (PomoState::STOP):
-				TimerApp::EraseSpecific(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 7));
-				mvwprintw(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 7), "STOPPED!");
+				TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
+				mvwprintw(&win, static_cast<int>(midy), static_cast<int>(TimerApp::xMiddle(midx, 7)), "STOPPED!");
                 break;
             case (PomoState::LONG):
             case (PomoState::SHORT):
             case (PomoState::POMODORO):
-				TimerApp::EraseSpecific(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 10));
-				mvwprintw(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 8),
+				TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 10));
+				mvwprintw(&win, static_cast<int>(midy), static_cast<int>(TimerApp::xMiddle(midx, 8)),
                     Li::TimerTools::Format::getFullTimeString(
                         M_Timer.getTimeLeft())
                         .c_str());
@@ -173,7 +173,7 @@ public:
 
             win_x = getmaxx(&win);
 
-            mvwaddstr(&win, 0, static_cast<int>((win_x - (title.length() - 1)) / 2), title.c_str());
+			mvwaddstr(&win, 0, static_cast<int>((static_cast<size_t>(win_x) - (title.length() - 1)) / 2), title.c_str());
             mvwaddstr(&win, 1, 2, "-> (C)lose");
             mvwaddstr(&win, 2, 2, "-> (B)reak");
             mvwaddstr(&win, 3, 2, "-> (P)ause/Un(P)ause");
@@ -194,7 +194,7 @@ public:
             int win_x = getmaxx(&win);
 
             box(&win, 0, 0);
-            mvwaddstr(&win, 0, static_cast<int>((win_x - (title.length() - 1)) / 2), title.c_str());
+			mvwaddstr(&win, 0, static_cast<int>((static_cast<size_t>(win_x) - (title.length() - 1)) / 2), title.c_str());
             mvwaddstr(&win, 1, 1, pomo.c_str());
             mvwaddstr(&win, 2, 1, sbreaks.c_str());
             wrefresh(&win);
@@ -488,7 +488,7 @@ int main()
 		AppView.TitleBar(*AppState.TopPanel);
 		AppView.Statistcs(*AppState.StatisticsWin);
 #ifndef NDEBUG
-		EraseSpecific(AppState.TopPanel, 0, COLS - 30);
+		EraseSpecific(AppState.TopPanel, 0, static_cast<size_t>(COLS) - 30);
         std::string StateLine = "Time L: " + std::to_string(Timer.getTimeLeft());
 		mvwaddstr(AppState.TopPanel, 0, COLS - 40, StateLine.c_str());
         StateLine = "State: ";
