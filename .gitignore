@@ -28,3 +28,4 @@ __pycache__/
 !CMakeLists.txt
 build/
 *.plist
+.cache/
