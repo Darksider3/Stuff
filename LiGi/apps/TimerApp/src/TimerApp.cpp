@@ -33,7 +33,7 @@
 #include "Tools.h"
 
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
-struct TimerStates {
+struct FrontendStates {
 	std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
 	WINDOW* FullWin;                        // full window; used to get dimensions
 	WINDOW* TopPanel;                       // Subwindow in FullWin, used for the top bar
@@ -179,8 +179,8 @@ public:
             mvwaddstr(&win, 3, 2, "-> (P)ause/Un(P)ause");
             mvwaddstr(&win, 4, 2, "-> P(O)modoro");
             mvwaddstr(&win, 5, 2, "-> (L)ong Break");
-            wrefresh(&win);
-            return;
+			wrefresh(&win);
+			return;
         }
 
         void Statistcs(WINDOW& win) noexcept
@@ -197,16 +197,16 @@ public:
 			mvwaddstr(&win, 0, static_cast<int>((static_cast<size_t>(win_x) - (title.length() - 1)) / 2), title.c_str());
             mvwaddstr(&win, 1, 1, pomo.c_str());
             mvwaddstr(&win, 2, 1, sbreaks.c_str());
-            wrefresh(&win);
-            return;
+			wrefresh(&win);
+			return;
         }
 
         void TitleBar(WINDOW& win) const noexcept
         {
             mvwaddstr(&win, 1, 1, "(E)dit settings");
             mvwhline(&win, 2, 0, ACS_HLINE, COLS);
-            wrefresh(&win);
-            return;
+			wrefresh(&win);
+			return;
         }
     };
 
@@ -224,7 +224,7 @@ public:
         , M_Stats(stat)
     {
         this->setDelay(50);
-        this->setSleep(10);
+		this->setSleep(25);
     }
 
     void RunResume() noexcept
@@ -424,17 +424,28 @@ int main()
 
 	SingleThreadLoop TimerThreadLoop(globalstop);
 
-    auto interrupt_handle = [&]() {
-        endwin();
-        init();
-        refresh();
-        clear();
-		getmaxyx(AppState.FullWin, FULL_COORD_Y, FULL_COORD_X);
-        refresh();
-		AppState._INTERRUPTED_ = false;
-    };
+	auto initialPaintState = [&]() {
+		refresh();
+		// These Windows dont need to get updated as often as the middle window
+		AppView.Shortcut(*AppState.ShortcutWin);
+		AppView.TitleBar(*AppState.TopPanel);
+		AppView.Statistcs(*AppState.StatisticsWin);
+		AppView.Mode(*AppState.MidWin);
+	};
 
-    auto EraseStateChangeRepaint = [&]() {
+	auto interrupt_handle
+		= [&]() {
+			  endwin();
+			  init();
+			  refresh();
+			  clear();
+			  getmaxyx(AppState.FullWin, FULL_COORD_Y, FULL_COORD_X);
+			  initialPaintState();
+
+			  AppState._INTERRUPTED_ = false;
+		  };
+
+	auto EraseStateChangeRepaint = [&]() {
 		werase(AppState.MidWin);
 		werase(AppState.ShortcutWin);
 		werase(AppState.StatisticsWin);
@@ -442,7 +453,8 @@ int main()
 		AppView.Shortcut(*AppState.ShortcutWin);
 		AppView.Statistcs(*AppState.StatisticsWin);
 		AppView.TitleBar(*AppState.TopPanel);
-    };
+		AppView.Mode(*AppState.MidWin);
+	};
 
 	auto ThreadReflectStateChanges = [&](PomodoroTimer& PomObj, std::function<void()> runFunc) {
         PomObj.Pause();
@@ -471,23 +483,20 @@ int main()
 	if (!TimerThreadLoop.RunThread(App::HoldThread())) {
         quitter();
 		TimerThreadLoop.Stop();
-        std::cerr << "Couldn't allocate Thread!";
+		std::cerr << "Couldn't allocate Thread!";
     }
 
 	TimerThreadLoop.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
 
+	initialPaintState();
 	while (true) {
 #define BIND(func, r, state) std::bind(&func, std::ref(r), state)
 #define REFLECT(Timer, func, r, state) \
 	ThreadReflectStateChanges(Timer, BIND(func, r, state))
 		using namespace TimerApp;
-        int c = wgetch(stdscr);
+		int c = wgetch(stdscr);
 		AppView.Mid(*AppState.MidWin);
-		AppView.Mode(*AppState.MidWin);
-		AppView.Shortcut(*AppState.ShortcutWin);
-		AppView.TitleBar(*AppState.TopPanel);
-		AppView.Statistcs(*AppState.StatisticsWin);
-#ifndef NDEBUG
+#ifdef NDEBUG
 		EraseSpecific(AppState.TopPanel, 0, static_cast<size_t>(COLS) - 30);
         std::string StateLine = "Time L: " + std::to_string(Timer.getTimeLeft());
 		mvwaddstr(AppState.TopPanel, 0, COLS - 40, StateLine.c_str());
@@ -498,10 +507,9 @@ int main()
 		mvwaddstr(AppState.TopPanel, 1, COLS - 40, StateLine.c_str());
 		wrefresh(AppState.TopPanel);
 #endif
-        refresh();
-        if (c == 'c') {
-            Timer.Pause();
-            quitter();
+		if (c == 'c') {
+			Timer.Pause();
+			quitter();
 			if (TimerThreadLoop.is_running())
 				TimerThreadLoop.Stop();
             return (EXIT_SUCCESS);
@@ -526,7 +534,7 @@ int main()
 		if (AppState._INTERRUPTED_) {
             interrupt_handle();
         } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
     return (0);
