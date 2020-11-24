@@ -1,7 +1,7 @@
 #include "../concepts_additions.h"
 #include <iostream>
 
-void test(EqualKeyValue auto const& s)
+void test(concepts::EqualKeyValue auto const& s)
 {
 	for (auto&& buck : s) {
 		std::cout << "EqualKeyBuck -> Key: '" << buck.first << "', second: " << buck.second << "\n";
@@ -9,7 +9,7 @@ void test(EqualKeyValue auto const& s)
 	return;
 }
 
-template<NotEqualKeyValue T>
+template<concepts::NotEqualKeyValue T>
 void test(T const& s)
 {
 	for (auto&& buck : s) {
