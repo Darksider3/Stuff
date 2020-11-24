@@ -117,15 +117,15 @@ public:
             getmaxyx(&win, midy, midx);
             midy = midy / 2;
             if (state == PomoState::SHORT)
-                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 14), "Taking a break");
+				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 14), "Taking a break");
             else if (state == PomoState::LONG)
-                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 18), "Taking a big break!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 18), "Taking a big break!");
             else if (state == PomoState::POMODORO)
-                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 22), "Working on a Pomodoro!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 22), "Working on a Pomodoro!");
             else if (state == PomoState::PAUSE)
-                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 22), "Taking a manual pause!");
             else if (state == PomoState::STOP)
-                mvwaddstr(&win, midy + 2, TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
+				mvwaddstr(&win, static_cast<int>(midy + 2), TimerApp::xMiddle(midx, 25), "Waiting for input what to run!!");
             return;
         }
 
@@ -138,18 +138,18 @@ public:
             set_red(win);
             switch (M_Timer.getState()) {
             case (PomoState::PAUSE):
-                TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
-                mvwprintw(&win, midy, TimerApp::xMiddle(midx, 6), "Paused!");
+				TimerApp::EraseSpecific(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 7));
+				mvwprintw(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 6), "Paused!");
                 break;
             case (PomoState::STOP):
-                TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 7));
-                mvwprintw(&win, midy, TimerApp::xMiddle(midx, 7), "STOPPED!");
+				TimerApp::EraseSpecific(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 7));
+				mvwprintw(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 7), "STOPPED!");
                 break;
             case (PomoState::LONG):
             case (PomoState::SHORT):
             case (PomoState::POMODORO):
-                TimerApp::EraseSpecific(&win, midy, TimerApp::xMiddle(midx, 10));
-                mvwprintw(&win, midy, TimerApp::xMiddle(midx, 8),
+				TimerApp::EraseSpecific(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 10));
+				mvwprintw(&win, static_cast<int>(midy), TimerApp::xMiddle(midx, 8),
                     Li::TimerTools::Format::getFullTimeString(
                         M_Timer.getTimeLeft())
                         .c_str());
