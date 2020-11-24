@@ -33,12 +33,14 @@
 #include "Tools.h"
 
 //@TODO: In case <semaphore> ever get's released, use it for the signal handler FFS!
-std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
-WINDOW* FullWin;                        // full window; used to get dimensions
-WINDOW* TopPanel;                       // Subwindow in FullWin, used for the top bar
-WINDOW* MidWin;                         // also in the FullWindow, used for status and timer itself
-WINDOW* ShortcutWin;                    // and again in FullWindow, here for visibility of shortcuts
-WINDOW* StatisticsWin;
+struct TimerStates {
+	std::atomic_bool _INTERRUPTED_ = false; // Signal Interrupt handle
+	WINDOW* FullWin;                        // full window; used to get dimensions
+	WINDOW* TopPanel;                       // Subwindow in FullWin, used for the top bar
+	WINDOW* MidWin;                         // also in the FullWindow, used for status and timer itself
+	WINDOW* ShortcutWin;                    // and again in FullWindow, here for visibility of shortcuts
+	WINDOW* StatisticsWin;
+} AppState;
 
 int FULL_COORD_X, FULL_COORD_Y;
 
@@ -301,10 +303,10 @@ public:
 
 void quitter() noexcept
 {
-    delwin(FullWin);
-    delwin(MidWin);
-    delwin(TopPanel);
-    delwin(ShortcutWin);
+	delwin(AppState.FullWin);
+	delwin(AppState.MidWin);
+	delwin(AppState.TopPanel);
+	delwin(AppState.ShortcutWin);
     endwin();
 }
 
@@ -320,39 +322,39 @@ void init_colors() noexcept
 
 void init_windows() noexcept
 {
-    if ((FullWin = initscr()) == nullptr) {
+	if ((AppState.FullWin = initscr()) == nullptr) {
         std::cerr << "Error! Couldn't initialise ncurses!" << std::endl;
         quitter();
     }
     atexit(quitter);
 
-    getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
+	getmaxyx(AppState.FullWin, FULL_COORD_Y, FULL_COORD_X);
 
     if (FULL_COORD_Y < MIN_Y || FULL_COORD_X < MIN_X) {
         std::cerr << "Sorry, but your window isnt big enough!" << std::endl;
         exit(ERR);
     }
 
-    if ((TopPanel = newwin(3, FULL_COORD_X, 0, 0)) == nullptr) {
+	if ((AppState.TopPanel = newwin(3, FULL_COORD_X, 0, 0)) == nullptr) {
         std::cerr << "Error! Couldn't intiialise top panel!" << std::endl;
         exit(ERR);
     }
-    if ((MidWin = newwin(FULL_COORD_Y - 13, FULL_COORD_X, 3, 1)) == nullptr) {
+	if ((AppState.MidWin = newwin(FULL_COORD_Y - 13, FULL_COORD_X, 3, 1)) == nullptr) {
         std::cerr << "Error! Couldn't initialise mid window!" << std::endl;
         exit(ERR);
     }
 
-    if ((ShortcutWin = newwin(10, COLS / 2, LINES - 10, 0)) == nullptr) {
+	if ((AppState.ShortcutWin = newwin(10, COLS / 2, LINES - 10, 0)) == nullptr) {
         std::cerr << "Error! Couldn't initialise shortcut window!" << std::endl;
     }
 
-    if ((StatisticsWin = newwin(10, COLS / 2, LINES - 10, COLS / 2)) == nullptr) {
+	if ((AppState.StatisticsWin = newwin(10, COLS / 2, LINES - 10, COLS / 2)) == nullptr) {
         std::cerr << "Error! Couldn't initialise statistics window!" << std::endl;
     }
 
     cbreak();
     noecho();
-    nodelay(FullWin, true);
+	nodelay(AppState.FullWin, true);
     curs_set(0);
 }
 
@@ -390,7 +392,7 @@ Timer background: #03A4BC, Timer Foreground: Black
 void winch_handle(int sig) noexcept
 {
     if (sig == SIGWINCH)
-        _INTERRUPTED_ = true;
+		AppState._INTERRUPTED_ = true;
 }
 
 int dummy(int bla) noexcept
@@ -401,7 +403,7 @@ int dummy(int bla) noexcept
 
 int main()
 {
-    /**
+	/**
    * Here lies dragons - actually handling WINCH/Resizing without segfaults. o.o
    */
 
@@ -427,22 +429,22 @@ int main()
         init();
         refresh();
         clear();
-        getmaxyx(FullWin, FULL_COORD_Y, FULL_COORD_X);
+		getmaxyx(AppState.FullWin, FULL_COORD_Y, FULL_COORD_X);
         refresh();
-        _INTERRUPTED_ = false;
+		AppState._INTERRUPTED_ = false;
     };
 
     auto EraseStateChangeRepaint = [&]() {
-        werase(MidWin);
-        werase(ShortcutWin);
-        werase(StatisticsWin);
-        werase(TopPanel);
-        AppView.Shortcut(*ShortcutWin);
-        AppView.Statistcs(*StatisticsWin);
-        AppView.TitleBar(*TopPanel);
+		werase(AppState.MidWin);
+		werase(AppState.ShortcutWin);
+		werase(AppState.StatisticsWin);
+		werase(AppState.TopPanel);
+		AppView.Shortcut(*AppState.ShortcutWin);
+		AppView.Statistcs(*AppState.StatisticsWin);
+		AppView.TitleBar(*AppState.TopPanel);
     };
 
-    auto StateChange = [&](PomodoroTimer& PomObj, std::function<void()> runFunc) {
+	auto ThreadReflectStateChanges = [&](PomodoroTimer& PomObj, std::function<void()> runFunc) {
         PomObj.Pause();
         App::delayedInsertion<std::chrono::milliseconds>(ThreadWrap, runFunc, 5);
         PomObj.Unpause();
@@ -474,24 +476,27 @@ int main()
 
     ThreadWrap.insert(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME);
 
-    while (true) {
-        using namespace TimerApp;
+	while (true) {
+#define BIND(func, r, state) std::bind(&func, std::ref(r), state)
+#define REFLECT(Timer, func, r, state) \
+	ThreadReflectStateChanges(Timer, BIND(func, r, state))
+		using namespace TimerApp;
         int c = wgetch(stdscr);
-        AppView.Mid(*MidWin);
-        AppView.Mode(*MidWin);
-        AppView.Shortcut(*ShortcutWin);
-        AppView.TitleBar(*TopPanel);
-        AppView.Statistcs(*StatisticsWin);
+		AppView.Mid(*AppState.MidWin);
+		AppView.Mode(*AppState.MidWin);
+		AppView.Shortcut(*AppState.ShortcutWin);
+		AppView.TitleBar(*AppState.TopPanel);
+		AppView.Statistcs(*AppState.StatisticsWin);
 #ifndef NDEBUG
-        EraseSpecific(TopPanel, 0, COLS - 30);
+		EraseSpecific(AppState.TopPanel, 0, COLS - 30);
         std::string StateLine = "Time L: " + std::to_string(Timer.getTimeLeft());
-        mvwaddstr(TopPanel, 0, COLS - 40, StateLine.c_str());
+		mvwaddstr(AppState.TopPanel, 0, COLS - 40, StateLine.c_str());
         StateLine = "State: ";
         StateLine += StateToStr(Timer.getState());
         StateLine += " | Old: ";
         StateLine += StateToStr(Timer.M_oldState);
-        mvwaddstr(TopPanel, 1, COLS - 40, StateLine.c_str());
-        wrefresh(TopPanel);
+		mvwaddstr(AppState.TopPanel, 1, COLS - 40, StateLine.c_str());
+		wrefresh(AppState.TopPanel);
 #endif
         refresh();
         if (c == 'c') {
@@ -501,25 +506,26 @@ int main()
                 ThreadWrap.Stop();
             return (EXIT_SUCCESS);
         } else if (c == 'p' && Timer.getState() != PomoState::PAUSE) {
-            StateChange(Timer, std::bind(&PomodoroTimer::RunPause, std::ref(Timer), PAUSE_STOP_VAL));
+			REFLECT(Timer, PomodoroTimer::RunPause, Timer, PAUSE_STOP_VAL);
         } else if (c == 'p' && Timer.getState() == PomoState::PAUSE) {
-            StateChange(Timer, std::bind(&PomodoroTimer::RunResume, std::ref(Timer)));
-        } else if (c == 'o') {
-            StateChange(Timer, std::bind(&PomodoroTimer::RunPomo, std::ref(Timer), POMODORO_TIME));
-        } else if (c == 'b') {
-            StateChange(Timer, std::bind(&PomodoroTimer::RunShortBreak, std::ref(Timer), SHORT_BREAK_TIME));
-        } else if (c == 'l') {
-            StateChange(Timer, std::bind(&PomodoroTimer::RunBigBreak, std::ref(Timer), BIG_BREAK_TIME));
-        } else if (Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP) {
-            mvwaddstr(TopPanel, 0, COLS - 20, "HERE");
-            wrefresh(TopPanel);
-            StateChange(Timer, std::bind(&PomodoroTimer::RunStop, std::ref(Timer), PAUSE_STOP_VAL));
+			ThreadReflectStateChanges(Timer, std::bind(&PomodoroTimer::RunResume, std::ref(Timer)));
+		} else if (c == 'o') {
+			REFLECT(Timer, PomodoroTimer::RunPomo, Timer, POMODORO_TIME);
+		} else if (c == 'b') {
+			REFLECT(Timer, PomodoroTimer::RunShortBreak, Timer, SHORT_BREAK_TIME);
+		} else if (c == 'l') {
+			REFLECT(Timer, PomodoroTimer::RunBigBreak, Timer, BIG_BREAK_TIME);
+		} else if (Timer.getState() == PomoState::STOP && Timer.M_oldState != PomoState::STOP) {
+			/* ^ dont stark threads over and over again. Accomplished by ^this^ check*/
+			mvwaddstr(AppState.TopPanel, 0, COLS - 20, "HERE");
+			wrefresh(AppState.TopPanel);
+			REFLECT(Timer, PomodoroTimer::RunStop, Timer, PAUSE_STOP_VAL);
         } else if (c == KEY_RESIZE) {
             // we have to do this actually, because the signal itself isn't really portable D:
             winch_handle(SIGWINCH);
         }
 
-        if (_INTERRUPTED_) {
+		if (AppState._INTERRUPTED_) {
             interrupt_handle();
         } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
