@@ -92,9 +92,65 @@ public:
 			item = m_table->items[index].get();
 		}
 
-		return nullptr;
+		return "";
 	}
 	void del();
+
+	constexpr BuckPtr make_bucket(const Key k, const Value v)
+	{
+		BuckPtr i = this->make_ptr<bucket>();
+		i->s_key = k;
+		i->s_value = v;
+		return i;
+	}
+
+	constexpr TablePtr make_table(Size MapSize = map_initial_size)
+	{
+		TablePtr Table = make_ptr<hash_table>();
+		Table->items.resize(MapSize);
+		for (Size i = 0; i < MapSize; ++i) {
+			Table->items[i] = (make_bucket(Key {}, Value {}));
+		}
+		Table->size = MapSize;
+		Table->count = 0;
+		return Table;
+	};
+
+	constexpr Size m_hash(Lengthy auto&& var, Size prime, Size modulo)
+	{
+		Size _hash = 0;
+		const Size len = var.length();
+		for (Size i = 0; i < len; ++i) {
+			_hash += static_cast<Size>(std::pow(prime, len - (i + 1))) * static_cast<Size>(var[i]);
+			_hash += static_cast<Size>(_hash % modulo + (modulo % modulo - 1)) * 2;
+		}
+		return _hash + prime;
+	}
+
+	constexpr Size get_hash(Lengthy auto&& var, const Size num_bucks, const Size attempts)
+	{
+		Size first = m_hash(var, hsmPrime_1, num_bucks);
+		Size second = m_hash(var, hsmPrime_2, num_bucks);
+		if ((second % num_bucks) == 0) {
+			second = 1;
+		}
+		if ((first % num_bucks) == 0) {
+			first = 2;
+		}
+		return (first + (attempts * (second))) % num_bucks;
+	}
+
+	constexpr void removeBucket(Size x)
+	{
+		if (m_table->items.at(x))
+			m_table->items.at(x).release();
+	}
+
+	constexpr void removeTable(TablePtr& t)
+	{
+		if (t)
+			t.release();
+	}
 
 public:
 	struct bucket {
@@ -102,60 +158,11 @@ public:
 		Value s_value;
 	};
 
-	static BuckPtr make_bucket(const Key k, const Value v)
-	{
-		BuckPtr i = std::make_unique<bucket>();
-		i->s_key = k;
-		i->s_value = v;
-		return i;
-	}
 	struct hash_table {
 		uint64_t size;
 		uint64_t count;
 		MapVec items;
 	};
-
-	static TablePtr make_table(Size MapSize = map_initial_size)
-	{
-		TablePtr Table = std::make_unique<hash_table>();
-		Table->items.resize(MapSize);
-		for (Size i = 0; i < MapSize; ++i) {
-			Table->items[i] = (make_bucket(Key {}, Value {}));
-		}
-		Table->size = 53;
-		Table->count = 0;
-		return Table;
-	};
-
-	static Size m_hash(Lengthy auto&& var, Size prime, Size modulo)
-	{
-		Size _hash = 0;
-		const Size len = var.length();
-		for (Size i = 0; i < len; ++i) {
-			_hash += static_cast<Size>(std::pow(prime, len - (i + 1))) * static_cast<Size>(var[i]);
-			_hash = static_cast<Size>(_hash % modulo);
-		}
-		return _hash;
-	}
-
-	static Size get_hash(Lengthy auto&& var, const Size num_bucks, const Size attempts)
-	{
-		const Size first = m_hash(var, hsmPrime_1, num_bucks);
-		const Size second = m_hash(var, hsmPrime_2, num_bucks);
-		return (first + (attempts * (second + 1))) % num_bucks;
-	}
-
-	void removeBucket(Size x)
-	{
-		if (m_table->items.at(x))
-			m_table->items.at(x).release();
-	}
-
-	void removeTable(TablePtr& t)
-	{
-		if (t)
-			t.release();
-	}
 
 	TablePtr m_table;
 };
