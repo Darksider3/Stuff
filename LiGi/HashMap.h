@@ -57,14 +57,14 @@ public:
 		m_table = make_table(MapSize);
 	}
 
-	constexpr void insert(Key key, Value val)
+	constexpr void insert(const Key&& key, const Value&& val)
 	{
 		BuckPtr item = make_bucket(key, val);
 		Size index = get_hash(item->s_key, m_table->size, 0);
 		const bucket* cur = m_table->items.at(index).get();
 
 		const Size tablesize = m_table->size;
-		for (Size i = 0; !cur->s_key.empty() && i != tablesize; ++i) {
+		for (Size i = 0; !cur->s_key.empty() && i < tablesize; ++i) {
 			index = get_hash(item->s_key, m_table->size, i);
 			cur = m_table->items.at(index).get();
 		}
@@ -73,13 +73,13 @@ public:
 		++m_table->count;
 	}
 
-	constexpr Value search(Key key)
+	constexpr Value search(const Key&& key) const
 	{
 		Size index = get_hash(key, m_table->size, 0);
 		const bucket* item = m_table->items[index].get();
 
 		const Size tablesize = m_table->size;
-		for (Size i = 0; !item->s_key.empty() && i != tablesize; ++i) {
+		for (Size i = 0; !item->s_key.empty() && i < tablesize; ++i) {
 			if (item->s_key == key) {
 				Value v = item->s_value;
 				//m_table->items[index] = std::move(item);
@@ -95,7 +95,7 @@ public:
 	}
 	void del();
 
-	constexpr BuckPtr make_bucket(const Key k, const Value v)
+	constexpr BuckPtr make_bucket(const Key& k, const Value& v) const
 	{
 		BuckPtr i = this->make_ptr<bucket>();
 		i->s_key = k;
@@ -103,7 +103,7 @@ public:
 		return i;
 	}
 
-	constexpr TablePtr make_table(Size MapSize = map_initial_size)
+	constexpr TablePtr make_table(Size MapSize = map_initial_size) const
 	{
 		TablePtr Table = make_ptr<hash_table>();
 		Table->items.resize(MapSize);
@@ -115,27 +115,27 @@ public:
 		return Table;
 	};
 
-	constexpr Size m_hash(Lengthy auto&& var, Size prime, Size modulo)
+	constexpr Size m_hash(Lengthy auto&& var, const Size prime, const Size modulo) const
 	{
 		Size _hash = 0;
 		const Size len = var.length();
 		for (Size i = 0; i < len; ++i) {
-			_hash += static_cast<Size>(std::pow(prime, len - (i + 1))) * static_cast<Size>(var[i]);
-			_hash = static_cast<Size>(_hash % modulo + (modulo % modulo - 1)) * 2;
+			_hash += static_cast<const Size>(std::pow(prime, len - (i + 1))) * static_cast<const Size>(var[i]);
 		}
+		_hash = static_cast<Size>(_hash % modulo + (modulo % modulo - 1)) * 2;
 		return _hash + prime;
 	}
 
-	constexpr Size get_hash(Lengthy auto&& var, const Size num_bucks, const Size attempts)
+	constexpr Size get_hash(Lengthy auto&& var, const Size num_bucks, const Size attempts) const
 	{
 		Size first = m_hash(var, hsmPrime_1, num_bucks);
 		Size second = m_hash(var, hsmPrime_2, num_bucks);
 		if ((second % num_bucks) == 0) {
 			second = 1;
 		}
-		if ((first % num_bucks) == 0) {
+		/*if ((first % num_bucks) == 0) {
 			first = 2;
-		}
+		}*/
 		return (first + (attempts * (second))) % num_bucks;
 	}
 
@@ -172,14 +172,14 @@ public:
 
 int main()
 {
-	auto tab = Li::HashMap<std::string, std::string>(15000);
+	auto tab = Li::HashMap<std::string, std::string>(1500);
 
-	for (int i = 0; i != 15000; ++i) {
+	for (int i = 0; i != 1500; ++i) {
 		tab.insert(std::to_string(i), std::to_string(i));
 	}
 
 	size_t misses = 0;
-	for (int i = 0; i != 15000; ++i) {
+	for (int i = 0; i != 1500; ++i) {
 		if (tab.search(std::to_string(i)).empty())
 			++misses;
 	}
