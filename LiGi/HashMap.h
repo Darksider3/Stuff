@@ -8,14 +8,17 @@
 #include <iostream>
 
 namespace Li {
-
 #include <concepts>
 
 constexpr size_t map_initial_size = 53;
-constexpr size_t hsmPrime_1 = 463;
-constexpr size_t hsmPrime_2 = 283;
+constexpr size_t hsmPrime_1 = 9239;
+constexpr size_t hsmPrime_2 = 35317;
 using Size = size_t;
-
+#define FUN_ALIAS(NEW_NAME, ...)                                                                                            \
+	inline static auto NEW_NAME = [](auto&&... args) noexcept(noexcept(__VA_ARGS__(std::forward<decltype(args)>(args)...))) \
+		-> decltype(auto) {                                                                                                 \
+		return __VA_ARGS__(std::forward<decltype(args)>(args)...);                                                          \
+	}
 template<typename T>
 concept Lengthy = requires(T a)
 {
@@ -47,26 +50,31 @@ public:
 	using TablePtr = ptr<hash_table>;
 
 public:
-	void insert(Key key, Value val)
+	constexpr explicit HashMap(Size MapSize = map_initial_size)
+	{
+		m_table = make_table(MapSize);
+	}
+
+	constexpr void insert(Key key, Value val)
 	{
 		BuckPtr item = make_bucket(key, val);
 		Size index = get_hash(item->s_key, m_table->size, 0);
 		bucket* cur = m_table->items.at(index).get();
-		for (Size i = 0; cur->s_key != Key {} && cur->s_value != Value {}; i++) {
+		for (Size i = 0; !cur->s_key.empty() && i != m_table->size; i++) {
 			index = get_hash(item->s_key, m_table->size, i);
 			cur = m_table->items.at(index).get();
-			std::cout << "Saw index '" << index << "'. \n";
 		}
 
 		m_table->items[index] = std::move(item);
 		m_table->count++;
 	}
-	Value search(Key key)
+
+	constexpr Value search(Key key)
 	{
 		Size index = get_hash(key, m_table->size, 0);
 		BuckPtr old;
 		bucket* item = m_table->items[index].get();
-		for (Size i = 0; item->s_key != Key {} && item->s_value != Value {}; ++i) {
+		for (Size i = 0; !item->s_key.empty() && i != m_table->size; ++i) {
 			if (item->s_key == key) {
 				Value v = item->s_value;
 				//m_table->items[index] = std::move(item);
@@ -152,10 +160,17 @@ public:
 
 int main()
 {
-	using bla = Li::HashMap<std::string, std::string>;
-	auto tab = Li::HashMap<std::string, std::string>();
-	tab.m_table = Li::HashMap<std::string, std::string>::make_table();
+	auto tab = Li::HashMap<std::string, std::string>(15000);
 
+	for (int i = 0; i != 15000; ++i) {
+		tab.insert(std::to_string(i), std::to_string(i));
+	}
+
+	size_t misses = 0;
+	for (int i = 0; i != 15000; ++i) {
+		if (tab.search(std::to_string(i)).empty())
+			++misses;
+	}
 	tab.insert("brot", "world");
 	tab.insert("brigitte", "welt");
 
@@ -164,24 +179,35 @@ int main()
 
 	//tab.removeBucket(3);
 
-	for (auto&& b : tab.m_table->items) {
+	/*for (auto&& b : tab.m_table->items)
+	{
 		if (b)
 			std::cout << "Valid -> ";
 		else
 			std::cout << "Invalid -> ";
 	}
-
 	std::cout << "." << std::endl;
+	*/
 
-	for (size_t x = 0; x < tab.m_table->items.size(); ++x) {
+	size_t Empty_Buckets = 0;
+	size_t Full_Buckets = 0;
+	for (auto& b : tab.m_table->items) {
+		if (b->s_key.empty())
+			Empty_Buckets++;
+		else
+			Full_Buckets++;
+	}
+
+	std::cout << "Full: " << Full_Buckets << ", Empty: " << Empty_Buckets << ", Misses: " << misses << std::endl;
+
+	/*for (size_t x = 0; x < tab.m_table->items.size(); ++x) {
 		auto b = tab.m_table->items[x]->s_key;
 		auto a = tab.m_table->items[x]->s_value;
 		std::cout << "Key: " << b
 				  << "\nValue: " << a << "\n";
-	}
+	}*/
 
 	tab.removeTable(tab.m_table);
-	std::cout << "Hash: " << bla::get_hash(std::string("Hello world"), Li::hsmPrime_1, 120) << "\n";
 	if (tab.m_table)
 		std::cout << "still there that table \n";
 	else
