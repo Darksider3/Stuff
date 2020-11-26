@@ -43,6 +43,12 @@ public:
 	template<typename T>
 	using ptr = std::unique_ptr<T>;
 
+	template<typename T>
+	constexpr inline static ptr<T> make_ptr()
+	{
+		return std::make_unique<T>();
+	}
+
 	using BuckPtr = ptr<bucket>;
 	using KeyPtr = ptr<Key>;
 	using ValuePtr = ptr<Value>;
