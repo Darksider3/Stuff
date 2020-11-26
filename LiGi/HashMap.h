@@ -12,13 +12,9 @@ namespace Li {
 
 constexpr size_t map_initial_size = 53;
 constexpr size_t hsmPrime_1 = 9239;
-constexpr size_t hsmPrime_2 = 35317;
+constexpr size_t hsmPrime_2 = 115249;
 using Size = size_t;
-#define FUN_ALIAS(NEW_NAME, ...)                                                                                            \
-	inline static auto NEW_NAME = [](auto&&... args) noexcept(noexcept(__VA_ARGS__(std::forward<decltype(args)>(args)...))) \
-		-> decltype(auto) {                                                                                                 \
-		return __VA_ARGS__(std::forward<decltype(args)>(args)...);                                                          \
-	}
+
 template<typename T>
 concept Lengthy = requires(T a)
 {
@@ -65,22 +61,25 @@ public:
 	{
 		BuckPtr item = make_bucket(key, val);
 		Size index = get_hash(item->s_key, m_table->size, 0);
-		bucket* cur = m_table->items.at(index).get();
-		for (Size i = 0; !cur->s_key.empty() && i != m_table->size; i++) {
+		const bucket* cur = m_table->items.at(index).get();
+
+		const Size tablesize = m_table->size;
+		for (Size i = 0; !cur->s_key.empty() && i != tablesize; ++i) {
 			index = get_hash(item->s_key, m_table->size, i);
 			cur = m_table->items.at(index).get();
 		}
 
 		m_table->items[index] = std::move(item);
-		m_table->count++;
+		++m_table->count;
 	}
 
 	constexpr Value search(Key key)
 	{
 		Size index = get_hash(key, m_table->size, 0);
-		BuckPtr old;
-		bucket* item = m_table->items[index].get();
-		for (Size i = 0; !item->s_key.empty() && i != m_table->size; ++i) {
+		const bucket* item = m_table->items[index].get();
+
+		const Size tablesize = m_table->size;
+		for (Size i = 0; !item->s_key.empty() && i != tablesize; ++i) {
 			if (item->s_key == key) {
 				Value v = item->s_value;
 				//m_table->items[index] = std::move(item);
@@ -122,7 +121,7 @@ public:
 		const Size len = var.length();
 		for (Size i = 0; i < len; ++i) {
 			_hash += static_cast<Size>(std::pow(prime, len - (i + 1))) * static_cast<Size>(var[i]);
-			_hash += static_cast<Size>(_hash % modulo + (modulo % modulo - 1)) * 2;
+			_hash = static_cast<Size>(_hash % modulo + (modulo % modulo - 1)) * 2;
 		}
 		return _hash + prime;
 	}
