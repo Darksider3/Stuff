@@ -10,6 +10,7 @@ public:
 	{
 		setnull();
 	}
+
 	T* next()
 	{
 		return static_cast<T*>(this)->m_next;
@@ -30,7 +31,6 @@ public:
 		static_cast<T*>(this)->m_next = r;
 	}
 
-public:
 	void setnull()
 	{
 		static_cast<T*>(this)->set_next(nullptr);

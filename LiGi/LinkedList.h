@@ -19,7 +19,6 @@
 #pragma once
 #ifndef LIGILL_H
 #    define LIGILL_H
-#    include "Assertions.h"
 #    include <concepts>
 #    include <memory>
 
@@ -53,10 +52,11 @@ public:
     {
         setnull();
     }
+
 	T* next()
     {
         return static_cast<T*>(this)->m_next;
-    }
+	}
 
 	T* prev() const
     {
@@ -83,12 +83,12 @@ public:
         static_cast<T*>(this)->m_prev = r;
     }
 
-public:
     void setnull()
     {
         static_cast<T*>(this)->set_next(nullptr);
         static_cast<T*>(this)->set_prev(nullptr);
     }
+
 	static std::unique_ptr<T> newPtr(T& data)
     {
         return std::make_unique(data);
@@ -96,7 +96,7 @@ public:
 
 private:
     T* m_next;
-    T* m_prev;
+	T* m_prev;
 };
 
 template<typename T>
@@ -140,7 +140,10 @@ public:
 	constexpr T* operator->() const
     {
         return m_current;
-    }
+	}
+
+	constexpr LLIterator<T> begin();
+	constexpr LLIterator<T> end();
 
 private:
     friend LinkedList<T>;
@@ -175,12 +178,12 @@ public:
     using ConstIt = LLIterator<const T>;
     friend ConstIt;
 
-	ConstIt begin() const
+	constexpr ConstIt begin() const
     {
         return ConstIt(m_head);
     }
 
-	ConstIt end() const
+	constexpr ConstIt end() const
     {
         return ConstIt(nullptr);
     }
@@ -292,7 +295,6 @@ protected:
 	LinkedList<T>() { }
 	friend T;
 };
-
 }
 
 #endif
