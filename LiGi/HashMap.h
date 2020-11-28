@@ -31,75 +31,80 @@ concept Lengthy = requires(T a)
 		a == a
 	}
 	->std::same_as<bool>;
+
+	{
+		a.operator[](0)
+	};
+
+	std::cout << a;
 };
-template<Lengthy Key, typename Value>
+
+template<typename T>
+concept AcceptablePointer = requires(T a)
+{
+	{
+		!a
+	}
+	->std::same_as<bool>;
+	a.release();
+	a.operator->();
+	a.operator*();
+	a.~T();
+};
+
+template<typename T>
+concept DefaultConstructible = requires(T a)
+{
+	std::is_default_constructible_v<T>;
+};
+
+template<typename T>
+concept hasCount = requires(T a)
+{
+	a.use_count();
+};
+
+template<Lengthy Key, DefaultConstructible Value, bool CLEANUP = true>
 class HashMap {
-public:
+private:
+	struct NotFundError {
+		std::string field;
+	};
+	using SearchResult = std::variant<Value, NotFundError>;
 	struct bucket;
 	struct hash_table;
-
 	template<typename T>
-	using ptr = std::unique_ptr<T>;
+	using ptr = std::shared_ptr<T>;
 
 	template<typename T>
 	constexpr inline static ptr<T> make_ptr()
 	{
-		return std::make_unique<T>();
+		return std::make_shared<T>();
 	}
 
-	using BuckPtr = ptr<bucket>;
 	using KeyPtr = ptr<Key>;
 	using ValuePtr = ptr<Value>;
+
+	using BuckPtr = ptr<bucket>;
 	using MapVec = std::vector<BuckPtr>;
 	using TablePtr = ptr<hash_table>;
 
-public:
-	constexpr explicit HashMap(Size MapSize = map_initial_size)
+	using ptrsize = ptrdiff_t;
+
+	struct bucket {
+		Key s_key;
+		Value s_value;
+	};
+
+	struct hash_table {
+		uint64_t size;
+		uint64_t count;
+		MapVec items;
+	};
+
+	static constexpr BuckPtr make_bucket(const Key& k, const Value& v)
 	{
-		m_table = make_table(MapSize);
-	}
-
-	constexpr void insert(const Key&& key, const Value&& val)
-	{
-		BuckPtr item = make_bucket(key, val);
-		Size index = get_hash(item->s_key, m_table->size, 0);
-		const bucket* cur = m_table->items.at(index).get();
-
-		const Size tablesize = m_table->size;
-		for (Size i = 0; !cur->s_key.empty() && i < tablesize; ++i) {
-			index = get_hash(item->s_key, m_table->size, i);
-			cur = m_table->items.at(index).get();
-		}
-
-		m_table->items[index] = std::move(item);
-		++m_table->count;
-	}
-
-	constexpr Value search(const Key&& key) const
-	{
-		Size index = get_hash(key, m_table->size, 0);
-		const bucket* item = m_table->items[index].get();
-
-		const Size tablesize = m_table->size;
-		for (Size i = 0; !item->s_key.empty() && i < tablesize; ++i) {
-			if (item->s_key == key) {
-				Value v = item->s_value;
-				//m_table->items[index] = std::move(item);
-				return v;
-			}
-
-			//m_table->items[index] = std::move(item);
-			index = get_hash(key, m_table->size, i);
-			item = m_table->items[index].get();
-		}
-
-		return "";
-	}
-	void del();
-
-	constexpr BuckPtr make_bucket(const Key& k, const Value& v) const
-	{
-		BuckPtr i = this->make_ptr<bucket>();
+		BuckPtr i = make_ptr<bucket>();
 		i->s_key = k;
 		i->s_value = v;
 		return i;
