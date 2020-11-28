@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include <variant>
+
 namespace Li {
 #include <concepts>
 
@@ -107,9 +109,10 @@ public:
 	{
 		TablePtr Table = make_ptr<hash_table>();
 		Table->items.resize(MapSize);
-		for (Size i = 0; i < MapSize; ++i) {
+		/* Initialise Array with empty values in buckets
+		   for (Size i = 0; i < MapSize; ++i) {
 			Table->items[i] = (make_bucket(Key {}, Value {}));
-		}
+		}*/
 		Table->size = MapSize;
 		Table->count = 0;
 		return Table;
@@ -120,7 +123,7 @@ public:
 		Size _hash = 0;
 		const Size len = var.length();
 		for (Size i = 0; i < len; ++i) {
-			_hash += static_cast<const Size>(std::pow(prime, len - (i + 1))) * static_cast<const Size>(var[i]);
+			_hash += static_cast<Size>(std::pow(prime, len - (i + 1))) * static_cast<const Size>(var[i]);
 		}
 		_hash = static_cast<Size>(_hash % modulo + (modulo % modulo - 1)) * 2;
 		return _hash + prime;
@@ -180,13 +183,21 @@ int main()
 
 	size_t misses = 0;
 	for (int i = 0; i != 1500; ++i) {
-		if (tab.search(std::to_string(i)).empty())
+		try {
+			auto x = std::get<std::string>(tab.search(std::to_string(i)));
+		} catch (std::bad_variant_access& x) {
 			++misses;
+		}
 	}
-	tab.insert("brot", "world");
+	tab.insert("brot", "war");
+	tab.insert("brats", "world");
 	tab.insert("brigitte", "welt");
 
-	std::cout << tab.m_table->items.size() << "brot: " << tab.search("brot");
+	tab.del("brot");
+	tab.del("brot");
+	tab.del("brats");
+	tab.insert("brot", " goes brrr hahahaha");
+	std::cout << "brot: " << std::get<std::string>(tab.search("brot"));
 	std::cout << std::endl;
 
 	//tab.removeBucket(3);
@@ -203,13 +214,14 @@ int main()
 
 	size_t Empty_Buckets = 0;
 	size_t Full_Buckets = 0;
-	for (auto& b : tab.m_table->items) {
-		if (b->s_key.empty())
+	/*for (auto& b : tab.m_table->items) {
+		if (!b && b->s_key.empty())
 			Empty_Buckets++;
 		else
 			Full_Buckets++;
 	}
 
+	*/
 	std::cout << "Full: " << Full_Buckets << ", Empty: " << Empty_Buckets << ", Misses: " << misses << std::endl;
 
 	/*for (size_t x = 0; x < tab.m_table->items.size(); ++x) {
@@ -219,10 +231,6 @@ int main()
 				  << "\nValue: " << a << "\n";
 	}*/
 
-	tab.removeTable(tab.m_table);
-	if (tab.m_table)
-		std::cout << "still there that table \n";
-	else
-		std::cout << "table GONE. \n";
+	std::cout << "Sentinel Use: " << tab.SentinelUse();
 }
 #endif
