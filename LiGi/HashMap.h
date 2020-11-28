@@ -147,32 +147,109 @@ private:
 		return (first + (attempts * (second))) % num_bucks;
 	}
 
-	constexpr void removeBucket(Size x)
+	constexpr void removeBucket(BuckPtr& it)
 	{
-		if (m_table->items.at(x))
-			m_table->items.at(x).release();
+		if constexpr (CLEANUP && hasCount<BuckPtr>) {
+			if (it) {
+				it = SENTINELBUCK;
+			}
+		}
 	}
 
-	constexpr void removeTable(TablePtr& t)
+	constexpr static void removeTable(TablePtr& t)
 	{
-		if (t)
-			t.release();
+		if constexpr (CLEANUP) {
+			if (t) {
+				t.reset();
+			}
+		}
 	}
-
-public:
-	struct bucket {
-		Key s_key;
-		Value s_value;
-	};
-
-	struct hash_table {
-		uint64_t size;
-		uint64_t count;
-		MapVec items;
-	};
 
 	TablePtr m_table;
+
+public:
+	constexpr explicit HashMap(Size MapSize = map_initial_size)
+	{
+		m_table = make_table(MapSize);
+	}
+
+	constexpr void insert(const Key&& key, const Value&& val)
+	{
+		BuckPtr item = make_bucket(key, val);
+		Size index = get_hash(item->s_key, m_table->size, 0);
+		const bucket* cur = m_table->items.at(index).get();
+
+		const Size tablesize = m_table->size;
+		const bucket* sentinel = SENTINELBUCK.get();
+		Size i = 1;
+		for (; i < tablesize && &sentinel != &cur && cur; ++i) {
+			if (cur->s_key == item->s_key) {
+				m_table->items[index].swap(item);
+				return;
+			}
+			index = get_hash(item->s_key, m_table->size, i);
+			cur = m_table->items.at(index).get();
+		}
+
+		/*if (cur != nullptr)
+			std::cout << "Bail out "
+					  << " at: " << i << ", hash: " << index << ", key: '" << key << "'\n";*/
+
+		m_table->items[index].swap(item);
+		++m_table->count;
+	}
+
+	constexpr SearchResult search(const Key&& key) const
+	{
+		Size index = get_hash(key, m_table->size, 0);
+		const bucket* cur = m_table->items[index].get();
+
+		const Size tablesize = m_table->size;
+		for (Size i = 0; cur && i < tablesize; ++i) {
+			const bucket* sentinel = SENTINELBUCK.get();
+			if (&cur != &sentinel && cur->s_key == key) {
+				Value v = cur->s_value;
+				//m_table->items[index] = std::move(item);
+				return v;
+			}
+
+			//m_table->items[index] = std::move(item);
+			index = get_hash(key, m_table->size, i);
+			cur = m_table->items[index].get();
+		}
+
+		return NotFundError { key };
+	}
+
+	void del(const Key&& key)
+	{
+		Size index = get_hash(key, m_table->size, 0);
+		const bucket* item = m_table->items[index].get();
+		const Size tablesize = m_table->size;
+		for (Size i = 1; item && i < tablesize; ++i) {
+			if (item && item->s_key == key) {
+				removeBucket(m_table->items[index]); // sets memory to sentinel
+				--m_table->size;
+				return;
+			}
+			index = get_hash(key, m_table->size, i);
+			item = m_table->items[index].get();
+		}
+	}
+
+	constexpr ptrsize SentinelUse() requires(hasCount<BuckPtr>) { return SENTINELBUCK.use_count(); }
+	constexpr ptrsize SentinelUse() requires(!hasCount<BuckPtr>) { return 0; }
+
+	virtual ~HashMap() { removeTable(m_table); }
+
+private:
+	const static BuckPtr SENTINELBUCK;
 };
+
+template<Lengthy Key, DefaultConstructible Value, bool CLEANUP>
+const typename Li::HashMap<Key, Value, CLEANUP>::BuckPtr
+	Li::HashMap<Key, Value, CLEANUP>::SENTINELBUCK
+	= Li::HashMap<Key, Value, CLEANUP>::make_bucket(Key {}, Value {});
 }
 #endif // HASHMAP_H
 
