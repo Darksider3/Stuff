@@ -13,8 +13,8 @@ namespace Li {
 #include <concepts>
 
 constexpr size_t map_initial_size = 53;
-constexpr size_t hsmPrime_1 = 9239;
-constexpr size_t hsmPrime_2 = 115249;
+constexpr size_t hsmPrime_1 = 8765753;
+constexpr size_t hsmPrime_2 = 6660499;
 using Size = size_t;
 
 template<typename T>
