@@ -45,9 +45,11 @@ concept AcceptablePointer = requires(T a)
 		!a
 	}
 	->std::same_as<bool>;
-	a.release();
 	a.operator->();
 	a.operator*();
+	a.swap(a); // can swap pointers
+	a.reset(); // can reset pointer
+	a.get();   // can get pointer
 	a.~T();
 };
 
@@ -100,7 +102,7 @@ concept CanFactoryPTRs = requires(factory<X> a)
 };
 
 template<template<class> class factory, class X>
-concept IsPTRFactory = std::is_base_of_v<pointer_factory, factory<X>>&& CanFactoryPTRs<factory, X>;
+concept IsPTRFactory = std::is_base_of_v<pointer_factory, factory<X>>&& CanFactoryPTRs<factory, X>&& AcceptablePointer<decltype(factory<X>::make_ptr())>;
 
 template<Lengthy Key,
 	DefaultConstructible Value,
