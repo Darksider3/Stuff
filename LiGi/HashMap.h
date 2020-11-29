@@ -1,16 +1,15 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
 #include <cmath>
+#include <concepts>
 #include <cstdint>
+#include <exception>
+#include <iostream>
 #include <memory>
+#include <variant>
 #include <vector>
 
-#include <iostream>
-
-#include <variant>
-
 namespace Li {
-#include <concepts>
 
 constexpr size_t map_initial_size = 53;
 constexpr size_t hsmPrime_1 = 8765753;
@@ -64,23 +63,59 @@ concept hasCount = requires(T a)
 	a.use_count();
 };
 
-template<Lengthy Key, DefaultConstructible Value, bool CLEANUP = true>
-class HashMap {
-private:
-	struct NotFundError {
-		std::string field;
-	};
-	using SearchResult = std::variant<Value, NotFundError>;
-	struct bucket;
-	struct hash_table;
-	template<typename T>
-	using ptr = std::shared_ptr<T>;
+struct pointer_factory {
+public:
+	using type = void;
+	type make_ptr();
+	virtual ~pointer_factory() = default;
+};
 
-	template<typename T>
-	constexpr inline static ptr<T> make_ptr()
+template<DefaultConstructible T>
+struct unique_pointer_factory : public pointer_factory {
+public:
+	using type = std::unique_ptr<T>;
+	constexpr inline static type make_ptr()
+	{
+		return std::make_unique<T>();
+	}
+};
+
+template<DefaultConstructible T>
+struct shared_ptr_factory : public pointer_factory {
+public:
+	using type = std::shared_ptr<T>;
+
+	constexpr inline static type make_ptr()
 	{
 		return std::make_shared<T>();
 	}
+};
+
+template<template<DefaultConstructible X> class factory, typename X>
+concept CanFactoryPTRs = requires(factory<X> a)
+{
+	{ a.make_ptr() };
+	{ !std::is_same_v<typename factory<X>::type, void> == false };
+	std::is_same_v<typename factory<X>::type, typename factory<X>::type>;
+};
+
+template<template<class> class factory, class X>
+concept IsPTRFactory = std::is_base_of_v<pointer_factory, factory<X>>&& CanFactoryPTRs<factory, X>;
+
+template<Lengthy Key,
+	DefaultConstructible Value,
+	template<class T> typename PTR_Factory = Li::shared_ptr_factory,
+	bool CLEANUP = true>
+class HashMap {
+
+protected:
+	struct NotFundError {
+		std::string field;
+	};
+	struct bucket;
+	struct hash_table;
+	template<typename T>
+	using ptr = typename PTR_Factory<T>::type;
 
 	using KeyPtr = ptr<Key>;
 	using ValuePtr = ptr<Value>;
@@ -104,7 +139,7 @@ private:
 
 	static constexpr BuckPtr make_bucket(const Key& k, const Value& v)
 	{
-		BuckPtr i = make_ptr<bucket>();
+		BuckPtr i = PTR_Factory<bucket>::make_ptr();
 		i->s_key = k;
 		i->s_value = v;
 		return i;
@@ -112,7 +147,7 @@ private:
 
 	constexpr TablePtr make_table(Size MapSize = map_initial_size) const
 	{
-		TablePtr Table = make_ptr<hash_table>();
+		TablePtr Table = PTR_Factory<hash_table>::make_ptr();
 		Table->items.resize(MapSize);
 		/* Initialise Array with empty values in buckets
 		   for (Size i = 0; i < MapSize; ++i) {
@@ -123,7 +158,7 @@ private:
 		return Table;
 	};
 
-	constexpr Size m_hash(Lengthy auto&& var, const Size prime, const Size modulo) const
+	constexpr Size m_hash(Lengthy auto const& var, const Size& prime, const Size& modulo) const
 	{
 		Size _hash = 0;
 		const Size len = var.length();
@@ -134,7 +169,7 @@ private:
 		return _hash + prime;
 	}
 
-	constexpr Size get_hash(Lengthy auto&& var, const Size num_bucks, const Size attempts) const
+	constexpr Size get_hash(Lengthy auto const& var, const Size& num_bucks, const Size& attempts) const
 	{
 		Size first = m_hash(var, hsmPrime_1, num_bucks);
 		Size second = m_hash(var, hsmPrime_2, num_bucks);
@@ -168,7 +203,9 @@ private:
 	TablePtr m_table;
 
 public:
-	constexpr explicit HashMap(Size MapSize = map_initial_size)
+	using SearchResult = std::variant<Value, NotFundError>;
+	constexpr explicit HashMap(Size = map_initial_size) requires(!IsPTRFactory<PTR_Factory, bucket>) { }
+	constexpr explicit HashMap(Size MapSize = map_initial_size) requires IsPTRFactory<PTR_Factory, bucket>
 	{
 		m_table = make_table(MapSize);
 	}
@@ -238,18 +275,25 @@ public:
 	}
 
 	constexpr ptrsize SentinelUse() requires(hasCount<BuckPtr>) { return SENTINELBUCK.use_count(); }
-	constexpr ptrsize SentinelUse() requires(!hasCount<BuckPtr>) { return 0; }
+	constexpr ptrsize SentinelUse() noexcept(false) requires(!hasCount<BuckPtr>)
+	{
+		using namespace std::literals;
+		throw std::logic_error("Currently used (smart)pointer '"s + typeid(decltype(BuckPtr {})).name() + "' has no ref-counting capabilites!"s);
+		return 0;
+	}
 
 	virtual ~HashMap() { removeTable(m_table); }
 
 private:
 	const static BuckPtr SENTINELBUCK;
+	static_assert(IsPTRFactory<PTR_Factory, bucket>,
+		"Delivered PTR_Factory(3rd. Argument) is not a valid Pointer factory!");
 };
 
-template<Lengthy Key, DefaultConstructible Value, bool CLEANUP>
-const typename Li::HashMap<Key, Value, CLEANUP>::BuckPtr
-	Li::HashMap<Key, Value, CLEANUP>::SENTINELBUCK
-	= Li::HashMap<Key, Value, CLEANUP>::make_bucket(Key {}, Value {});
+template<Lengthy Key, DefaultConstructible Value, template<class FT> class factory, bool CLEANUP>
+const typename Li::HashMap<Key, Value, factory, CLEANUP>::BuckPtr
+	Li::HashMap<Key, Value, factory, CLEANUP>::SENTINELBUCK
+	= Li::HashMap<Key, Value, factory, CLEANUP>::make_bucket(Key {}, Value {});
 }
 #endif // HASHMAP_H
 
@@ -257,14 +301,14 @@ const typename Li::HashMap<Key, Value, CLEANUP>::BuckPtr
 
 int main()
 {
-	auto tab = Li::HashMap<std::string, std::string>(1500);
+	auto tab = Li::HashMap<std::string, std::string, Li::shared_ptr_factory>(15000);
 
-	for (int i = 0; i != 1500; ++i) {
+	for (int i = 0; i != 15000; ++i) {
 		tab.insert(std::to_string(i), std::to_string(i));
 	}
 
 	size_t misses = 0;
-	for (int i = 0; i != 1500; ++i) {
+	for (int i = 0; i != 15000; ++i) {
 		try {
 			auto x = std::get<std::string>(tab.search(std::to_string(i)));
 		} catch (std::bad_variant_access& x) {
