@@ -231,9 +231,36 @@ protected:
 	TablePtr m_table;
 
 public:
+	void put() { std::cout << m_table->size; }
+
 	using SearchResult = std::variant<Value, NotFundError>;
-	constexpr explicit HashMap(Size = map_initial_size) requires(!IsPTRFactory<PTR_Factory, bucket>) { }
-	constexpr explicit HashMap(Size MapSize = map_initial_size) requires IsPTRFactory<PTR_Factory, bucket>
+	constexpr explicit HashMap() requires(PointerFactory<PTR_Factory, bucket>) = delete;
+	constexpr HashMap(HashMap&& other)
+	{
+		m_table = std::move(other.m_table);
+	}
+
+	HashMap(HashMap& other)
+	{
+		if (&other == this)
+			return;
+		removeTable(m_table);
+		m_table = make_table(other.m_table->items.size());
+		std::copy(other.m_table->items.begin(), other.m_table->items.end(), std::back_inserter(m_table->items));
+		m_table->size = other.m_table->size;
+		m_table->count = other.m_table->count;
+		std::cout << "copied" << std::endl;
+	}
+
+	HashMap& operator=(const HashMap& other) const
+	{
+		if (this == &other)
+			return this;
+		this(other);
+		std::cout << "copied" << std::endl;
+	}
+
+	constexpr explicit HashMap(Size MapSize = map_initial_size) requires PointerFactory<PTR_Factory, bucket>
 	{
 		m_table = make_table(MapSize);
 	}
