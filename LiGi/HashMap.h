@@ -16,6 +16,7 @@ constexpr size_t hsmPrime_1 = 8765753;
 constexpr size_t hsmPrime_2 = 6660499;
 using Size = size_t;
 
+/// @brief Concept which requires default constructiblity, .lengt(), operator[], operator<<(ostream&), and operator==(ownType)
 template<typename T>
 concept Lengthy = requires(T a)
 {
@@ -38,71 +39,96 @@ concept Lengthy = requires(T a)
 	std::cout << a;
 };
 
+/// @brief Concept for acceptable pointers
 template<typename T>
 concept AcceptablePointer = requires(T a)
 {
 	{
 		!a
 	}
-	->std::same_as<bool>;
-	a.operator->();
-	a.operator*();
-	a.swap(a); // can swap pointers
-	a.reset(); // can reset pointer
-	a.get();   // can get pointer
-	a.~T();
+	->std::same_as<bool>; // has operator bool
+	a.operator->();       // can dereference
+	a.operator*();        // can dereference
+	a.operator=(a);       // can assign pointer
+	a.swap(a);            // can swap pointers
+	a.reset();            // can reset pointer
+	a.get();              // can get pointer
+	a.~T();               // can deallocate
 };
 
+/// @brief Concept requiring default constructibility
 template<typename T>
 concept DefaultConstructible = requires(T a)
 {
 	std::is_default_constructible_v<T>;
 };
 
+/// @brief Concept checking for .use_count() method
 template<typename T>
 concept hasCount = requires(T a)
 {
 	a.use_count();
 };
 
+/**
+ * @brief Base class for factories... factoring... pointers.
+ */
+template<class T>
 struct pointer_factory {
 public:
-	using type = void;
+	using type = T;
 	type make_ptr();
 	virtual ~pointer_factory() = default;
 };
 
+/**
+ * @brief Creates unique_ptr `s
+ */
 template<DefaultConstructible T>
-struct unique_pointer_factory : public pointer_factory {
+struct unique_pointer_factory : public pointer_factory<std::unique_ptr<T>> {
 public:
-	using type = std::unique_ptr<T>;
-	constexpr inline static type make_ptr()
+	constexpr inline static std::unique_ptr<T> make_ptr()
 	{
 		return std::make_unique<T>();
 	}
-};
 
-template<DefaultConstructible T>
-struct shared_ptr_factory : public pointer_factory {
-public:
-	using type = std::shared_ptr<T>;
-
-	constexpr inline static type make_ptr()
+	template<typename... Args>
+	constexpr inline static std::unique_ptr<T> make_ptr(Args... args)
 	{
-		return std::make_shared<T>();
+		return std::make_unique<T>(std::forward<Args>(args)...);
 	}
 };
 
+/**
+ * @brief creates shared_ptr `s
+ */
+template<DefaultConstructible T>
+struct shared_ptr_factory : public pointer_factory<std::shared_ptr<T>> {
+public:
+	constexpr inline static std::shared_ptr<T> make_ptr()
+	{
+		return std::make_shared<T>();
+	}
+
+	template<typename... Args>
+	constexpr inline static std::shared_ptr<T> make_ptr(Args... args)
+	{
+		return std::make_shared<T>(std::forward<Args>(args)...);
+	}
+};
+
+/// @brief can create pointers with a make_ptr function, also storing it's type
 template<template<DefaultConstructible X> class factory, typename X>
-concept CanFactoryPTRs = requires(factory<X> a)
+concept ProducesPointers = requires(factory<X> a)
 {
 	{ a.make_ptr() };
 	{ !std::is_same_v<typename factory<X>::type, void> == false };
 	std::is_same_v<typename factory<X>::type, typename factory<X>::type>;
 };
 
+/// @brief Is child of pointer_factory, can create an acceptable pointer for the hash map
 template<template<class> class factory, class X>
-concept IsPTRFactory = std::is_base_of_v<pointer_factory, factory<X>>&& CanFactoryPTRs<factory, X>&& AcceptablePointer<decltype(factory<X>::make_ptr())>;
+concept PointerFactory = (std::is_base_of_v<pointer_factory<typename factory<X>::type>, factory<X>>)&&(ProducesPointers<factory, X>)&&(AcceptablePointer<decltype(factory<X>::make_ptr())>);
 
 template<Lengthy Key,
 	DefaultConstructible Value,
@@ -288,7 +314,7 @@ public:
 
 private:
 	const static BuckPtr SENTINELBUCK;
-	static_assert(IsPTRFactory<PTR_Factory, bucket>,
+	static_assert(PointerFactory<PTR_Factory, bucket>,
 		"Delivered PTR_Factory(3rd. Argument) is not a valid Pointer factory!");
 };
 
@@ -303,8 +329,7 @@ const typename Li::HashMap<Key, Value, factory, CLEANUP>::BuckPtr
 
 int main()
 {
-	auto tab = Li::HashMap<std::string, std::string, Li::shared_ptr_factory>(15000);
-
+	auto tab = Li::HashMap<std::string, std::string, Li::shared_ptr_factory>(20000);
 	for (int i = 0; i != 15000; ++i) {
 		tab.insert(std::to_string(i), std::to_string(i));
 	}
