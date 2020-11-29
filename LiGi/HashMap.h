@@ -1,5 +1,6 @@
 #ifndef HASHMAP_H
 #define HASHMAP_H
+#include <cassert>
 #include <cmath>
 #include <concepts>
 #include <cstdint>
@@ -132,7 +133,7 @@ concept PointerFactory = (std::is_base_of_v<pointer_factory<typename factory<X>:
 
 template<Lengthy Key,
 	DefaultConstructible Value,
-	template<class T> typename PTR_Factory = Li::shared_ptr_factory,
+	template<DefaultConstructible T> typename PTR_Factory = Li::shared_ptr_factory,
 	bool CLEANUP = true>
 class HashMap {
 
@@ -193,8 +194,8 @@ protected:
 		for (Size i = 0; i < len; ++i) {
 			_hash += static_cast<Size>(std::pow(prime, len - (i + 1))) * static_cast<const Size>(var[i]);
 		}
-		_hash = static_cast<Size>(_hash % modulo + (modulo % modulo - 1)) * 2;
-		return _hash + prime;
+		_hash = static_cast<Size>(_hash % modulo);
+		return _hash;
 	}
 
 	constexpr Size get_hash(Lengthy auto const& var, const Size& num_bucks, const Size& attempts) const
@@ -204,60 +205,61 @@ protected:
 		if ((second % num_bucks) == 0) {
 			second = 1;
 		}
-		/*if ((first % num_bucks) == 0) {
-			first = 2;
-		}*/
 		return (first + (attempts * (second))) % num_bucks;
 	}
 
-	constexpr void removeBucket(BuckPtr& it)
+	void removeBucket(BuckPtr& it)
 	{
-		if constexpr (CLEANUP && hasCount<BuckPtr>) {
-			if (it) {
-				it = SENTINELBUCK;
-			}
+		if constexpr (!CLEANUP || !hasCount<BuckPtr>) { // when we can't ref-count, we cant replace it with a ref
+			return;
+		}
+		if (it) {
+			it = SENTINELBUCK;
 		}
 	}
 
 	constexpr static void removeTable(TablePtr& t)
 	{
-		if constexpr (CLEANUP) {
-			if (t) {
-				t.reset();
-			}
+		if constexpr (!CLEANUP) {
+			return;
+		}
+		if (t) {
+			t.reset();
 		}
 	}
 
 	TablePtr m_table;
 
 public:
-	void put() { std::cout << m_table->size; }
-
 	using SearchResult = std::variant<Value, NotFundError>;
 	constexpr explicit HashMap() requires(PointerFactory<PTR_Factory, bucket>) = delete;
 	constexpr HashMap(HashMap&& other)
 	{
+		if (&other == this)
+			return;
 		m_table = std::move(other.m_table);
+		other.m_table.reset();
 	}
 
 	HashMap(HashMap& other)
 	{
 		if (&other == this)
 			return;
+
 		removeTable(m_table);
 		m_table = make_table(other.m_table->items.size());
+
+		// deep-copy whole frigging vector
 		std::copy(other.m_table->items.begin(), other.m_table->items.end(), std::back_inserter(m_table->items));
 		m_table->size = other.m_table->size;
 		m_table->count = other.m_table->count;
-		std::cout << "copied" << std::endl;
 	}
 
-	HashMap& operator=(const HashMap& other) const
+	HashMap& operator=(HashMap const& other)
 	{
 		if (this == &other)
-			return this;
-		this(other);
-		std::cout << "copied" << std::endl;
+			return *this;
+		*this(other);
 	}
 
 	constexpr explicit HashMap(Size MapSize = map_initial_size) requires PointerFactory<PTR_Factory, bucket>
@@ -269,13 +271,11 @@ public:
 	{
 		BuckPtr item = make_bucket(key, val);
 		Size index = get_hash(item->s_key, m_table->size, 0);
-		const bucket* cur = m_table->items.at(index).get();
+		bucket* cur = m_table->items.at(index).get();
 
-		const Size tablesize = m_table->size;
 		const bucket* sentinel = SENTINELBUCK.get();
-		Size i = 1;
-		for (; i < tablesize && &sentinel != &cur && cur; ++i) {
-			if (cur->s_key == item->s_key) {
+		for (Size i = 1; cur != nullptr && (&sentinel != &cur); ++i) {
+			if (cur->s_key == key) {
 				m_table->items[index].swap(item);
 				return;
 			}
@@ -287,22 +287,25 @@ public:
 			std::cout << "Bail out "
 					  << " at: " << i << ", hash: " << index << ", key: '" << key << "'\n";*/
 
-		m_table->items[index].swap(item);
+		m_table->items[index]
+			= std::move(item);
 		++m_table->count;
 	}
 
-	constexpr SearchResult search(const Key&& key) const
+	constexpr SearchResult
+	search(const Key& key) const
 	{
 		Size index = get_hash(key, m_table->size, 0);
 		const bucket* cur = m_table->items[index].get();
 
-		const Size tablesize = m_table->size;
-		for (Size i = 0; cur && i < tablesize; ++i) {
+		for (Size i = 1; cur; ++i) {
 			const bucket* sentinel = SENTINELBUCK.get();
-			if (&cur != &sentinel && cur->s_key == key) {
-				Value v = cur->s_value;
-				//m_table->items[index] = std::move(item);
-				return v;
+			if (cur && &cur != &sentinel) {
+				if (cur->s_key == key) {
+					Value v = cur->s_value;
+					//m_table->items[index] = std::move(item);
+					return v;
+				}
 			}
 
 			//m_table->items[index] = std::move(item);
@@ -313,18 +316,22 @@ public:
 		return NotFundError { key };
 	}
 
-	void del(const Key&& key)
+	void del(const Key& key)
 	{
-		Size index = get_hash(key, m_table->size, 0);
-		const bucket* item = m_table->items[index].get();
 		const Size tablesize = m_table->size;
-		for (Size i = 1; item && i < tablesize; ++i) {
-			if (item && item->s_key == key) {
-				removeBucket(m_table->items[index]); // sets memory to sentinel
-				--m_table->size;
-				return;
+		Size index = get_hash(key, tablesize, 0);
+		bucket* item = m_table->items[index].get();
+		bucket* sentinel = SENTINELBUCK.get();
+
+		for (Size i = 1; i < tablesize; ++i) {
+			if (item != sentinel && item != nullptr) {
+				if (item->s_key == key) {
+					--m_table->size;
+					removeBucket(m_table->items[index]); // sets memory to sentinel
+					return;
+				}
 			}
-			index = get_hash(key, m_table->size, i);
+			index = get_hash(key, tablesize, i);
 			item = m_table->items[index].get();
 		}
 	}
@@ -339,13 +346,77 @@ public:
 
 	virtual ~HashMap() { removeTable(m_table); }
 
-private:
 	const static BuckPtr SENTINELBUCK;
 	static_assert(PointerFactory<PTR_Factory, bucket>,
 		"Delivered PTR_Factory(3rd. Argument) is not a valid Pointer factory!");
+#ifndef NDEBUG
+	void dbg(Size testsize)
+	{
+
+		m_table.reset();
+		Size s = (testsize / 3);
+		m_table = make_table(testsize);
+
+		for (size_t i = 0; i != s; ++i) {
+			insert(std::to_string(i), std::to_string(i));
+		}
+
+		size_t misses = 0;
+		for (size_t i = 0; i != s; ++i) {
+			try {
+				auto y = std::to_string(i);
+				auto x = std::get<std::string>(search(y));
+				assert((x != y) || static_cast<bool>("Debug fail: hash-search not perfect"));
+			} catch (std::bad_variant_access& x) {
+				++misses;
+			}
+		}
+		insert("brot", "war");
+		insert("brats", "world");
+		insert("brigitte", "welt");
+		insert("hash", "map");
+
+		del("brot");
+		del("hash");
+		del("brigitte");
+		del("brats");
+		insert("brot", " goes brrr hahahaha");
+		insert("brot", "second");
+		std::cout << "brot: " << std::get<std::string>(search("brot"));
+		std::cout << std::endl;
+
+		//tab.removeBucket(3);
+
+		/*for (auto&& b : tab.m_table->items)
+	{
+		if (b)
+			std::cout << "Valid -> ";
+		else
+			std::cout << "Invalid -> ";
+	}
+	std::cout << "." << std::endl;
+	*/
+
+		size_t Empty_Buckets = 0;
+		size_t Full_Buckets = 0;
+		for (auto& b : m_table->items) {
+			if (!b || b == SENTINELBUCK)
+				Empty_Buckets++;
+			else
+				Full_Buckets++;
+		}
+
+		std::cout << "Given Buckets((testsize/3)+testsize): " << testsize
+				  << "\nFull Buckets: " << Full_Buckets
+				  << ", Empty Buckets: " << Empty_Buckets
+				  << " = " << (Full_Buckets + Empty_Buckets) << "! "
+				  << "Search Misses: " << misses << std::endl;
+		std::cout << "Sentinel Use: " << SentinelUse() << "\n";
+	}
+#endif
 };
 
-template<Lengthy Key, DefaultConstructible Value, template<class FT> class factory, bool CLEANUP>
+template<Lengthy Key, DefaultConstructible Value, template<DefaultConstructible FT> class factory, bool CLEANUP>
 const typename Li::HashMap<Key, Value, factory, CLEANUP>::BuckPtr
 	Li::HashMap<Key, Value, factory, CLEANUP>::SENTINELBUCK
 	= Li::HashMap<Key, Value, factory, CLEANUP>::make_bucket(Key {}, Value {});
@@ -357,52 +428,8 @@ const typename Li::HashMap<Key, Value, factory, CLEANUP>::BuckPtr
 int main()
 {
 	auto tab = Li::HashMap<std::string, std::string, Li::shared_ptr_factory>(20000);
-	for (int i = 0; i != 15000; ++i) {
-		tab.insert(std::to_string(i), std::to_string(i));
-	}
 
-	size_t misses = 0;
-	for (int i = 0; i != 15000; ++i) {
-		try {
-			auto x = std::get<std::string>(tab.search(std::to_string(i)));
-		} catch (std::bad_variant_access& x) {
-			++misses;
-		}
-	}
-	tab.insert("brot", "war");
-	tab.insert("brats", "world");
-	tab.insert("brigitte", "welt");
-
-	tab.del("brot");
-	tab.del("brot");
-	tab.del("brats");
-	tab.insert("brot", " goes brrr hahahaha");
-	std::cout << "brot: " << std::get<std::string>(tab.search("brot"));
-	std::cout << std::endl;
-
-	//tab.removeBucket(3);
-
-	/*for (auto&& b : tab.m_table->items)
-	{
-		if (b)
-			std::cout << "Valid -> ";
-		else
-			std::cout << "Invalid -> ";
-	}
-	std::cout << "." << std::endl;
-	*/
-
-	size_t Empty_Buckets = 0;
-	size_t Full_Buckets = 0;
-	/*for (auto& b : tab.m_table->items) {
-		if (!b && b->s_key.empty())
-			Empty_Buckets++;
-		else
-			Full_Buckets++;
-	}
-
-	*/
-	std::cout << "Full: " << Full_Buckets << ", Empty: " << Empty_Buckets << ", Misses: " << misses << std::endl;
+	tab.dbg(15000);
 
 	/*for (size_t x = 0; x < tab.m_table->items.size(); ++x) {
 		auto b = tab.m_table->items[x]->s_key;
@@ -410,7 +437,5 @@ int main()
 		std::cout << "Key: " << b
 				  << "\nValue: " << a << "\n";
 	}*/
-
-	std::cout << "Sentinel Use: " << tab.SentinelUse();
 }
 #endif
