@@ -19,9 +19,9 @@
 #pragma once
 #ifndef LIGILL_H
 #    define LIGILL_H
+#    include <cassert>
 #    include <concepts>
 #    include <memory>
-
 namespace Li {
 template<typename T>
 class LLNode;
