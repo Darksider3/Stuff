@@ -126,13 +126,13 @@ struct unique_pointer_factory : public pointer_factory<std::unique_ptr<T>> {
 public:
 	constexpr inline static std::unique_ptr<T> make_ptr()
 	{
-		return std::make_unique<T>();
+		return std::move(std::make_unique<T>());
 	}
 
 	template<typename... Args>
 	constexpr inline static std::unique_ptr<T> make_ptr(Args... args)
 	{
-		return std::make_unique<T>(std::forward<Args>(args)...);
+		return std::move(std::make_unique<T>(std::forward<Args>(args)...));
 	}
 };
 
@@ -144,13 +144,13 @@ struct shared_ptr_factory : public pointer_factory<std::shared_ptr<T>> {
 public:
 	constexpr inline static std::shared_ptr<T> make_ptr()
 	{
-		return std::make_shared<T>();
+		return std::move(std::make_shared<T>());
 	}
 
 	template<typename... Args>
 	constexpr inline static std::shared_ptr<T> make_ptr(Args... args)
 	{
-		return std::make_shared<T>(std::forward<Args>(args)...);
+		return std::move(std::make_shared<T>(std::forward<Args>(args)...));
 	}
 };
 
