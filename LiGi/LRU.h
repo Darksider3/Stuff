@@ -88,6 +88,11 @@ public:
 		return get(t);
 	}
 
+	bool has(const key_t& key) const
+	{
+		return m_cached_references.find(key) != m_cached_references.end();
+	}
+
 	Size size() const
 	{
 		return m_cached_items.size();
