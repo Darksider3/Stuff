@@ -16,7 +16,43 @@ constexpr size_t map_initial_size = 53;
 constexpr size_t hsmPrime_1 = 8765753;
 constexpr size_t hsmPrime_2 = 6660499;
 using Size = size_t;
+/*
+ * Return whether x is prime or not
+ *
+ * Returns:
+ *   1  - prime
+ *   0  - not prime
+ *   -1 - undefined (i.e. x < 2)
+ */
+bool is_prime(Size x)
+{
+	if (x < 2) {
+		return false;
+	}
+	if (x < 4) {
+		return false;
+	}
+	if ((x % 2) == 0) {
+		return false;
+	}
+	for (Size i = 3; i <= static_cast<Size>(floor(sqrt((double)x))); i += 2) {
+		if ((x % i) == 0) {
+			return true;
+		}
+	}
+	return 1;
+}
 
+/*
+ * Return the next prime after x, or x if x is prime
+ */
+Size next_prime(Size x)
+{
+	while (is_prime(x) != 1) {
+		x++;
+	}
+	return x;
+}
 /// @brief Concept which requires default constructiblity, .lengt(), operator[], operator<<(ostream&), and operator==(ownType)
 template<typename T>
 concept Lengthy = requires(T a)
@@ -177,7 +213,7 @@ protected:
 	constexpr TablePtr make_table(Size MapSize = map_initial_size) const
 	{
 		TablePtr Table = PTR_Factory<hash_table>::make_ptr();
-		Table->items.resize(MapSize);
+		Table->items.resize(next_prime(MapSize));
 		/* Initialise Array with empty values in buckets
 		   for (Size i = 0; i < MapSize; ++i) {
 			Table->items[i] = (make_bucket(Key {}, Value {}));
@@ -228,6 +264,27 @@ protected:
 		}
 	}
 
+	Size Load() { return (m_table->count * 100) / m_table->size; }
+
+	constexpr void resize(const Size base_s)
+	{
+		if (m_table->size < map_initial_size)
+			return;
+
+		m_table->items.resize(next_prime(base_s));
+		m_table->size = m_table->items.size();
+	}
+	constexpr void upResize()
+	{
+		resize(m_table->size * 2);
+		return;
+	}
+	constexpr void downResize()
+	{
+		resize(m_table->size);
+		return;
+	}
+
 	TablePtr m_table;
 
 public:
@@ -269,12 +326,14 @@ public:
 
 	constexpr void insert(const Key&& key, const Value&& val)
 	{
+		if (Load() > 65)
+			upResize();
 		BuckPtr item = make_bucket(key, val);
 		Size index = get_hash(item->s_key, m_table->size, 0);
 		bucket* cur = m_table->items.at(index).get();
 
 		const bucket* sentinel = SENTINELBUCK.get();
-		for (Size i = 1; cur != nullptr && (&sentinel != &cur); ++i) {
+		for (Size i = 1; cur && (cur != sentinel); ++i) {
 			if (cur->s_key == key) {
 				m_table->items[index].swap(item);
 				return;
@@ -289,7 +348,7 @@ public:
 
 		m_table->items[index]
 			= std::move(item);
-		++m_table->count;
+		m_table->count = m_table->count + 1;
 	}
 
 	constexpr SearchResult
@@ -300,7 +359,7 @@ public:
 
 		for (Size i = 1; cur; ++i) {
 			const bucket* sentinel = SENTINELBUCK.get();
-			if (cur && &cur != &sentinel) {
+			if (&cur != &sentinel) {
 				if (cur->s_key == key) {
 					Value v = cur->s_value;
 					//m_table->items[index] = std::move(item);
@@ -318,15 +377,17 @@ public:
 
 	void del(const Key& key)
 	{
+		if (Load() < 10)
+			downResize();
 		const Size tablesize = m_table->size;
 		Size index = get_hash(key, tablesize, 0);
 		bucket* item = m_table->items[index].get();
 		bucket* sentinel = SENTINELBUCK.get();
 
-		for (Size i = 1; i < tablesize; ++i) {
-			if (item != sentinel && item != nullptr) {
+		for (Size i = 1; item; ++i) {
+			if (item != sentinel) {
 				if (item->s_key == key) {
-					--m_table->size;
+					m_table->count = m_table->count - 1;
 					removeBucket(m_table->items[index]); // sets memory to sentinel
 					return;
 				}
@@ -350,11 +411,10 @@ public:
 	static_assert(PointerFactory<PTR_Factory, bucket>,
 		"Delivered PTR_Factory(3rd. Argument) is not a valid Pointer factory!");
 #ifndef NDEBUG
-	void dbg(Size testsize)
+	void dbg(Size testsize, Size inval = 10)
 	{
-
 		m_table.reset();
-		Size s = (testsize / 3);
+		Size s = testsize / 100;
 		m_table = make_table(testsize);
 
 		for (size_t i = 0; i != s; ++i) {
@@ -370,6 +430,10 @@ public:
 			} catch (std::bad_variant_access& x) {
 				++misses;
 			}
+		}
+
+		for (Size i = 0; i != inval; ++i) {
+			del(std::to_string(i));
 		}
 		insert("brot", "war");
 		insert("brats", "world");
@@ -406,11 +470,12 @@ public:
 				Full_Buckets++;
 		}
 
-		std::cout << "Given Buckets((testsize/3)+testsize): " << testsize
+		std::cout << "Given Buckets((testsize/3)+testsize):     " << testsize
 				  << "\nFull Buckets: " << Full_Buckets
 				  << ", Empty Buckets: " << Empty_Buckets
 				  << " = " << (Full_Buckets + Empty_Buckets) << "! "
-				  << "Search Misses: " << misses << std::endl;
+				  << "Search Misses: " << misses
+				  << ";\ncount: " << m_table->count << "(should equal full buckets)" << std::endl;
 		std::cout << "Sentinel Use: " << SentinelUse() << "\n";
 	}
 #endif
@@ -427,9 +492,9 @@ const typename Li::HashMap<Key, Value, factory, CLEANUP>::BuckPtr
 
 int main()
 {
-	auto tab = Li::HashMap<std::string, std::string, Li::shared_ptr_factory>(20000);
+	auto tab = Li::HashMap<std::string, std::string, Li::shared_ptr_factory>(30);
 
-	tab.dbg(15000);
+	tab.dbg(1000000);
 
 	/*for (size_t x = 0; x < tab.m_table->items.size(); ++x) {
 		auto b = tab.m_table->items[x]->s_key;
