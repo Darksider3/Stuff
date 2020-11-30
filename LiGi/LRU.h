@@ -13,18 +13,26 @@
 #include "../doctest.h"
 namespace Li {
 
-template<typename T>
-struct LRUNode {
-public:
-	LRUNode()
-	{
-	}
+/* LRU cached_items
+----> std::list.splice
+1099ms construction time.
+2667ms measured 30000000 items insertion.
+445ms measured 30000000 linear items search.
+6897ms measured 30000000 random items search.
 
-	void null_it()
-	{
-		static_cast<T*>(this)->set_next(nullptr);
-	}
-};
+----> std::list insert move iterator
+1088ms construction time.
+2721ms measured 30000000 items insertion.
+188ms measured 30000000 linear items search.
+2283ms measured 30000000 random items search.
+
+----> std::deque insert move iterator
+
+553ms construction time.
+2627ms measured 30000000 items insertion.
+546ms measured 30000000 linear items search.
+4406ms measured 30000000 random items search.
+ */
 
 const size_t lru_default_size = 8 * 256;
 template<typename key_t, typename val_t>
@@ -50,7 +58,7 @@ public:
 
 	void movable_put(const key_t& key, val_t val)
 	{
-		m_cached_items.push_front(std::move(key_value_t(key, std::move(val))));
+		m_cached_items.push_front(key_value_t(key, std::move(val)));
 		auto it = m_cached_references.find(key);
 		if (it != m_cached_references.end()) {
 			m_cached_items.erase(it->second);
@@ -78,11 +86,14 @@ public:
 		if (it == m_cached_references.end()) {
 			throw std::range_error("Ther is no such key '"s + std::to_string(key) + "' in cache"s);
 		} else {
+			//std::list :
 			m_cached_items.splice(m_cached_items.begin(), m_cached_items, it->second);
+			/*m_cached_items.insert(m_cached_items.begin(),
+				std::make_move_iterator(it->second),
+				std::make_move_iterator(it->second));*/
 			return it->second->second;
 		}
 	}
-
 	inline const val_t& operator[](const key_t t)
 	{
 		return get(t);
@@ -91,6 +102,11 @@ public:
 	bool has(const key_t& key) const
 	{
 		return m_cached_references.find(key) != m_cached_references.end();
+	}
+
+	bool is_at_beginning(const key_t& key)
+	{
+		return m_cached_references.find(key)->first == m_cached_items.front().first;
 	}
 
 	Size size() const
@@ -127,6 +143,9 @@ TEST_CASE("LRU get & operator[]")
 		CHECK(m.get(i) == i + 1);
 		CHECK(m[i] == i + 1);
 	}
+
+	m[0]; // reference to bring it up
+	CHECK(m.is_at_beginning(0));
 }
 TEST_CASE("LRU Deletion")
 {
@@ -161,7 +180,7 @@ TEST_CASE("LRU Shared from this/getLRU")
 TEST_CASE("LRU Bench")
 {
 
-	constexpr size_t bench_size = 1000000;
+	constexpr size_t bench_size = 30000000;
 	auto start = []() {
 		return std::chrono::high_resolution_clock::now();
 	};
