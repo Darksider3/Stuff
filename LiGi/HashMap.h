@@ -159,6 +159,7 @@ template<template<DefaultConstructible X> class factory, typename X>
 concept ProducesPointers = requires(factory<X> a)
 {
 	{ a.make_ptr() };
+	{ factory<X>::make_ptr() };
 	{ !std::is_same_v<typename factory<X>::type, void> == false };
 	std::is_same_v<typename factory<X>::type, typename factory<X>::type>;
 };
