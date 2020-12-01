@@ -88,7 +88,7 @@ public:
 	 * @param key Key to place&lookup item
 	 * @param val Value to store
 	 */
-	void movable_put(const key_t& key, val_t val)
+	void movable_put(const key_t& key, val_t&& val)
 	{
 		m_cached_items.push_front(key_value_t(key, std::move(val)));
 		auto it = m_cached_references.find(key);
@@ -111,9 +111,9 @@ public:
 	 * @param key Key to place&lookup item
 	 * @param val Value to store
 	 */
-	inline void put(const key_t& key, const val_t& val)
+	inline void put(const key_t& key, val_t val)
 	{
-		movable_put(key, val);
+		movable_put(key, std::move(val));
 	}
 
 	/**
