@@ -34,19 +34,46 @@ namespace Li {
 4406ms measured 30000000 random items search.
  */
 
-const size_t lru_default_size = 8 * 256;
+const size_t lru_default_size = 8 * 256; ///< The default LRU size when no arguments are supplied
+
+/**
+ *  @brief LRU caching class
+ *
+ * An LRU Cache is, put simply, a "usage" Cache. It means "Least Recently Used" which means
+ * it keeps track of the recently used items, and kicks, when stressing the capacity, least
+ * one used, on insertion out of the cache.
+ *
+ * @author darksider3
+ * @date 17.9.2016
+ * @tparam key_t Key type
+ * @tparam val_t Value Type
+ */
 template<typename key_t, typename val_t>
 class LRU : public std::enable_shared_from_this<LRU<key_t, val_t>> {
 protected:
-	using key_value_t = std::pair<key_t, val_t>;
-	using pair_iterator_t = typename std::list<key_value_t>::iterator;
-	using Size = size_t;
-	Size m_Capacity;
+	using key_value_t = std::pair<key_t, val_t>;                       ///< Key-Pair of Key and Value supplied through template parameters
+	using pair_iterator_t = typename std::list<key_value_t>::iterator; ///< key_value_t iterator
+	using Size = size_t;                                               ///< used Size throughout the class
+	Size m_Capacity;                                                   ///< Capacity of given LRU
 
 public:
-	static std::shared_ptr<LRU> make_shared(Size p) { return std::make_shared<LRU>(LRU(p)); }
+	/**
+	 * @brief make_shared creates and instanciates an `std::shared_ptr<Li::LRU<key_t, val_t>>` for you.
+	 * @param p Size of LRU
+	 * @return std::shared_ptr<LRU> with given capacity
+	 */
+	static std::shared_ptr<LRU> make_shared(Size p = lru_default_size) { return std::make_shared<LRU>(LRU(p)); }
+
+	/**
+	 * @brief getLRU creates a new std::shared_ptr on an instance of a class. TAKE CARE: YOU NEED TO HAVE ONE ALREADY ON IT!
+	 * @return std::shared_ptr<LRU> new std::shared_ptr pointing to this instance
+	 */
 	std::shared_ptr<LRU> getLRU() { return this->shared_from_this(); }
 
+	/**
+	 * @brief Instanciate LRU with given capacity
+	 * @param max_pre Size of wanted LRU
+	 */
 	explicit LRU(Size max_pre = lru_default_size)
 	{
 		m_Capacity = max_pre;
@@ -56,6 +83,11 @@ public:
 		m_cached_references.reserve(m_Capacity);
 	}
 
+	/**
+	 * @brief movable_put inserts `val` into the LRU with `key`, through moving `val`.
+	 * @param key Key to place&lookup item
+	 * @param val Value to store
+	 */
 	void movable_put(const key_t& key, val_t val)
 	{
 		m_cached_items.push_front(key_value_t(key, std::move(val)));
@@ -74,11 +106,22 @@ public:
 		}
 	}
 
+	/**
+	 * @brief put see `movable_put` but without the moving part
+	 * @param key Key to place&lookup item
+	 * @param val Value to store
+	 */
 	inline void put(const key_t& key, const val_t& val)
 	{
 		movable_put(key, val);
 	}
 
+	/**
+	 * @brief get Key from LRU, throws `std::range_error` in case it couldn't find it
+	 * @param key Key to lookup
+	 * @return val_t Value of `key`
+	 * @throws std::range_error when key couldn't be found
+	 */
 	const val_t& get(const key_t& key)
 	{
 		using namespace std::literals;
@@ -94,34 +137,58 @@ public:
 			return it->second->second;
 		}
 	}
+
+	/**
+	 * @brief operator[] alias of `get(const key_t& val)`
+	 * @param t Key to lookup
+	 * @return `val_t` Value of `key`
+	 */
 	inline const val_t& operator[](const key_t t)
 	{
 		return get(t);
 	}
 
+	/**
+	 * @brief has Determine if key is in Cache or not
+	 * @param key Key to lookup
+	 * @return bool true when found, otherwise false
+	 */
 	bool has(const key_t& key) const
 	{
 		return m_cached_references.find(key) != m_cached_references.end();
 	}
 
+	/**
+	 * @brief is_at_beginning Helper to excerise if a given `key` is currently at position 0 of the Cache
+	 * @param key Key to lookup
+	 * @return bool True when key is first in Cache, false when not
+	 */
 	bool is_at_beginning(const key_t& key)
 	{
 		return m_cached_references.find(key)->first == m_cached_items.front().first;
 	}
 
+	/**
+	 * @brief size Returns size of LRU
+	 * @return `LRU::Size`
+	 */
 	Size size() const
 	{
 		return m_cached_items.size();
 	}
 
+	/**
+	 * @brief Capacity of given LRU
+	 * @return `LRU::Size`
+	 */
 	Size Capacity() const
 	{
 		return m_Capacity;
 	}
 
 private:
-	std::list<key_value_t> m_cached_items;
-	std::unordered_map<key_t, pair_iterator_t> m_cached_references;
+	std::list<key_value_t> m_cached_items;                          ///< List holding the inserted values
+	std::unordered_map<key_t, pair_iterator_t> m_cached_references; ///< Map holding references to iterators in the cache
 };
 }
 
