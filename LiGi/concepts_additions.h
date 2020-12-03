@@ -44,6 +44,30 @@ concept GeneralIterator = requires(T a)
 	->std::convertible_to<typename T::_type*>;
 };
 
+/// @brief Concept checking for .use_count() method
+template<typename T>
+concept UseCounter = requires(T a)
+{
+	a.use_count();
+};
+
+/// @brief Concept requiring default constructibility
+template<typename T>
+concept DefaultConstructible = requires(T a)
+{
+	std::is_default_constructible_v<T>;
+};
+
+/// @brief can create pointers with a make_ptr function, also storing it's type
+template<template<DefaultConstructible X> class factory, typename X>
+concept ProducesPointers = requires(factory<X> a)
+{
+	{ a.make_ptr() };
+	{ factory<X>::make_ptr() };
+	{ !std::is_same_v<typename factory<X>::type, void> == false };
+	std::is_same_v<typename factory<X>::type, typename factory<X>::type>;
+};
+
 }
 
 // -----------------------------------------------------------------------------

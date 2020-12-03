@@ -10,6 +10,9 @@
 #include <variant>
 #include <vector>
 
+#include "concepts_additions.h"
+#include "ptr_factory.h"
+
 namespace Li {
 
 constexpr size_t map_initial_size = 53;
@@ -55,7 +58,7 @@ Size next_prime(Size x)
 }
 /// @brief Concept which requires default constructiblity, .lengt(), operator[], operator<<(ostream&), and operator==(ownType)
 template<typename T>
-concept Lengthy = requires(T a)
+concept LengthyObject = requires(T a)
 {
 	std::is_default_constructible_v<T>;
 
@@ -76,101 +79,9 @@ concept Lengthy = requires(T a)
 	std::cout << a;
 };
 
-/// @brief Concept for acceptable pointers
-template<typename T>
-concept AcceptablePointer = requires(T a)
-{
-	{
-		!a
-	}
-	->std::same_as<bool>; // has operator bool
-	a.operator->();       // can dereference
-	a.operator*();        // can dereference
-	a.operator=(a);       // can assign pointer
-	a.swap(a);            // can swap pointers
-	a.reset();            // can reset pointer
-	a.get();              // can get pointer
-	a.~T();               // can deallocate
-};
-
-/// @brief Concept requiring default constructibility
-template<typename T>
-concept DefaultConstructible = requires(T a)
-{
-	std::is_default_constructible_v<T>;
-};
-
-/// @brief Concept checking for .use_count() method
-template<typename T>
-concept hasCount = requires(T a)
-{
-	a.use_count();
-};
-
-/**
- * @brief Base class for factories... factoring... pointers.
- */
-template<class T>
-struct pointer_factory {
-public:
-	using type = T;
-	type make_ptr();
-	virtual ~pointer_factory() = default;
-};
-
-/**
- * @brief Creates unique_ptr `s
- */
-template<DefaultConstructible T>
-struct unique_pointer_factory : public pointer_factory<std::unique_ptr<T>> {
-public:
-	constexpr inline static std::unique_ptr<T> make_ptr()
-	{
-		return std::move(std::make_unique<T>());
-	}
-
-	template<typename... Args>
-	constexpr inline static std::unique_ptr<T> make_ptr(Args... args)
-	{
-		return std::move(std::make_unique<T>(std::forward<Args>(args)...));
-	}
-};
-
-/**
- * @brief creates shared_ptr `s
- */
-template<DefaultConstructible T>
-struct shared_ptr_factory : public pointer_factory<std::shared_ptr<T>> {
-public:
-	constexpr inline static std::shared_ptr<T> make_ptr()
-	{
-		return std::move(std::make_shared<T>());
-	}
-
-	template<typename... Args>
-	constexpr inline static std::shared_ptr<T> make_ptr(Args... args)
-	{
-		return std::move(std::make_shared<T>(std::forward<Args>(args)...));
-	}
-};
-
-/// @brief can create pointers with a make_ptr function, also storing it's type
-template<template<DefaultConstructible X> class factory, typename X>
-concept ProducesPointers = requires(factory<X> a)
-{
-	{ a.make_ptr() };
-	{ factory<X>::make_ptr() };
-	{ !std::is_same_v<typename factory<X>::type, void> == false };
-	std::is_same_v<typename factory<X>::type, typename factory<X>::type>;
-};
-
-/// @brief Is child of pointer_factory, can create an acceptable pointer for the hash map
-template<template<class> class factory, class X>
-concept PointerFactory = (std::is_base_of_v<pointer_factory<typename factory<X>::type>, factory<X>>)&&(ProducesPointers<factory, X>)&&(AcceptablePointer<decltype(factory<X>::make_ptr())>);
-
-template<Lengthy Key,
-	DefaultConstructible Value,
-	template<DefaultConstructible T> typename PTR_Factory = Li::shared_ptr_factory,
+template<LengthyObject Key,
+	concepts::DefaultConstructible Value,
+	template<concepts::DefaultConstructible T> typename PTR_Factory = Li::shared_ptr_factory,
 	bool CLEANUP = true>
 class HashMap {
 
@@ -224,7 +135,7 @@ protected:
 		return Table;
 	};
 
-	constexpr Size m_hash(Lengthy auto const& var, const Size& prime, const Size& modulo) const
+	constexpr Size m_hash(LengthyObject auto const& var, const Size& prime, const Size& modulo) const
 	{
 		Size _hash = 0;
 		const Size len = var.length();
@@ -235,7 +146,7 @@ protected:
 		return _hash;
 	}
 
-	constexpr Size get_hash(Lengthy auto const& var, const Size& num_bucks, const Size& attempts) const
+	constexpr Size get_hash(LengthyObject auto const& var, const Size& num_bucks, const Size& attempts) const
 	{
 		Size first = m_hash(var, hsmPrime_1, num_bucks);
 		Size second = m_hash(var, hsmPrime_2, num_bucks);
@@ -247,7 +158,7 @@ protected:
 
 	void removeBucket(BuckPtr& it)
 	{
-		if constexpr (!CLEANUP || !hasCount<BuckPtr>) { // when we can't ref-count, we cant replace it with a ref
+		if constexpr (!CLEANUP || !concepts::UseCounter<BuckPtr>) { // when we can't ref-count, we cant replace it with a ref
 			return;
 		}
 		if (it) {
@@ -398,8 +309,8 @@ public:
 		}
 	}
 
-	constexpr ptrsize SentinelUse() requires(hasCount<BuckPtr>) { return SENTINELBUCK.use_count(); }
-	constexpr ptrsize SentinelUse() noexcept(false) requires(!hasCount<BuckPtr>)
+	constexpr ptrsize SentinelUse() requires(concepts::UseCounter<BuckPtr>) { return SENTINELBUCK.use_count(); }
+	constexpr ptrsize SentinelUse() noexcept(false) requires(!concepts::UseCounter<BuckPtr>)
 	{
 		using namespace std::literals;
 		throw std::logic_error("Currently used (smart)pointer '"s + typeid(decltype(BuckPtr {})).name() + "' has no ref-counting capabilites!"s);
@@ -482,7 +393,7 @@ public:
 #endif
 };
 
-template<Lengthy Key, DefaultConstructible Value, template<DefaultConstructible FT> class factory, bool CLEANUP>
+template<LengthyObject Key, concepts::DefaultConstructible Value, template<concepts::DefaultConstructible FT> class factory, bool CLEANUP>
 const typename Li::HashMap<Key, Value, factory, CLEANUP>::BuckPtr
 	Li::HashMap<Key, Value, factory, CLEANUP>::SENTINELBUCK
 	= Li::HashMap<Key, Value, factory, CLEANUP>::make_bucket(Key {}, Value {});
