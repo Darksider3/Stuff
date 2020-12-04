@@ -192,112 +192,130 @@ private:
 };
 }
 
-TEST_CASE("LRU Capacity")
+TEST_SUITE("LRU")
 {
-	size_t s = 10;
-	auto m_ = Li::LRU<size_t, size_t>(s);
-	CHECK(m_.Capacity() == 10);
-}
-
-TEST_CASE("LRU get & operator[]")
-{
-	int s = 4;
-	auto m = Li::LRU<int, int>(static_cast<size_t>(s));
-	for (int i = 0; i != s; ++i) {
-		m.movable_put(i, i + 1);
-	}
-	for (int i = 0; i != s; ++i) {
-		CHECK(m.get(i) == i + 1);
-		CHECK(m[i] == i + 1);
+	constexpr int small_case_size = 25;
+	TEST_CASE("LRU exists")
+	{
+		Li::LRU<int, int> c(small_case_size);
+		for (auto i = 0; i < small_case_size; ++i) {
+			c.put(i, i + 1);
+		}
+		CHECK(c.has(23));
+		CHECK(c.get(23) == 24);
+		CHECK_FALSE(c.has(29));
 	}
 
-	m[0]; // reference to bring it up
-	CHECK(m.is_at_beginning(0));
-}
-TEST_CASE("LRU Deletion")
-{
-	size_t s = 100;
-	auto m = Li::LRU<size_t, size_t>(s);
-	for (size_t i = 0; i != s; ++i) {
-		m.put(i, i);
+	TEST_CASE("LRU Capacity")
+	{
+		size_t s = 10;
+		auto m_ = Li::LRU<size_t, size_t>(s);
+		CHECK(m_.Capacity() == 10);
 	}
-	m[0];
-	CHECK((m.size()) == s * 2); // standard containers often are double as big as they need..
-}
 
-TEST_CASE("LRU make shared")
-{
-	size_t s = 10;
-	auto p = Li::LRU<int, int>::make_shared(s);
-	CHECK(p);
-}
-
-TEST_CASE("LRU Shared from this/getLRU")
-{
-	size_t s = 10;
-	auto F = Li::LRU<int, int>::make_shared(s);
-	CHECK(F);
-
-	std::shared_ptr<Li::LRU<int, int>> p = F->getLRU();
-	CHECK(p);
-	CHECK(p->Capacity() == s);
-	CHECK(std::is_same_v<decltype(p->getLRU()), decltype(F)>);
-}
-
-TEST_CASE("LRU Bench")
-{
-
-	constexpr size_t bench_size = 30000000;
-	auto start = []() {
-		return std::chrono::high_resolution_clock::now();
-	};
-
-	auto stop = [start](auto begin) {
-		auto y = start();
-		return std::chrono::duration_cast<std::chrono::milliseconds>(y - begin).count();
-	};
-
-	auto cur = start();
-	auto m = Li::LRU<size_t, std::string>(bench_size);
-	auto end = stop(cur);
-	auto msg = "\n" + std::to_string(end) + "ms construction time.\n";
-
-	cur = start();
-	for (size_t i = 0; i != bench_size; ++i) {
-		m.movable_put(i, std::to_string(i)); // faster insertion through copy-ellision and moving value
-	}
-	end = stop(cur);
-	msg += std::to_string(end) + "ms measured " + std::to_string(bench_size) + " items insertion.\n";
-
-	cur = start();
-	for (size_t i = 0; i != bench_size; ++i) {
-		m.get(i);
-	}
-	end = stop(cur);
-	msg += std::to_string(end) + "ms measured " + std::to_string(bench_size) + " linear items search.\n";
-
-	std::random_device rd;  //Will be used to obtain a seed for the random number engine
-	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-	std::uniform_int_distribution<size_t> distrib(0, bench_size - 1);
-
-	std::stack<size_t> RandomNums {};
-	for (size_t i = 0; i != bench_size; ++i)
-		RandomNums.emplace(distrib(gen));
-
-	cur = start();
-
-	while (true) {
-		if (RandomNums.size() == 0) {
-			break;
+	TEST_CASE("LRU get & operator[]")
+	{
+		int s = 4;
+		auto m = Li::LRU<int, int>(static_cast<size_t>(s));
+		for (int i = 0; i != s; ++i) {
+			m.movable_put(i, i + 1);
+		}
+		for (int i = 0; i != s; ++i) {
+			CHECK(m.get(i) == i + 1);
+			CHECK(m[i] == i + 1);
 		}
 
-		m.get(RandomNums.top());
-		RandomNums.pop();
+		m[0]; // reference to bring it up
+		CHECK(m.is_at_beginning(0));
+	}
+	TEST_CASE("LRU Deletion")
+	{
+		size_t s = 100;
+		auto m = Li::LRU<size_t, size_t>(s);
+		for (size_t i = 0; i != s; ++i) {
+			m.put(i, i);
+		}
+		m[0];
+		CHECK((m.size()) == s * 2); // standard containers often are double as big as they need..
 	}
 
-	end = stop(cur);
-	msg += std::to_string(end) + "ms measured " + std::to_string(bench_size) + " random items search.";
+	TEST_CASE("LRU make shared")
+	{
+		size_t s = 10;
+		auto p = Li::LRU<int, int>::make_shared(s);
+		CHECK(p);
+	}
 
-	MESSAGE(msg);
+	TEST_CASE("LRU Shared from this/getLRU")
+	{
+		size_t s = 10;
+		auto F = Li::LRU<int, int>::make_shared(s);
+		CHECK(F);
+
+		std::shared_ptr<Li::LRU<int, int>> p = F->getLRU();
+		CHECK(p);
+		CHECK(p->Capacity() == s);
+		CHECK(std::is_same_v<decltype(p->getLRU()), decltype(F)>);
+	}
+}
+
+TEST_SUITE("Benchmark" * doctest::skip())
+{
+	TEST_CASE("LRU Bench")
+	{
+
+		constexpr size_t bench_size = 30000000;
+		auto start = []() {
+			return std::chrono::high_resolution_clock::now();
+		};
+
+		auto stop = [start](auto begin) {
+			auto y = start();
+			return std::chrono::duration_cast<std::chrono::milliseconds>(y - begin).count();
+		};
+
+		auto cur = start();
+		auto m = Li::LRU<size_t, std::string>(bench_size);
+		auto end = stop(cur);
+		auto msg = "\n" + std::to_string(end) + "ms construction time.\n";
+
+		cur = start();
+		for (size_t i = 0; i != bench_size; ++i) {
+			m.movable_put(i, std::to_string(i)); // faster insertion through copy-ellision and moving value
+		}
+		end = stop(cur);
+		msg += std::to_string(end) + "ms measured " + std::to_string(bench_size) + " items insertion.\n";
+
+		cur = start();
+		for (size_t i = 0; i != bench_size; ++i) {
+			m.get(i);
+		}
+		end = stop(cur);
+		msg += std::to_string(end) + "ms measured " + std::to_string(bench_size) + " linear items search.\n";
+
+		std::random_device rd;  //Will be used to obtain a seed for the random number engine
+		std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+		std::uniform_int_distribution<size_t> distrib(0, bench_size - 1);
+
+		std::stack<size_t> RandomNums {};
+		for (size_t i = 0; i != bench_size; ++i)
+			RandomNums.emplace(distrib(gen));
+
+		cur = start();
+
+		while (true) {
+			if (RandomNums.size() == 0) {
+				break;
+			}
+
+			m.get(RandomNums.top());
+			RandomNums.pop();
+		}
+
+		end = stop(cur);
+		msg += std::to_string(end) + "ms measured " + std::to_string(bench_size) + " random items search.";
+
+		MESSAGE(msg);
+	}
 }
 #endif // LRU_H
