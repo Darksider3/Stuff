@@ -186,6 +186,27 @@ public:
 		return m_Capacity;
 	}
 
+	/**
+	 * @brief Resize resizes the LRU. !!!WARNING!!! destructible! Also clears out everything first!
+	 * @param cap Size to resize to
+	 */
+	void Resize(size_t cap)
+	{
+		clear();
+		m_cached_items.resize(cap);
+		m_cached_references.reserve(cap);
+		m_Capacity = cap;
+	}
+
+	/**
+	 * @brief Clears out LRU
+	 */
+	void clear()
+	{
+		m_cached_items.clear();
+		m_cached_references.clear();
+	}
+
 private:
 	std::list<key_value_t> m_cached_items;                          ///< List holding the inserted values
 	std::unordered_map<key_t, pair_iterator_t> m_cached_references; ///< Map holding references to iterators in the cache
@@ -206,21 +227,25 @@ TEST_SUITE("LRU")
 		CHECK_FALSE(c.has(29));
 	}
 
+	TEST_CASE("LRU Range-Throw")
+	{
+		Li::LRU<int, int> c(small_case_size);
+		CHECK_THROWS(c.get(small_case_size * 2));
+	}
+
 	TEST_CASE("LRU Capacity")
 	{
-		size_t s = 10;
-		auto m_ = Li::LRU<size_t, size_t>(s);
-		CHECK(m_.Capacity() == 10);
+		auto m_ = Li::LRU<size_t, size_t>(small_case_size);
+		CHECK(m_.Capacity() == small_case_size);
 	}
 
 	TEST_CASE("LRU get & operator[]")
 	{
-		int s = 4;
-		auto m = Li::LRU<int, int>(static_cast<size_t>(s));
-		for (int i = 0; i != s; ++i) {
+		auto m = Li::LRU<int, int>(static_cast<size_t>(small_case_size));
+		for (int i = 0; i != small_case_size; ++i) {
 			m.movable_put(i, i + 1);
 		}
-		for (int i = 0; i != s; ++i) {
+		for (int i = 0; i != small_case_size; ++i) {
 			CHECK(m.get(i) == i + 1);
 			CHECK(m[i] == i + 1);
 		}
@@ -228,33 +253,31 @@ TEST_SUITE("LRU")
 		m[0]; // reference to bring it up
 		CHECK(m.is_at_beginning(0));
 	}
+
 	TEST_CASE("LRU Deletion")
 	{
-		size_t s = 100;
-		auto m = Li::LRU<size_t, size_t>(s);
-		for (size_t i = 0; i != s; ++i) {
+		auto m = Li::LRU<size_t, size_t>(small_case_size);
+		for (size_t i = 0; i != small_case_size; ++i) {
 			m.put(i, i);
 		}
-		m[0];
-		CHECK((m.size()) == s * 2); // standard containers often are double as big as they need..
+		m[small_case_size - 1];
+		CHECK((m.size()) == small_case_size * 2); // standard containers often are double as big as they need..
 	}
 
 	TEST_CASE("LRU make shared")
 	{
-		size_t s = 10;
-		auto p = Li::LRU<int, int>::make_shared(s);
+		auto p = Li::LRU<int, int>::make_shared(small_case_size);
 		CHECK(p);
 	}
 
 	TEST_CASE("LRU Shared from this/getLRU")
 	{
-		size_t s = 10;
-		auto F = Li::LRU<int, int>::make_shared(s);
+		auto F = Li::LRU<int, int>::make_shared(small_case_size);
 		CHECK(F);
 
 		std::shared_ptr<Li::LRU<int, int>> p = F->getLRU();
 		CHECK(p);
-		CHECK(p->Capacity() == s);
+		CHECK(p->Capacity() == small_case_size);
 		CHECK(std::is_same_v<decltype(p->getLRU()), decltype(F)>);
 	}
 }
