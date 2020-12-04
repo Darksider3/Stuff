@@ -90,20 +90,24 @@ public:
 	 */
 	void movable_put(const key_t& key, val_t&& val)
 	{
-		m_cached_items.push_front(key_value_t(key, std::move(val)));
 		auto it = m_cached_references.find(key);
+		m_cached_items.push_front(key_value_t(key, std::move(val)));
+
+		// if item is already in the list, remove it's old reference
 		if (it != m_cached_references.end()) {
 			m_cached_items.erase(it->second);
 			m_cached_references.erase(it);
 		}
-		m_cached_references[key] = m_cached_items.begin();
 
+		// if the new item exceeds the limit of the cache, erase the least recently used one
 		if (m_cached_references.size() > m_Capacity) {
 			auto last = m_cached_items.end();
 			--last;
 			m_cached_references.erase(last->first);
 			m_cached_items.pop_back();
 		}
+
+		m_cached_references[key] = m_cached_items.begin();
 	}
 
 	/**
@@ -129,11 +133,13 @@ public:
 		if (it == m_cached_references.end()) {
 			throw std::range_error("Ther is no such key '"s + std::to_string(key) + "' in cache"s);
 		} else {
-			//std::list :
+			// put the used item in front of the list
 			m_cached_items.splice(m_cached_items.begin(), m_cached_items, it->second);
+
 			/*m_cached_items.insert(m_cached_items.begin(),
 				std::make_move_iterator(it->second),
 				std::make_move_iterator(it->second));*/
+
 			return it->second->second;
 		}
 	}
