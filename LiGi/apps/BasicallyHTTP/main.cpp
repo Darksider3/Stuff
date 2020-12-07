@@ -65,11 +65,12 @@ private:
 	virtual ~AbstractConnection()
 	{
 		//close(*d->Socket);
+		close(d->Sock);
 	}
 
 protected:
 	std::shared_ptr<sockaddr_storage> Storage;
-	int FD;
+	int Sock = -1;
 	bool alive = false;
 
 public:
@@ -104,6 +105,11 @@ public:
 		return { ipstr, port };
 	}
 
+	void setSock(int* s)
+	{
+		*d->Sock = *s;
+	}
+
 	void test()
 	{
 	}
@@ -129,6 +135,20 @@ class ResponseBuilder {
 
 class Server {
 protected:
+	constexpr static int enable_s = 1;
+
+	// sin length - ipv6 sin pls
+	socklen_t m_sin_l = sizeof(m_serv_addr);
+
+	// Servers own address
+	sockaddr_in6 m_serv_addr;
+
+	// servers own port
+	in_port_t m_serv_port;
+
+	// servers actual Socket!
+	int Sock;
+
 	// Stores all connections established
 	std::vector<ClientConnection> m_connections;
 
@@ -145,10 +165,31 @@ protected:
 		signal(SIGPIPE, SIG_IGN);
 	}
 
+	template<typename SingleArg>
+	void EnableOpts(SingleArg opt)
+	{
+		std::cout << "enabled opt" << std::endl;
+		setsockopt(Sock, SOL_SOCKET, opt, &enable_socket_reuse, sizeof(int));
+	}
+
+	template<typename FirstArg, typename... Args>
+	void EnableOpts(FirstArg first, Args... args)
+	{
+		EnableOpts(first);
+		EnableOpts(args...);
+	}
+
 public:
 	Server()
 	{
 		setsigs();
+		Sock = socket(AF_INET6, SOCK_STREAM, 0);
+		EnableOpts(SO_REUSEADDR, SO_REUSEPORT);
+	}
+
+	~Server()
+	{
+		close(Sock);
 	}
 
 	void bindTo(int&& p);
