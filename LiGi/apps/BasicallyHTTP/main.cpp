@@ -1,22 +1,51 @@
+#include <concepts>
 #include <functional>
 #include <iostream>
-#include <map>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 // socket include
 #include <arpa/inet.h>
 #include <iomanip>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+constexpr int max_connections_per_socket = 10;
+constexpr int enable_socket_reuse = 1;
+sig_atomic_t flag = false;
+
+void flagFunc(int) // ignore sig - we gonna handle them all the same
+{
+	flag = true;
+}
+
+template<typename T>
+concept SocketAddrStore = std::is_same_v<std::remove_cvref_t<T>, sockaddr_in> || std::is_same_v<std::remove_cvref_t<T>, sockaddr_in6> || std::is_same_v<std::remove_cvref_t<T>, sockaddr_storage>;
+
 sockaddr_in* asIncomingSocketAddress(addrinfo& s)
 {
 	return reinterpret_cast<struct sockaddr_in*>(s.ai_addr);
+}
+
+bool hasCLRFEnd(std::string_view where)
+{
+	size_t start = where.length() - 4; // CLRF*2+1
+	if (where[start] != '\r')
+		return false;
+	if (where[start + 1] != '\n')
+		return false;
+	if (where[start + 2] != '\r')
+		return false;
+	if (where[start + 3] != '\n')
+		return false;
+
+	return true;
 }
 
 template<typename T>
