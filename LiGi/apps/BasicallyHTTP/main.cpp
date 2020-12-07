@@ -210,37 +210,119 @@ protected:
 	}
 
 	template<typename SingleArg>
-	void EnableOpts(SingleArg opt)
+	void EnableOpts(const SingleArg& opt)
 	{
-		std::cout << "enabled opt" << std::endl;
-		setsockopt(Sock, SOL_SOCKET, opt, &enable_socket_reuse, sizeof(int));
+		setsockopt(m_Sock, SOL_SOCKET, opt, &enable_socket_reuse, sizeof(int));
 	}
 
 	template<typename FirstArg, typename... Args>
-	void EnableOpts(FirstArg first, Args... args)
+	void EnableOpts(const FirstArg&& first, const Args&&... args)
 	{
 		EnableOpts(first);
 		EnableOpts(args...);
 	}
 
 public:
-	Server()
+	Server(const in_port_t p)
 	{
 		setsigs();
-		Sock = socket(AF_INET6, SOCK_STREAM, 0);
+		// hint
+		memset(&hints, 0, sizeof hints);
+		hints.ai_family = AF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE; // fill my ip!
+
+		getaddrinfo(NULL, std::string(std::to_string(p)).c_str(), &hints, &m_serv_addr);
+
+		m_Sock = socket(m_serv_addr->ai_family, m_serv_addr->ai_socktype, m_serv_addr->ai_protocol);
+		if (m_Sock == -1) {
+			perror("Couldnt set socket");
+			exit(EXIT_FAILURE);
+		}
+		m_ConState = INITIALISED;
 		EnableOpts(SO_REUSEADDR, SO_REUSEPORT);
+		constexpr int disable = -1;
+		int err = setsockopt(m_Sock, IPPROTO_IPV6, IPV6_V6ONLY, (void*)&disable, sizeof(int));
+		if (err != 0)
+			perror("setsockopt ipv_v6only-disable didnt work");
+		auto HandleFunc = [this](ClientConnection& con) {
+			auto g = con.getPeerName();
+			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
+			return;
+		};
+
+		m_handlers["accept"] = HandleFunc;
 	}
 
-	~Server()
+	virtual ~Server()
 	{
-		close(Sock);
+		std::cout << "Usage exit: " << m_connections.size() << std::endl;
+		unbind();
 	}
 
-	void bindTo(int&& p);
-	void RegisterResponseHandler(std::function<void(void)> f);
-	void run()
+	bool bindTo()
 	{
+		if (m_ConState != INITIALISED)
+			return false;
+
+		//uint8_t addr[16] = { 0x00, 0xff, 0xff, 0x25, 0x4d, 0x38, 0x4b };
+		//memcpy(&reinterpret_cast<struct sockaddr_in6*>(&m_serv_addr)->sin6_addr, &addr, sizeof(addr));
+
+		if (bind(m_Sock, (const sockaddr*)m_serv_addr->ai_addr, m_serv_addr->ai_addrlen) == -1) {
+			perror("Couldn't bind! ");
+			exit(EXIT_FAILURE);
+		}
+		m_ConState = BOUND;
+		freeaddrinfo(m_serv_addr);
+		return true;
 	}
+
+	void unbind()
+	{
+		if (m_ConState < INITIALISED) {
+			return;
+		}
+
+		close(m_Sock);
+	}
+
+	bool Listen(int max_connections = max_connections_per_socket)
+	{
+		// requiring being bound before listening
+		if (m_ConState != BOUND) {
+			return false;
+		}
+		if (listen(m_Sock, max_connections) != 0) {
+			perror("Couldn't bind: ");
+			return false;
+		}
+
+		m_ConState = LISTENING;
+		return true;
+	}
+	void RegisterResponseHandler(std::function<void(ClientConnection&, int)> f);
+	void runAccept()
+	{
+		while (!flag) {
+			sockaddr_storage cli;
+			int cli_fd = accept(m_Sock, reinterpret_cast<sockaddr*>(&cli), &m_sin_l);
+			if (cli_fd == -1)
+				perror("Couldn't accept peer: ");
+			if (m_handlers.find("accept") == m_handlers.end())
+				return;
+			auto handle = m_handlers["accept"];
+			m_connections.emplace_back(ClientConnection(cli_fd, cli));
+			if (!m_connections.empty()) {
+				auto& con = m_connections.back();
+				handle(con);
+				m_connections.pop_back();
+			}
+		}
+	}
+
+	void runEpoll() { }
+	void runPoll() { }
+	void runUring() { }
 };
 
 class AbstractResponse {
