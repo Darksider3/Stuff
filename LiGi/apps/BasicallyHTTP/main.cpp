@@ -133,12 +133,29 @@ protected:
 	std::vector<ClientConnection> m_connections;
 
 	// Stores handlers registered for pathes
-	std::map<std::string, std::function<void(void)>> m_handlers;
+	std::unordered_map<std::string, std::function<void(void)>> m_handlers;
+
+	void setsigs()
+	{
+		struct sigaction a;
+		a.sa_handler = flagFunc;
+		a.sa_flags = 0;
+		sigemptyset(&a.sa_mask);
+		sigaction(SIGINT, &a, NULL);
+		signal(SIGPIPE, SIG_IGN);
+	}
 
 public:
+	Server()
+	{
+		setsigs();
+	}
+
 	void bindTo(int&& p);
 	void RegisterResponseHandler(std::function<void(void)> f);
-	void run();
+	void run()
+	{
+	}
 };
 
 class AbstractResponse {
@@ -157,41 +174,54 @@ char response[] = "HTTP/1.1 200 OK\r\n"
 				  "<body><h1>Goodbye, world!</h1></body></html>\r\n";
 int main()
 {
+
 	ClientConnection f;
+	Server ss {};
 	char buff[2048] = "";
 	int client_fd;
-	struct sockaddr_in server_addr, cli_addr;
+	struct sockaddr_in6 server_addr, cli_addr;
 	socklen_t sin_len = sizeof(cli_addr);
 
-	int sock = socket(AF_INET, SOCK_STREAM, 0);
+	int sock = socket(AF_INET6, SOCK_STREAM, 0);
 	if (sock < 0) {
 		//error
 	}
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable_socket_reuse, sizeof(int));
+	setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &enable_socket_reuse, sizeof(int));
 
-	int port = 8080;
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(port);
+	in_port_t port = 8080;
+	server_addr.sin6_family = AF_INET6;
+	server_addr.sin6_addr = in6addr_any;
+	server_addr.sin6_port = htons(port);
 
 	if (bind(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
 		close(sock);
 		//error
 	}
 
-	listen(sock, 5);
+	listen(sock, max_connections_per_socket);
 	std::cout << "Serving on http://localhost:" << port << "\n";
-	while (true) {
 
+	while (!flag) {
 		client_fd = accept(sock, (struct sockaddr*)&cli_addr, &sin_len);
-		f.setSocket((struct sockaddr*)&cli_addr);
-		f.printme();
-		printf("Connection established \n");
+		//f.setInfo(&cli_addr);
 		if (client_fd == -1) {
 			perror("Can't accept");
-			continue;
+			return errno;
 		}
+		printf("Connection established \n");
+
+		read(client_fd, buff, 2048);
+		auto g = f.getPeerName(sock);
+		if (hasCLRFEnd(buff))
+			std::cout << "found end!" << std::endl;
+		f.printme();
 
 		write(client_fd, response, sizeof(response) - 1);
 		close(client_fd);
 	}
+
+	close(sock);
+	sock = -1;
+	exit(EXIT_SUCCESS);
 }
