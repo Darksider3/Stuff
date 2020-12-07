@@ -58,31 +58,54 @@ private:
 
 	AbstractConnection()
 	{
+		d->Storage = std::make_shared<sockaddr_storage>();
+		//d->Socket = std::make_shared<int>();
+	}
+
+	virtual ~AbstractConnection()
+	{
+		//close(*d->Socket);
 	}
 
 protected:
-	std::shared_ptr<addrinfo> Sock;
+	std::shared_ptr<sockaddr_storage> Storage;
+	int FD;
+	bool alive = false;
 
 public:
-	sockaddr* asSocketAddress()
+	bool is_alive() const { return alive; }
+
+	template<SocketAddrStore F>
+	void setInfo(F* s)
 	{
-		return reinterpret_cast<struct sockaddr*>(d->Sock->ai_addr);
+		memcpy(reinterpret_cast<unsigned char*>(d->Storage.get()),
+			reinterpret_cast<unsigned char*>(&s), sizeof(F));
 	}
 
-	sockaddr_in* asIncomingSocketAddress4()
+	std::pair<std::string, in_port_t> getPeerName(int& s)
 	{
-		return reinterpret_cast<struct sockaddr_in*>(d->Sock->ai_addr);
+		char ipstr[INET6_ADDRSTRLEN];
+		socklen_t len;
+		sockaddr_storage addr;
+		in_port_t port;
+		len = sizeof(addr);
+		getpeername(s, reinterpret_cast<struct sockaddr*>(&addr), &len);
+		setInfo(&addr);
+		if (addr.ss_family == AF_INET) { // ipv4
+			struct sockaddr_in* ad = reinterpret_cast<struct sockaddr_in*>(&addr);
+			port = ntohs(ad->sin_port);
+			inet_ntop(AF_INET, &ad->sin_addr, ipstr, sizeof(ipstr));
+		} else { // ipv6
+			struct sockaddr_in6* ad = reinterpret_cast<sockaddr_in6*>(&addr);
+			port = ntohs(ad->sin6_port);
+			inet_ntop(AF_INET6, &ad->sin6_addr, ipstr, sizeof(ipstr));
+		}
+
+		return { ipstr, port };
 	}
 
-	sockaddr_in6* asIncomingSocketAddress6()
+	void test()
 	{
-		return reinterpret_cast<struct sockaddr_in6*>(d->Sock->ai_addr);
-	}
-
-	void setSocket(sockaddr* s)
-	{
-		d->Sock = std::make_shared<addrinfo>();
-		d->Sock->ai_addr = s;
 	}
 };
 
@@ -91,7 +114,10 @@ protected:
 public:
 	void printme()
 	{
-		std::cout << asIncomingSocketAddress4()->sin_port << std::endl;
+		char ipstr[INET6_ADDRSTRLEN];
+		inet_ntop(AF_INET6, &d->Storage, ipstr, sizeof(ipstr));
+		std::cout << "printme() Port: " << ntohs(reinterpret_cast<sockaddr_in6*>(&d->Storage)->sin6_port) << "\n"
+				  << "printme() Addr: " << ipstr << std::endl;
 	}
 };
 
