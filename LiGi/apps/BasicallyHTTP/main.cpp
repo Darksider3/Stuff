@@ -5,28 +5,45 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-// socket include
+// socket include#include <stdio.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #include <iomanip>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 constexpr int max_connections_per_socket = 10;
 constexpr int enable_socket_reuse = 1;
+constexpr in_port_t default_port = 8080;
+
 sig_atomic_t flag = false;
 
+void* get_in_addr(struct sockaddr* sa)
+{
+	if (sa->sa_family == AF_INET) {
+		return &(((struct sockaddr_in*)sa)->sin_addr);
+	}
+
+	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
 void flagFunc(int) // ignore sig - we gonna handle them all the same
 {
 	flag = true;
 }
 
+// clang-format off
 template<typename T>
-concept SocketAddrStore = std::is_same_v<std::remove_cvref_t<T>, sockaddr_in> || std::is_same_v<std::remove_cvref_t<T>, sockaddr_in6> || std::is_same_v<std::remove_cvref_t<T>, sockaddr_storage>;
+concept SocketAddrStore = std::is_same_v<std::remove_cvref_t<T>, sockaddr_in>
+					   || std::is_same_v<std::remove_cvref_t<T>, sockaddr_in6>
+					   || std::is_same_v<std::remove_cvref_t<T>, sockaddr_storage>;
+// clang-format on
 
 sockaddr_in* asIncomingSocketAddress(addrinfo& s)
 {
@@ -59,13 +76,6 @@ private:
 	AbstractConnection()
 	{
 		d->Storage = std::make_shared<sockaddr_storage>();
-		//d->Socket = std::make_shared<int>();
-	}
-
-	virtual ~AbstractConnection()
-	{
-		//close(*d->Socket);
-		close(d->Sock);
 	}
 
 protected:
@@ -76,30 +86,37 @@ protected:
 public:
 	bool is_alive() const { return alive; }
 
+	int& getSock()
+	{
+		return d->Sock;
+	}
+
 	template<SocketAddrStore F>
-	void setInfo(F* s)
+	void setInfo(F& s)
 	{
 		memcpy(reinterpret_cast<unsigned char*>(d->Storage.get()),
 			reinterpret_cast<unsigned char*>(&s), sizeof(F));
 	}
 
-	std::pair<std::string, in_port_t> getPeerName(int& s)
+	std::pair<std::string, in_port_t> getPeerName()
+	{
+		if (!d->Storage)
+			return {};
+		return getPeerName(&reinterpret_cast<sockaddr_storage&>(*d->Storage.get()));
+	}
+	std::pair<std::string, in_port_t> getPeerName(sockaddr_storage* s)
 	{
 		char ipstr[INET6_ADDRSTRLEN];
-		socklen_t len;
-		sockaddr_storage addr;
 		in_port_t port;
-		len = sizeof(addr);
-		getpeername(s, reinterpret_cast<struct sockaddr*>(&addr), &len);
-		setInfo(&addr);
-		if (addr.ss_family == AF_INET) { // ipv4
-			struct sockaddr_in* ad = reinterpret_cast<struct sockaddr_in*>(&addr);
-			port = ntohs(ad->sin_port);
-			inet_ntop(AF_INET, &ad->sin_addr, ipstr, sizeof(ipstr));
-		} else { // ipv6
-			struct sockaddr_in6* ad = reinterpret_cast<sockaddr_in6*>(&addr);
+		inet_ntop(d->Storage.get()->ss_family,
+			get_in_addr((struct sockaddr*)d->Storage.get()),
+			ipstr, sizeof ipstr);
+		if (s->ss_family == AF_INET6) { // ipv6
+			struct sockaddr_in6* ad = reinterpret_cast<sockaddr_in6*>(&s);
 			port = ntohs(ad->sin6_port);
-			inet_ntop(AF_INET6, &ad->sin6_addr, ipstr, sizeof(ipstr));
+		} else { // ipv4
+			struct sockaddr_in* ad = reinterpret_cast<struct sockaddr_in*>(&s);
+			port = ntohs(ad->sin_port);
 		}
 
 		return { ipstr, port };
@@ -107,23 +124,40 @@ public:
 
 	void setSock(int* s)
 	{
-		*d->Sock = *s;
+		d->Sock = *s;
 	}
 
 	void test()
 	{
+	}
+
+	void Close()
+	{
+		if (d->Sock != -1)
+			close(d->Sock);
+		d->Sock = -1;
+	}
+
+	virtual ~AbstractConnection()
+	{
+		Close();
 	}
 };
 
 class ClientConnection : public AbstractConnection<ClientConnection> {
 protected:
 public:
+	ClientConnection(int& S, sockaddr_storage& stor)
+	{
+		setSock(&S);
+		setInfo(stor);
+	}
+
 	void printme()
 	{
-		char ipstr[INET6_ADDRSTRLEN];
-		inet_ntop(AF_INET6, &d->Storage, ipstr, sizeof(ipstr));
-		std::cout << "printme() Port: " << ntohs(reinterpret_cast<sockaddr_in6*>(&d->Storage)->sin6_port) << "\n"
-				  << "printme() Addr: " << ipstr << std::endl;
+		auto info = getPeerName(this->d->Storage.get());
+		std::cout << "printme() Port: " << info.second << "\n"
+				  << "printme() Addr: " << info.first << std::endl;
 	}
 };
 
@@ -138,22 +172,32 @@ protected:
 	constexpr static int enable_s = 1;
 
 	// sin length - ipv6 sin pls
-	socklen_t m_sin_l = sizeof(m_serv_addr);
+	socklen_t m_sin_l = sizeof(sockaddr_storage);
 
 	// Servers own address
-	sockaddr_in6 m_serv_addr;
+	addrinfo hints, *m_serv_addr;
 
 	// servers own port
 	in_port_t m_serv_port;
 
 	// servers actual Socket!
-	int Sock;
+	int m_Sock;
 
 	// Stores all connections established
 	std::vector<ClientConnection> m_connections;
 
 	// Stores handlers registered for pathes
-	std::unordered_map<std::string, std::function<void(void)>> m_handlers;
+	std::unordered_map<std::string, std::function<void(ClientConnection&)>> m_handlers;
+
+	// state!
+
+	enum ConState {
+		UNINITIALISED = 0,
+		INITIALISED = 1,
+		BOUND = 2,
+		LISTENING = 4
+	} m_ConState
+		= UNINITIALISED;
 
 	void setsigs()
 	{
@@ -216,8 +260,10 @@ char response[] = "HTTP/1.1 200 OK\r\n"
 int main()
 {
 
-	ClientConnection f;
-	Server ss {};
+	Server ss { 12312 };
+	ss.bindTo();
+	ss.Listen();
+	ss.runAccept();
 	char buff[2048] = "";
 	int client_fd;
 	struct sockaddr_in6 server_addr, cli_addr;
@@ -244,25 +290,27 @@ int main()
 	std::cout << "Serving on http://localhost:" << port << "\n";
 
 	while (!flag) {
+		//ClientConnection f {sock, cli_addr};
 		client_fd = accept(sock, (struct sockaddr*)&cli_addr, &sin_len);
-		//f.setInfo(&cli_addr);
+
 		if (client_fd == -1) {
 			perror("Can't accept");
 			return errno;
 		}
+
+		//f.setSock(&client_fd);
+
 		printf("Connection established \n");
 
 		read(client_fd, buff, 2048);
-		auto g = f.getPeerName(sock);
+
 		if (hasCLRFEnd(buff))
 			std::cout << "found end!" << std::endl;
-		f.printme();
 
 		write(client_fd, response, sizeof(response) - 1);
-		close(client_fd);
 	}
 
 	close(sock);
-	sock = -1;
+	ss.~Server();
 	exit(EXIT_SUCCESS);
 }
