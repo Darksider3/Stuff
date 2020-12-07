@@ -20,7 +20,8 @@
 #include <unistd.h>
 
 constexpr int max_connections_per_socket = 10;
-constexpr int enable_socket_reuse = 1;
+constexpr int enable_s = 1;
+constexpr int disable_s = -1;
 constexpr in_port_t default_port = 8080;
 
 sig_atomic_t flag = false;
@@ -212,7 +213,7 @@ protected:
 	template<typename SingleArg>
 	void EnableOpts(const SingleArg& opt)
 	{
-		setsockopt(m_Sock, SOL_SOCKET, opt, &enable_socket_reuse, sizeof(int));
+		setsockopt(m_Sock, SOL_SOCKET, opt, &enable_s, sizeof(int));
 	}
 
 	template<typename FirstArg, typename... Args>
@@ -241,8 +242,7 @@ public:
 		}
 		m_ConState = INITIALISED;
 		EnableOpts(SO_REUSEADDR, SO_REUSEPORT);
-		constexpr int disable = -1;
-		int err = setsockopt(m_Sock, IPPROTO_IPV6, IPV6_V6ONLY, (void*)&disable, sizeof(int));
+		int err = setsockopt(m_Sock, IPPROTO_IPV6, IPV6_V6ONLY, &disable_s, sizeof(int));
 		if (err != 0)
 			perror("setsockopt ipv_v6only-disable didnt work");
 		auto HandleFunc = [this](ClientConnection& con) {
@@ -355,8 +355,8 @@ int main()
 	if (sock < 0) {
 		//error
 	}
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable_socket_reuse, sizeof(int));
-	setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &enable_socket_reuse, sizeof(int));
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable_s, sizeof(int));
+	setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &enable_s, sizeof(int));
 
 	in_port_t port = 8080;
 	server_addr.sin6_family = AF_INET6;
