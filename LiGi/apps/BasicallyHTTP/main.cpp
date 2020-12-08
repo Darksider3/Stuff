@@ -227,10 +227,12 @@ protected:
 	std::vector<ClientConnection> m_connections;
 
 	// Stores handlers registered for pathes
-	std::unordered_map<std::string, std::function<void(ClientConnection&)>> m_handlers;
+	std::unordered_map<std::string, std::function<bool(ClientConnection&)>> m_handlers;
 
 	std::vector<char> m_tmp_buf {};
 	// state!
+
+	bool m_blocking;
 
 	enum ConState {
 		UNINITIALISED = 0,
@@ -264,7 +266,8 @@ protected:
 	}
 
 public:
-	Server(const in_port_t p)
+	Server(const in_port_t p, bool blocking = true)
+		: m_blocking { blocking }
 	{
 		m_tmp_buf.reserve(max_buf_len);
 		m_tmp_buf.resize(max_buf_len, 0x00);
@@ -273,7 +276,7 @@ public:
 		// hint
 		memset(&hints, 0, sizeof hints);
 
-		auto AcceptFunc = [this](ClientConnection& con) {
+		auto AcceptFunc = [this](ClientConnection& con) -> bool {
 			std::string d {};
 			con.Read(m_tmp_buf);
 			d.append(m_tmp_buf.begin(), m_tmp_buf.end());
@@ -290,9 +293,14 @@ public:
 
 			auto g = con.getPeerName();
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
-			return;
+			con.Close();
+			return true;
 		};
 		m_handlers["accept"] = AcceptFunc;
+
+		setupSocket();
+		bindTo();
+		Listen();
 	}
 
 	virtual ~Server()
@@ -381,8 +389,8 @@ public:
 			auto handle = m_handlers["accept"];
 			ClientConnection con(cli_fd, cli);
 			m_connections.emplace_back(con);
-			handle(con);
-			m_connections.pop_back();
+			if (handle(con))
+				m_connections.pop_back();
 		}
 	}
 
@@ -409,57 +417,7 @@ int main()
 {
 
 	Server ss { 12312 };
-	ss.setupSocket();
-	ss.bindTo();
-	ss.Listen();
 	ss.runAccept();
-	char buff[2048] = "";
-	int client_fd;
-	struct sockaddr_in6 server_addr, cli_addr;
-	socklen_t sin_len = sizeof(cli_addr);
-
-	int sock = socket(AF_INET6, SOCK_STREAM, 0);
-	if (sock < 0) {
-		//error
-	}
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable_s, sizeof(int));
-	setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &enable_s, sizeof(int));
-
-	in_port_t port = 8080;
-	server_addr.sin6_family = AF_INET6;
-	server_addr.sin6_addr = in6addr_any;
-	server_addr.sin6_port = htons(port);
-
-	if (bind(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
-		close(sock);
-		//error
-	}
-
-	listen(sock, max_connections_per_socket);
-	std::cout << "Serving on http://localhost:" << port << "\n";
-
-	while (!flag) {
-		//ClientConnection f {sock, cli_addr};
-		client_fd = accept(sock, (struct sockaddr*)&cli_addr, &sin_len);
-
-		if (client_fd == -1) {
-			perror("Can't accept");
-			return errno;
-		}
-
-		//f.setSock(&client_fd);
-
-		printf("Connection established \n");
-
-		read(client_fd, buff, 2048);
-
-		if (hasCLRFEnd(buff))
-			std::cout << "found end!" << std::endl;
-
-		write(client_fd, response, sizeof(response) - 1);
-	}
-
-	close(sock);
 	ss.~Server();
 	exit(EXIT_SUCCESS);
 }
