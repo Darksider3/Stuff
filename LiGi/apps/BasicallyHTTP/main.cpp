@@ -180,6 +180,23 @@ public:
 				  << "printme() Addr: " << info.first << std::endl;
 	}
 
+	std::string ReadUntilN(std::vector<char>& into, ssize_t max = max_buf_len)
+	{
+		std::string ret;
+		into.reserve(static_cast<size_t>(max));
+
+		ssize_t bytes_received = 0;
+		do {
+			bytes_received = recv(Sock, &into[0], into.size(), 0);
+			if (bytes_received == -1) { // error out
+			} else {
+				ret.append(into.begin(), into.end());
+			}
+		} while (bytes_received == max); // errored out!
+
+		return ret;
+	}
+
 	virtual ~ClientConnection()
 	{
 		Close();
