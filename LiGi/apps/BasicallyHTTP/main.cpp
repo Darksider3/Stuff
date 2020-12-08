@@ -82,22 +82,9 @@ private:
 
 	std::shared_ptr<sockaddr_storage> Storage;
 	int Sock;
-	bool alive = false;
 
 public:
-	bool is_alive() const { return alive; }
-
-	int* getSock()
-	{
-		return &d->Sock;
-	}
-
-	template<SocketAddrStore F>
-	void setInfo(F& s)
-	{
-		memcpy(reinterpret_cast<unsigned char*>(d->Storage.get()),
-			reinterpret_cast<unsigned char*>(&s), sizeof(F));
-	}
+	bool is_alive() const { return Sock != -1; }
 
 	std::pair<std::string, in_port_t> getPeerName()
 	{
@@ -123,13 +110,23 @@ public:
 		return { ipstr, port };
 	}
 
+	template<SocketAddrStore F>
+	void setInfo(F& s)
+	{
+		memcpy(reinterpret_cast<unsigned char*>(d->Storage.get()),
+			reinterpret_cast<unsigned char*>(&s), sizeof(F));
+	}
 	void setSock(int* s)
 	{
 		d->Sock = *s;
 	}
 
-	void test()
+	static AbstractConnection<T>&& Open(int domain, int type, int proto)
 	{
+		int sock = socket(domain, type, proto);
+		AbstractConnection<T> obj = AbstractConnection<T>();
+		obj.setSock(sock);
+		return std::move(obj);
 	}
 
 	void Close()
@@ -137,29 +134,6 @@ public:
 		if (d->Sock != -1)
 			close(d->Sock);
 		d->Sock = -1;
-	}
-
-	virtual ~AbstractConnection()
-	{
-		Close();
-	}
-};
-
-class ClientConnection : public AbstractConnection<ClientConnection> {
-protected:
-public:
-	ClientConnection() = delete;
-	ClientConnection(int& S, sockaddr_storage& stor)
-	{
-		setSock(&S);
-		setInfo(stor);
-	}
-
-	void printme()
-	{
-		auto info = getPeerName(this->d->Storage.get());
-		std::cout << "printme() Port: " << info.second << "\n"
-				  << "printme() Addr: " << info.first << std::endl;
 	}
 
 	void Write(std::vector<char>& vec)
@@ -182,6 +156,28 @@ public:
 		if ((read(Sock, thing, maxlen)) == -1) {
 			perror("Read");
 		}
+	}
+	virtual ~AbstractConnection()
+	{
+		Close();
+	}
+};
+
+class ClientConnection : public AbstractConnection<ClientConnection> {
+protected:
+public:
+	ClientConnection() = delete;
+	ClientConnection(int& S, sockaddr_storage& stor)
+	{
+		setSock(&S);
+		setInfo(stor);
+	}
+
+	void printme()
+	{
+		auto info = getPeerName(this->d->Storage.get());
+		std::cout << "printme() Port: " << info.second << "\n"
+				  << "printme() Addr: " << info.first << std::endl;
 	}
 
 	virtual ~ClientConnection()
@@ -259,7 +255,8 @@ public:
 		setsigs();
 		// hint
 		memset(&hints, 0, sizeof hints);
-		auto HandleFunc = [this](ClientConnection& con) {
+
+		auto AcceptFunc = [this](ClientConnection& con) {
 			std::string d {};
 			con.Read(m_tmp_buf);
 			d.append(m_tmp_buf.begin(), m_tmp_buf.end());
@@ -278,8 +275,7 @@ public:
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
 			return;
 		};
-
-		m_handlers["accept"] = HandleFunc;
+		m_handlers["accept"] = AcceptFunc;
 	}
 
 	virtual ~Server()
@@ -386,7 +382,7 @@ public:
 	void send();
 };
 char response[] = "HTTP/1.1 200 OK\r\n"
-				  "Content-Type: text/html; charset=UTF-8\r\n\r\n"
+				  "Content-Toperator>>ype: text/html; charset=UTF-8\r\n\r\n"
 				  "<!DOCTYPE html><html><head><title>Bye-bye baby bye-bye</title>"
 				  "<style>body { background-color: #111 }"
 				  "h1 { font-size:4cm; text-align: center; color: black;"
