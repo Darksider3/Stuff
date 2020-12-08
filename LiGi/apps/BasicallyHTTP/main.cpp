@@ -19,10 +19,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+constexpr size_t max_buf_len = 4096;
 constexpr int max_connections_per_socket = 10;
 constexpr int enable_s = 1;
 constexpr int disable_s = -1;
-constexpr in_port_t default_port = 8080;
 
 sig_atomic_t flag = false;
 
@@ -44,6 +44,7 @@ template<typename T>
 concept SocketAddrStore = std::is_same_v<std::remove_cvref_t<T>, sockaddr_in>
 					   || std::is_same_v<std::remove_cvref_t<T>, sockaddr_in6>
 					   || std::is_same_v<std::remove_cvref_t<T>, sockaddr_storage>;
+
 // clang-format on
 
 sockaddr_in* asIncomingSocketAddress(addrinfo& s)
@@ -79,17 +80,16 @@ private:
 		d->Storage = std::make_shared<sockaddr_storage>();
 	}
 
-protected:
 	std::shared_ptr<sockaddr_storage> Storage;
-	int Sock = -1;
+	int Sock;
 	bool alive = false;
 
 public:
 	bool is_alive() const { return alive; }
 
-	int& getSock()
+	int* getSock()
 	{
-		return d->Sock;
+		return &d->Sock;
 	}
 
 	template<SocketAddrStore F>
@@ -148,6 +148,7 @@ public:
 class ClientConnection : public AbstractConnection<ClientConnection> {
 protected:
 public:
+	ClientConnection() = delete;
 	ClientConnection(int& S, sockaddr_storage& stor)
 	{
 		setSock(&S);
@@ -160,6 +161,33 @@ public:
 		std::cout << "printme() Port: " << info.second << "\n"
 				  << "printme() Addr: " << info.first << std::endl;
 	}
+
+	void Write(std::vector<char>& vec)
+	{
+		return Write(&vec[0], vec.size());
+	}
+
+	void Write(char* thing, size_t len)
+	{
+		write(Sock, thing, len);
+	}
+
+	void Read(std::vector<char>& vec)
+	{
+		return Read(&vec[0], vec.size());
+	}
+
+	void Read(char* thing, size_t maxlen)
+	{
+		if ((read(Sock, thing, maxlen)) == -1) {
+			perror("Read");
+		}
+	}
+
+	virtual ~ClientConnection()
+	{
+		Close();
+	}
 };
 
 class ServerConnection {
@@ -170,8 +198,6 @@ class ResponseBuilder {
 
 class Server {
 protected:
-	constexpr static int enable_s = 1;
-
 	// sin length - ipv6 sin pls
 	socklen_t m_sin_l = sizeof(sockaddr_storage);
 
@@ -190,6 +216,7 @@ protected:
 	// Stores handlers registered for pathes
 	std::unordered_map<std::string, std::function<void(ClientConnection&)>> m_handlers;
 
+	std::vector<char> m_tmp_buf {};
 	// state!
 
 	enum ConState {
@@ -226,26 +253,27 @@ protected:
 public:
 	Server(const in_port_t p)
 	{
+		m_tmp_buf.reserve(max_buf_len);
+		m_tmp_buf.resize(max_buf_len, 0x00);
+		m_serv_port = p;
 		setsigs();
 		// hint
 		memset(&hints, 0, sizeof hints);
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_PASSIVE; // fill my ip!
-
-		getaddrinfo(NULL, std::string(std::to_string(p)).c_str(), &hints, &m_serv_addr);
-
-		m_Sock = socket(m_serv_addr->ai_family, m_serv_addr->ai_socktype, m_serv_addr->ai_protocol);
-		if (m_Sock == -1) {
-			perror("Couldnt set socket");
-			exit(EXIT_FAILURE);
-		}
-		m_ConState = INITIALISED;
-		EnableOpts(SO_REUSEADDR, SO_REUSEPORT);
-		int err = setsockopt(m_Sock, IPPROTO_IPV6, IPV6_V6ONLY, &disable_s, sizeof(int));
-		if (err != 0)
-			perror("setsockopt ipv_v6only-disable didnt work");
 		auto HandleFunc = [this](ClientConnection& con) {
+			std::string d {};
+			con.Read(m_tmp_buf);
+			d.append(m_tmp_buf.begin(), m_tmp_buf.end());
+			char response[] = "HTTP/1.1 200 OK\r\n"
+							  "Content-Type: text/html; charset=UTF-8\r\n\r\n"
+							  "<!DOCTYPE html><html><head><title>Bye-bye baby bye-bye</title>"
+							  "<style>body { background-color: #111 }"
+							  "h1 { font-size:4cm; text-align: center; color: black;"
+							  " text-shadow: 0 0 2mm red}</style></head>"
+							  "<body><h1>Goodbye, world!</h1></body></html>\r\n";
+			con.Write(response, sizeof(response) - 1);
+			std::cout << "data:\n------\n "
+					  << d << " \n------\n";
+
 			auto g = con.getPeerName();
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
 			return;
@@ -260,18 +288,43 @@ public:
 		unbind();
 	}
 
+	bool setupSocket()
+	{
+		if (m_ConState != UNINITIALISED) {
+			m_connections.clear();
+			close(m_Sock);
+		}
+		hints.ai_family = AF_UNSPEC;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_PASSIVE; // fill my ip!
+
+		getaddrinfo(NULL, std::string(std::to_string(m_serv_port)).c_str(), &hints, &m_serv_addr);
+
+		m_Sock = socket(m_serv_addr->ai_family, m_serv_addr->ai_socktype, m_serv_addr->ai_protocol);
+		if (m_Sock == -1) {
+			perror("Couldnt set socket");
+			return false;
+		}
+		m_ConState = INITIALISED;
+		EnableOpts(SO_REUSEADDR, SO_REUSEPORT);
+		int err = setsockopt(m_Sock, IPPROTO_IPV6, IPV6_V6ONLY, &disable_s, sizeof(int));
+		if (err != 0) {
+			perror("setsockopt ipv_v6only-disable didnt work");
+			return false;
+		}
+
+		return true;
+	}
 	bool bindTo()
 	{
 		if (m_ConState != INITIALISED)
 			return false;
 
-		//uint8_t addr[16] = { 0x00, 0xff, 0xff, 0x25, 0x4d, 0x38, 0x4b };
-		//memcpy(&reinterpret_cast<struct sockaddr_in6*>(&m_serv_addr)->sin6_addr, &addr, sizeof(addr));
-
 		if (bind(m_Sock, (const sockaddr*)m_serv_addr->ai_addr, m_serv_addr->ai_addrlen) == -1) {
 			perror("Couldn't bind! ");
 			exit(EXIT_FAILURE);
 		}
+
 		m_ConState = BOUND;
 		freeaddrinfo(m_serv_addr);
 		return true;
@@ -306,17 +359,17 @@ public:
 		while (!flag) {
 			sockaddr_storage cli;
 			int cli_fd = accept(m_Sock, reinterpret_cast<sockaddr*>(&cli), &m_sin_l);
+
 			if (cli_fd == -1)
 				perror("Couldn't accept peer: ");
 			if (m_handlers.find("accept") == m_handlers.end())
 				return;
+
 			auto handle = m_handlers["accept"];
-			m_connections.emplace_back(ClientConnection(cli_fd, cli));
-			if (!m_connections.empty()) {
-				auto& con = m_connections.back();
-				handle(con);
-				m_connections.pop_back();
-			}
+			ClientConnection con(cli_fd, cli);
+			m_connections.emplace_back(con);
+			handle(con);
+			m_connections.pop_back();
 		}
 	}
 
@@ -343,6 +396,7 @@ int main()
 {
 
 	Server ss { 12312 };
+	ss.setupSocket();
 	ss.bindTo();
 	ss.Listen();
 	ss.runAccept();
