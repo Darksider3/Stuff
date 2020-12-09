@@ -92,6 +92,7 @@ public:
 			return {};
 		return getPeerName(&reinterpret_cast<sockaddr_storage&>(*d->Storage.get()));
 	}
+
 	std::pair<std::string, in_port_t> getPeerName(sockaddr_storage* s)
 	{
 		char ipstr[INET6_ADDRSTRLEN];
@@ -157,6 +158,7 @@ public:
 			perror("Read");
 		}
 	}
+
 	virtual ~AbstractConnection()
 	{
 		Close();
@@ -253,25 +255,25 @@ protected:
 	}
 
 	template<typename SingleArg>
-	void EnableOpts(const SingleArg& opt)
+	int EnableOpts(const int& sockT, const SingleArg& opt)
 	{
-		setsockopt(m_Sock, SOL_SOCKET, opt, &enable_s, sizeof(int));
+		return setsockopt(m_Sock, sockT, opt, &enable_s, sizeof(int));
 	}
 
 	template<typename FirstArg, typename... Args>
-	void EnableOpts(const FirstArg&& first, const Args&&... args)
+	void EnableOpts(int sockT, const FirstArg&& first, const Args&&... args)
 	{
-		EnableOpts(first);
-		EnableOpts(args...);
+		EnableOpts(sockT, first);
+		EnableOpts(sockT, args...);
 	}
 
 public:
 	Server(const in_port_t p, bool blocking = true)
-		: m_blocking { blocking }
+		: m_serv_port { p }
+		, m_blocking { blocking }
 	{
 		m_tmp_buf.reserve(max_buf_len);
 		m_tmp_buf.resize(max_buf_len, 0x00);
-		m_serv_port = p;
 		setsigs();
 		// hint
 		memset(&hints, 0, sizeof hints);
@@ -309,15 +311,15 @@ public:
 		unbind();
 	}
 
-	bool setupSocket()
+	bool setupSocket(int hintFam = AF_UNSPEC, int hintSockT = SOCK_STREAM, int hintFlags = AI_PASSIVE)
 	{
 		if (m_ConState != UNINITIALISED) {
 			m_connections.clear();
 			close(m_Sock);
 		}
-		hints.ai_family = AF_UNSPEC;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_PASSIVE; // fill my ip!
+		hints.ai_family = hintFam;
+		hints.ai_socktype = hintSockT;
+		hints.ai_flags = hintFlags; // fill my ip!
 
 		getaddrinfo(NULL, std::string(std::to_string(m_serv_port)).c_str(), &hints, &m_serv_addr);
 
@@ -327,7 +329,7 @@ public:
 			return false;
 		}
 		m_ConState = INITIALISED;
-		EnableOpts(SO_REUSEADDR, SO_REUSEPORT);
+		EnableOpts(SOL_SOCKET, SO_REUSEADDR, SO_REUSEPORT);
 		int err = setsockopt(m_Sock, IPPROTO_IPV6, IPV6_V6ONLY, &disable_s, sizeof(int));
 		if (err != 0) {
 			perror("setsockopt ipv_v6only-disable didnt work");
@@ -336,6 +338,7 @@ public:
 
 		return true;
 	}
+
 	bool bindTo()
 	{
 		if (m_ConState != INITIALISED)
