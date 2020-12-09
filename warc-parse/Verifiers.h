@@ -77,7 +77,30 @@ class WarcinfoVerifier : public Verifier {
 		if (!m_Record.has_("http-header-from")) {
 			m_Diag.addReport(RLevel::Rec, "Specification recommends 'http-header-from' as a field in Warcinfo(from which url the url was visited which got harvested)");
 		}
-		return true;
+		return true; // always valid, all fields optional
+	}
+};
+
+class WarcMetadataVerifier : public Verifier {
+	Result verify() override
+	{
+		if (auto str = m_Record.type(); str != "metadata") {
+			return WrongHeaderTypeDelivered { str };
+		}
+
+		if (!m_Record.has_("via")) {
+			m_Diag.addReport(RLevel::Rec, "Specification recommends the 'via' field not present here.");
+		}
+
+		if (!m_Record.has_("hopsFromSeed")) {
+			m_Diag.addReport(RLevel::Rec, "Specification recommends the 'hopsFromSeed' field not present here.");
+		}
+
+		if (!m_Record.has_("fetchTimeMs")) {
+			m_Diag.addReport(RLevel::Rec, "Specification recommends the 'fetchTimeMs' field not present here.");
+		}
+
+		return true; // always valid
 	}
 };
 

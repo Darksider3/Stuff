@@ -11,6 +11,7 @@
 #endif
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "../doctest.h"
+
 namespace Li {
 
 /* LRU cached_items
