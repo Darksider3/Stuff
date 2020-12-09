@@ -211,31 +211,32 @@ class ServerConnection {
 class ResponseBuilder {
 };
 
-class Server {
+/**
+ * @brief The AcceptServer class uses the accept() system call to serve a socket listening
+ */
+class AcceptServer {
 protected:
-	// sin length - ipv6 sin pls
+	/// sin length - ipv6 sin pls
 	socklen_t m_sin_l = sizeof(sockaddr_storage);
 
-	// Servers own address
+	/// Servers own address
 	addrinfo hints, *m_serv_addr;
 
-	// servers own port
+	/// servers own port
 	in_port_t m_serv_port;
 
-	// servers actual Socket!
+	/// servers actual Socket!
 	int m_Sock;
 
-	// Stores all connections established
+	/// Stores all connections established
 	std::vector<ClientConnection> m_connections;
 
-	// Stores handlers registered for pathes
+	/// Stores handlers registered for pathes
 	std::unordered_map<std::string, std::function<bool(ClientConnection&)>> m_handlers;
 
 	std::vector<char> m_tmp_buf {};
-	// state!
 
-	bool m_blocking;
-
+	/// Constate stores information used for setup the socket
 	enum ConState {
 		UNINITIALISED = 0,
 		INITIALISED = 1,
@@ -244,6 +245,9 @@ protected:
 	} m_ConState
 		= UNINITIALISED;
 
+	/**
+	 * @brief setsigs sets up the signals so that on CTRL+C and such we are still able to unbind the socket
+	 */
 	void setsigs()
 	{
 		struct sigaction a;
@@ -268,9 +272,8 @@ protected:
 	}
 
 public:
-	Server(const in_port_t p, bool blocking = true)
+	AcceptServer(const in_port_t p)
 		: m_serv_port { p }
-		, m_blocking { blocking }
 	{
 		m_tmp_buf.reserve(max_buf_len);
 		m_tmp_buf.resize(max_buf_len, 0x00);
@@ -305,12 +308,19 @@ public:
 		Listen();
 	}
 
-	virtual ~Server()
+	virtual ~AcceptServer()
 	{
 		std::cout << "Usage exit: " << m_connections.size() << std::endl;
 		unbind();
 	}
 
+	/**
+	 * @brief setupSocket sets everything related to the socket itself up
+	 * @param hintFam AF_* protocol
+	 * @param hintSockT SOCK_* Type
+	 * @param hintFlags AI_* Type
+	 * @return True, when successfully set up the server, false when not
+	 */
 	bool setupSocket(int hintFam = AF_UNSPEC, int hintSockT = SOCK_STREAM, int hintFlags = AI_PASSIVE)
 	{
 		if (m_ConState != UNINITIALISED) {
@@ -339,6 +349,10 @@ public:
 		return true;
 	}
 
+	/**
+	 * @brief bindTo binds the socket to a specific address
+	 * @return True when bind was successfull, false when not
+	 */
 	bool bindTo()
 	{
 		if (m_ConState != INITIALISED)
@@ -354,6 +368,9 @@ public:
 		return true;
 	}
 
+	/**
+	 * @brief unbind the socket
+	 */
 	void unbind()
 	{
 		if (m_ConState < INITIALISED) {
@@ -363,6 +380,11 @@ public:
 		close(m_Sock);
 	}
 
+	/**
+	 * @brief Listen setups the listener on the socket setup earlier
+	 * @param max_connections
+	 * @return True, when setting up the listening worked, false when not
+	 */
 	bool Listen(int max_connections = max_connections_per_socket)
 	{
 		// requiring being bound before listening
@@ -377,7 +399,12 @@ public:
 		m_ConState = LISTENING;
 		return true;
 	}
+
 	void RegisterResponseHandler(std::function<void(ClientConnection&, int)> f);
+
+	/**
+	 * @brief runAccept runs accept() in a loop and calling the "accept" routine
+	 */
 	void runAccept()
 	{
 		while (!flag) {
@@ -396,10 +423,6 @@ public:
 				m_connections.pop_back();
 		}
 	}
-
-	void runEpoll() { }
-	void runPoll() { }
-	void runUring() { }
 };
 
 class AbstractResponse {
@@ -409,6 +432,13 @@ private:
 public:
 	void send();
 };
+
+/**
+ * @brief The EpollServer class uses Epoll under the hood
+ */
+class EpollServer {
+};
+
 char response[] = "HTTP/1.1 200 OK\r\n"
 				  "Content-Toperator>>ype: text/html; charset=UTF-8\r\n\r\n"
 				  "<!DOCTYPE html><html><head><title>Bye-bye baby bye-bye</title>"
@@ -419,8 +449,8 @@ char response[] = "HTTP/1.1 200 OK\r\n"
 int main()
 {
 
-	Server ss { 12312 };
+	AcceptServer ss { 12312 };
 	ss.runAccept();
-	ss.~Server();
+	ss.~AcceptServer();
 	exit(EXIT_SUCCESS);
 }
