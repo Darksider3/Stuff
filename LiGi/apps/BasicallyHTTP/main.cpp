@@ -211,20 +211,40 @@ public:
 class ServerConnection {
 };
 
+/**
+ * @brief The AbstractStatus class provides an base class for status codes, like the `Status404` class.
+ */
 class AbstractStatus {
 private:
 protected:
 public:
+	/**
+	 * @brief get returns the appropriate status code as a string
+	 * @return Statuscode as std::string
+	 */
 	virtual const std::string get() const = 0;
-
+	/**
+	 * @brief operator std::string std::string conversion operator
+	 * @return Same as `.get()`.
+	 */
+	virtual operator std::string()
+	{
+		return get();
+	}
 	virtual ~AbstractStatus() = default;
 };
 
+/**
+ * @brief The Status200 class implements Status Code 200
+ */
 class Status200 : public AbstractStatus {
 public:
 	const std::string get() const override { return "200 OK"; }
 };
 
+/**
+ * @brief The Status404 class implements Status Code 404
+ */
 class Status404 : public AbstractStatus {
 public:
 	const std::string get() const override
@@ -233,7 +253,35 @@ public:
 	}
 };
 
-class HTTPResponseBuilder {
+/**
+ * @brief The ResponseBuilder class provides the interface for Responses
+ */
+class ResponseBuilder {
+private:
+protected:
+public:
+	ResponseBuilder() {};
+	virtual ~ResponseBuilder() = default;
+	/**
+	 * @brief get returns a full fledged response
+	 * @return Response(to clients, from clients)
+	 */
+	virtual std::string get() = 0;
+
+	/**
+	 * @brief length of(given, gotten) response
+	 * @return Length of Response
+	 */
+	virtual size_t length() const = 0;
+};
+
+class HTTPClientResponse : public ResponseBuilder {
+};
+
+/**
+ * @brief The HTTPResponseBuilder class provides an easy, fast interface for basic servings
+ */
+class HTTPResponseBuilder : public ResponseBuilder {
 protected:
 	std::string m_Resp {};
 	std::string m_Status {};
@@ -245,31 +293,55 @@ protected:
 	constexpr std::string_view CLRF() { return "\r\n"; }
 
 public:
+	/**
+	 * @brief HTTPResponseBuilder Response-content and Status Code as string constructor
+	 * @param str Contents of the response
+	 * @param Status status code(as a string)
+	 */
 	HTTPResponseBuilder(std::string_view str, std::string Status = "200 OK")
 		: m_Resp { str }
 		, m_Status { Status }
 	{
 	}
 
-	HTTPResponseBuilder(const std::vector<char>& c)
+	/**
+	 * @brief HTTPResponseBuilder vector-copy ctor providing an easy mechanism to input clients requests
+	 * @param c
+	 */
+	explicit HTTPResponseBuilder(const std::vector<char>& c)
 	{
 		m_Resp.append(c.begin(), c.end());
 	}
 
-	HTTPResponseBuilder() = default;
-	HTTPResponseBuilder(HTTPResponseBuilder&&) = default;
-	HTTPResponseBuilder(HTTPResponseBuilder&) = default;
-	HTTPResponseBuilder(const HTTPResponseBuilder&) = default;
-	~HTTPResponseBuilder() = default;
+	/**
+	 * @brief HTTPResponseBuilder default ctor
+	 */
+	explicit HTTPResponseBuilder() = default;
 
-	void append(std::string_view t) { m_Resp.append(t); }
+	/**
+	 * @brief append to currently holding content
+	 * @param str String to append
+	 */
+	void append(std::string_view str) { m_Resp.append(str); }
 
-	void setStatus(AbstractStatus const&& stat) { m_Status = stat.get(); }
-	void setStatus(std::string_view t) { m_Status = t; }
+	/**
+	 * @brief setStatus sets HTTP status
+	 * @param Status to set
+	 */
+	void setStatus(AbstractStatus const&& Status) { m_Status = Status.get(); }
 
-	std::string getHTTPResponse()
+	/**
+	 * @brief setStatus set string as status
+	 * @param str Statusstring
+	 */
+	void setStatus(std::string_view str) { m_Status = str; }
+
+	/**
+	 * @brief get Get current build of response
+	 * @return std::string holding response
+	 */
+	std::string get() override
 	{
-		m_out.clear();
 		m_out = "HTTP/1.1 ";
 		m_out.append(m_Status);
 		m_out.append(CLRF());
@@ -283,13 +355,23 @@ public:
 		return m_out;
 	}
 
+	void clear()
+	{
+		m_Resp.clear();
+	}
+
+	/**
+	 * @brief getResponseOnly just returns the response without the headers
+	 * @return
+	 */
 	std::string_view getResponseOnly()
 	{
 		return m_Resp;
 	}
 
-	size_t length() const { return m_Resp.length(); }
+	size_t length() const override { return m_Resp.length(); }
 };
+
 /**
  * @brief The AcceptServer class uses the accept() system call to serve a socket listening
  */
@@ -350,17 +432,24 @@ protected:
 		EnableOpts(sockT, args...);
 	}
 
+	void bufclear()
+	{
+		m_tmp_buf.clear(); // needed due to stupidness of holding it
+		m_tmp_buf.reserve(max_buf_len);
+		m_tmp_buf.resize(max_buf_len, 0x00);
+	}
+
 public:
 	AcceptServer(const in_port_t p)
 		: m_serv_port { p }
 	{
-		m_tmp_buf.reserve(max_buf_len);
-		m_tmp_buf.resize(max_buf_len, 0x00);
+		bufclear();
 		setsigs();
 		// hint
 		memset(&hints, 0, sizeof hints);
 
 		auto AcceptFunc = [this](ClientConnection& con) -> bool {
+			bufclear();
 			con.Read(m_tmp_buf);
 			auto clientIn = HTTPResponseBuilder(m_tmp_buf);
 			auto Out = HTTPResponseBuilder();
@@ -370,9 +459,10 @@ public:
 				"h1 { font-size:4cm; text-align: center; color: black;"
 				" text-shadow: 0 0 2mm red}</style></head>"
 				"<body><h1>Goodbye, world!</h1></body></html>\r\n");
+
 			Out.setStatus(Status200());
-			std::string str = Out.getHTTPResponse();
-			con.Write(str);
+			con.Write(Out.get());
+
 			std::cout << "data:\n------\n "
 					  << clientIn.getResponseOnly() << " \n------\n";
 
