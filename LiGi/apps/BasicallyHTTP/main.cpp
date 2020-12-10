@@ -52,7 +52,7 @@ sockaddr_in* asIncomingSocketAddress(addrinfo& s)
 	return reinterpret_cast<struct sockaddr_in*>(s.ai_addr);
 }
 
-bool hasCLRFEnd(std::string_view where)
+bool hasCLRFEnd(std::string_view const where)
 {
 	size_t start = where.length() - 4; // CLRF*2+1
 	if (where[start] != '\r')
@@ -93,7 +93,7 @@ public:
 		return getPeerName(&reinterpret_cast<sockaddr_storage&>(*d->Storage.get()));
 	}
 
-	std::pair<std::string, in_port_t> getPeerName(sockaddr_storage* s)
+	std::pair<std::string, in_port_t> getPeerName(const sockaddr_storage* s)
 	{
 		char ipstr[INET6_ADDRSTRLEN];
 		in_port_t port;
@@ -117,12 +117,12 @@ public:
 		memcpy(reinterpret_cast<unsigned char*>(d->Storage.get()),
 			reinterpret_cast<unsigned char*>(&s), sizeof(F));
 	}
-	void setSock(int* s)
+	void setSock(const int* s)
 	{
 		d->Sock = *s;
 	}
 
-	static AbstractConnection<T>&& Open(int domain, int type, int proto)
+	static AbstractConnection<T>&& Open(const int& domain, const int& type, const int& proto)
 	{
 		int sock = socket(domain, type, proto);
 		AbstractConnection<T> obj = AbstractConnection<T>();
@@ -157,7 +157,7 @@ public:
 		return Read(&vec[0], vec.size());
 	}
 
-	ssize_t Read(char* thing, size_t maxlen)
+	ssize_t Read(char* thing, const size_t maxlen)
 	{
 		return read(Sock, thing, maxlen);
 	}
@@ -172,7 +172,7 @@ class ClientConnection : public AbstractConnection<ClientConnection> {
 protected:
 public:
 	ClientConnection() = delete;
-	ClientConnection(int& S, sockaddr_storage& stor)
+	ClientConnection(const int& S, sockaddr_storage& stor)
 	{
 		setSock(&S);
 		setInfo(stor);
@@ -185,7 +185,7 @@ public:
 				  << "printme() Addr: " << info.first << std::endl;
 	}
 
-	std::string ReadUntilN(std::vector<char>& into, ssize_t max = max_buf_len)
+	std::string ReadUntilN(std::vector<char>& into, const ssize_t max = max_buf_len)
 	{
 		std::string ret;
 		into.reserve(static_cast<size_t>(max));
@@ -298,7 +298,7 @@ public:
 	 * @param str Contents of the response
 	 * @param Status status code(as a string)
 	 */
-	HTTPResponseBuilder(std::string_view str, std::string Status = "200 OK")
+	HTTPResponseBuilder(const std::string_view str, const std::string Status = "200 OK")
 		: m_Resp { str }
 		, m_Status { Status }
 	{
@@ -322,7 +322,7 @@ public:
 	 * @brief append to currently holding content
 	 * @param str String to append
 	 */
-	void append(std::string_view str) { m_Resp.append(str); }
+	void append(std::string_view const str) { m_Resp.append(str); }
 
 	/**
 	 * @brief setStatus sets HTTP status
@@ -426,7 +426,7 @@ protected:
 	}
 
 	template<typename FirstArg, typename... Args>
-	void EnableOpts(int sockT, const FirstArg&& first, const Args&&... args)
+	void EnableOpts(const int sockT, const FirstArg&& first, const Args&&... args)
 	{
 		EnableOpts(sockT, first);
 		EnableOpts(sockT, args...);
@@ -492,7 +492,7 @@ public:
 	 * @param hintFlags AI_* Type
 	 * @return True, when successfully set up the server, false when not
 	 */
-	bool setupSocket(int hintFam = AF_UNSPEC, int hintSockT = SOCK_STREAM, int hintFlags = AI_PASSIVE)
+	bool setupSocket(const int hintFam = AF_UNSPEC, const int hintSockT = SOCK_STREAM, const int hintFlags = AI_PASSIVE)
 	{
 		if (m_ConState != UNINITIALISED) {
 			m_connections.clear();
@@ -556,7 +556,7 @@ public:
 	 * @param max_connections
 	 * @return True, when setting up the listening worked, false when not
 	 */
-	bool Listen(int max_connections = max_connections_per_socket)
+	bool Listen(const int max_connections = max_connections_per_socket)
 	{
 		// requiring being bound before listening
 		if (m_ConState != BOUND) {
