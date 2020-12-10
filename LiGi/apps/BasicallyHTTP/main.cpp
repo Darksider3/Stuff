@@ -137,26 +137,29 @@ public:
 		d->Sock = -1;
 	}
 
-	void Write(std::vector<char>& vec)
+	ssize_t Write(const std::string& data)
+	{
+		return Write(data.c_str(), data.length());
+	}
+
+	ssize_t Write(const std::vector<char>& vec) const
 	{
 		return Write(&vec[0], vec.size());
 	}
 
-	void Write(char* thing, size_t len)
+	ssize_t Write(const char* thing, const size_t len) const
 	{
-		write(Sock, thing, len);
+		return write(Sock, thing, len);
 	}
 
-	void Read(std::vector<char>& vec)
+	ssize_t Read(std::vector<char>& vec)
 	{
 		return Read(&vec[0], vec.size());
 	}
 
-	void Read(char* thing, size_t maxlen)
+	ssize_t Read(char* thing, size_t maxlen)
 	{
-		if ((read(Sock, thing, maxlen)) == -1) {
-			perror("Read");
-		}
+		return read(Sock, thing, maxlen);
 	}
 
 	virtual ~AbstractConnection()
@@ -208,9 +211,85 @@ public:
 class ServerConnection {
 };
 
-class ResponseBuilder {
+class AbstractStatus {
+private:
+protected:
+public:
+	virtual const std::string get() const = 0;
+
+	virtual ~AbstractStatus() = default;
 };
 
+class Status200 : public AbstractStatus {
+public:
+	const std::string get() const override { return "200 OK"; }
+};
+
+class Status404 : public AbstractStatus {
+public:
+	const std::string get() const override
+	{
+		return "404 Not Found";
+	}
+};
+
+class HTTPResponseBuilder {
+protected:
+	std::string m_Resp {};
+	std::string m_Status {};
+	std::string m_Content_Type { "text/html" };
+	std::string m_Charset { "charset=UTF-8" };
+
+	std::string m_out {};
+
+	constexpr std::string_view CLRF() { return "\r\n"; }
+
+public:
+	HTTPResponseBuilder(std::string_view str, std::string Status = "200 OK")
+		: m_Resp { str }
+		, m_Status { Status }
+	{
+	}
+
+	HTTPResponseBuilder(const std::vector<char>& c)
+	{
+		m_Resp.append(c.begin(), c.end());
+	}
+
+	HTTPResponseBuilder() = default;
+	HTTPResponseBuilder(HTTPResponseBuilder&&) = default;
+	HTTPResponseBuilder(HTTPResponseBuilder&) = default;
+	HTTPResponseBuilder(const HTTPResponseBuilder&) = default;
+	~HTTPResponseBuilder() = default;
+
+	void append(std::string_view t) { m_Resp.append(t); }
+
+	void setStatus(AbstractStatus const&& stat) { m_Status = stat.get(); }
+	void setStatus(std::string_view t) { m_Status = t; }
+
+	std::string getHTTPResponse()
+	{
+		m_out.clear();
+		m_out = "HTTP/1.1 ";
+		m_out.append(m_Status);
+		m_out.append(CLRF());
+		m_out.append(m_Content_Type);
+		m_out.append("; ");
+		m_out.append(m_Charset);
+		m_out.append(CLRF());
+		m_out.append(CLRF());
+		m_out.append(m_Resp);
+
+		return m_out;
+	}
+
+	std::string_view getResponseOnly()
+	{
+		return m_Resp;
+	}
+
+	size_t length() const { return m_Resp.length(); }
+};
 /**
  * @brief The AcceptServer class uses the accept() system call to serve a socket listening
  */
@@ -282,22 +361,24 @@ public:
 		memset(&hints, 0, sizeof hints);
 
 		auto AcceptFunc = [this](ClientConnection& con) -> bool {
-			std::string d {};
 			con.Read(m_tmp_buf);
-			d.append(m_tmp_buf.begin(), m_tmp_buf.end());
-			char response[] = "HTTP/1.1 200 OK\r\n"
-							  "Content-Type: text/html; charset=UTF-8\r\n\r\n"
-							  "<!DOCTYPE html><html><head><title>Bye-bye baby bye-bye</title>"
-							  "<style>body { background-color: #111 }"
-							  "h1 { font-size:4cm; text-align: center; color: black;"
-							  " text-shadow: 0 0 2mm red}</style></head>"
-							  "<body><h1>Goodbye, world!</h1></body></html>\r\n";
-			con.Write(response, sizeof(response) - 1);
+			auto clientIn = HTTPResponseBuilder(m_tmp_buf);
+			auto Out = HTTPResponseBuilder();
+			Out.append(
+				"<!DOCTYPE html><html><head><title>Bye-bye baby bye-bye</title>"
+				"<style>body { background-color: #111 }"
+				"h1 { font-size:4cm; text-align: center; color: black;"
+				" text-shadow: 0 0 2mm red}</style></head>"
+				"<body><h1>Goodbye, world!</h1></body></html>\r\n");
+			Out.setStatus(Status200());
+			std::string str = Out.getHTTPResponse();
+			con.Write(str);
 			std::cout << "data:\n------\n "
-					  << d << " \n------\n";
+					  << clientIn.getResponseOnly() << " \n------\n";
 
 			auto g = con.getPeerName();
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
+
 			con.Close();
 			return true;
 		};
@@ -425,27 +506,12 @@ public:
 	}
 };
 
-class AbstractResponse {
-private:
-	std::string m_Response;
-
-public:
-	void send();
-};
-
 /**
  * @brief The EpollServer class uses Epoll under the hood
  */
 class EpollServer {
 };
 
-char response[] = "HTTP/1.1 200 OK\r\n"
-				  "Content-Toperator>>ype: text/html; charset=UTF-8\r\n\r\n"
-				  "<!DOCTYPE html><html><head><title>Bye-bye baby bye-bye</title>"
-				  "<style>body { background-color: #111 }"
-				  "h1 { font-size:4cm; text-align: center; color: black;"
-				  " text-shadow: 0 0 2mm red}</style></head>"
-				  "<body><h1>Goodbye, world!</h1></body></html>\r\n";
 int main()
 {
 
