@@ -19,6 +19,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "LiGi/GeneralTools.h"
+
 constexpr size_t max_buf_len = 4096;
 constexpr int max_connections_per_socket = 10;
 constexpr int enable_s = 1;
@@ -275,7 +277,140 @@ public:
 	virtual size_t length() const = 0;
 };
 
-class HTTPClientResponse : public ResponseBuilder {
+struct HTTPClientResponse {
+	std::string Version {};
+	std::string Method {};
+	std::string URL {};
+	std::string Host {};
+	std::string Agent {};
+};
+
+using Map = std::unordered_map<std::string, std::string>;
+int ToLower(unsigned const char& c)
+{
+	return std::tolower(c);
+}
+
+template<typename StrT = std::string>
+class HTTPClientResponseBuilder : public ResponseBuilder {
+private:
+	StrT TrimField(std::string_view in)
+	{
+		auto begin = in.begin();
+		auto end = in.end();
+		begin = std::find_if_not(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+
+		end = std::find_if(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+
+		return StrT(begin, end);
+	}
+
+	void SkipWhitespace(std::istream& in)
+	{
+		while (std::isspace(in.peek())) {
+			in.ignore(1);
+		}
+	}
+
+	static HTTPClientResponse ReadHTTPMethodAndVersion(std::istream& in)
+	{
+		std::string line, tmp;
+		if (in.tellg() > 0) {
+			return {}; // @TODO: ERROR! Shall not pass in
+					   // some stream in useless state
+					   // because HTTP headers start in the first char...
+		}
+
+		// ORDER is important here! Ideally, we should be past
+		// the HTTP verb(GET, POST, PATCH, etc) after this call
+		// so dont mess up order!
+
+		std::getline(in, line);
+		if (line.empty()) {
+			return {}; // @TODO: ERROR! Line MUST have words!
+		}
+
+		// Step 1: get the method
+		auto begin = line.begin();
+		auto end = line.end();
+		begin = std::find_if_not(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+		end = std::find_if(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+
+		if (end == begin) {
+			// matching error
+		}
+
+		// here we should have the method - store it!
+		HTTPClientResponse response;
+		response.Method = std::string(begin, end);
+
+		// Step 2: get Destination URL
+
+		// we recycle the begin as our end because it already points to the space behind the verb
+
+		begin = end;
+		end = line.end();
+
+		begin = std::find_if_not(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+
+		end = std::find_if(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+
+		if (end == begin) {
+			// @TODO: ERROR! somehow we read 0 size!
+		}
+
+		response.URL = std::string(begin, end);
+
+		return response;
+	}
+
+	void ReadFields(std::istream& in, Map& map)
+	{
+		std::string line;
+		std::getline(in, line);
+
+		while (!line.empty() && line != "\r") /* In HTTP Header */ {
+			auto [name, value] = Li::common::SplitPair(line, ':');
+			if (name.empty() || value.empty()) {
+				// @TODO: ERROR! Invalid HTTP Header Field!
+			}
+
+			name = TrimField(name);
+			value = TrimField(value);
+
+			// any field may also be just lowercase!
+			std::transform(name.begin(), name.end(), name.begin(), ToLower);
+			map[std::move(name)] = std::move(value);
+			std::getline(in, line);
+		}
+	}
+
+public:
+	static auto parse(const std::string&& in)
+	{
+		std::istringstream x(in);
+		auto r = ReadHTTPMethodAndVersion(x);
+
+		std::cout << "Parsed! "
+				  << "Method: " << r.Method << "\n"
+				  << "URL: " << r.URL << "\n"
+				  << "Version: " << r.Version << "\n"
+				  << std::endl;
+
+		return r;
+	}
 };
 
 /**
@@ -470,6 +605,10 @@ public:
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
 
 			con.Close();
+
+			std::string test(m_tmp_buf.begin(), m_tmp_buf.end());
+
+			HTTPClientResponseBuilder<>::parse(std::move(test));
 			return true;
 		};
 		m_handlers["accept"] = AcceptFunc;
