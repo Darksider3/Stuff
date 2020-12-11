@@ -318,6 +318,7 @@ private:
 
 	static HTTPClientResponse ReadHTTPMethodAndVersion(std::istream& in)
 	{
+		HTTPClientResponse response;
 		std::string line, tmp;
 		if (in.tellg() > 0) {
 			return {}; // @TODO: ERROR! Shall not pass in
@@ -346,11 +347,10 @@ private:
 
 		if (end == begin) {
 			// matching error
+		} else {
+			// here we should have the method - store it!
+			response.Method = std::string(begin, end);
 		}
-
-		// here we should have the method - store it!
-		HTTPClientResponse response;
-		response.Method = std::string(begin, end);
 
 		// Step 2: get Destination URL
 
@@ -369,9 +369,27 @@ private:
 
 		if (end == begin) {
 			// @TODO: ERROR! somehow we read 0 size!
+		} else {
+			response.URL = std::string(begin, end);
 		}
+		// Step 3: get HTTP-Version
 
-		response.URL = std::string(begin, end);
+		begin = end;
+		end = line.end();
+
+		begin = std::find_if_not(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+
+		end = std::find_if(begin, end, [](char cur) -> bool {
+			return std::isspace(cur);
+		});
+
+		if (end == begin) {
+			// @TODO: ERROR! Still shouldn't be 0!
+		} else {
+			response.Version = std::string(begin, end);
+		}
 
 		return response;
 	}
