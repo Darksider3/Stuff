@@ -421,6 +421,17 @@ private:
 		}
 	}
 
+	void processPossibleContent(std::istream& in, Map& map, ssize_t max_streamlen = max_buf_len)
+	{
+		if (!has("content-length", map))
+			return; // no content to possibly read
+
+		ssize_t len = std::stol(map.at("content-length"));
+
+		if (len > max_streamlen)
+			return; // @TODO: ERROR! Size given is bigger then what we actually accept to proceed!
+	}
+
 public:
 	static auto parse(const std::string&& in)
 	{
@@ -433,6 +444,8 @@ public:
 				  << "Version: " << r.Version << "\n"
 				  << std::endl;
 
+		// @TODO: FIELDS PARSING
+		// @TODO: BODY PARSING
 		return r;
 	}
 };
@@ -613,11 +626,18 @@ public:
 			auto clientIn = HTTPResponseBuilder(m_tmp_buf);
 			auto Out = HTTPResponseBuilder();
 			Out.append(
-				"<!DOCTYPE html><html><head><title>Bye-bye baby bye-bye</title>"
+				"<!DOCTYPE html><html><meta charset='utf-8'><head><title>Bye-bye baby bye-bye</title>"
 				"<style>body { background-color: #111 }"
 				"h1 { font-size:4cm; text-align: center; color: black;"
 				" text-shadow: 0 0 2mm red}</style></head>"
-				"<body><h1>Goodbye, world!</h1></body></html>\r\n");
+				"<body><h1>Goodbye, world!</h1>"
+				"<form method=\"post\">"
+				"<label text-color='white'>Name:"
+				"<input name=\"submitted-name\" autocomplete=\"name\">"
+				"</label>"
+				"<button>Save</button>"
+				"</form>"
+				"</body></html>\r\n");
 
 			Out.setStatus(Status200());
 			con.Write(Out.get());
