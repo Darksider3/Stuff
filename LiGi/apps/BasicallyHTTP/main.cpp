@@ -1,4 +1,4 @@
-#include <concepts>
+﻿#include <concepts>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -21,7 +21,7 @@
 
 #include "LiGi/GeneralTools.h"
 
-constexpr size_t max_buf_len = 4096;
+constexpr size_t max_buf_len = 8192;
 constexpr int max_connections_per_socket = 10;
 constexpr int enable_s = 1;
 constexpr int disable_s = -1;
@@ -281,8 +281,8 @@ struct HTTPClientResponse {
 	std::string Version {};
 	std::string Method {};
 	std::string URL {};
-	std::string Host {};
-	std::string Agent {};
+
+	std::unordered_map<std::string, std::string> Fields {};
 };
 
 using Map = std::unordered_map<std::string, std::string>;
@@ -294,6 +294,12 @@ int ToLower(unsigned const char& c)
 template<typename StrT = std::string>
 class HTTPClientResponseBuilder : public ResponseBuilder {
 private:
+	template<typename T>
+	bool has(const T map, const T& name)
+	{
+		map.find(name) != map.end();
+	}
+
 	StrT TrimField(std::string_view in)
 	{
 		auto begin = in.begin();
