@@ -28,6 +28,11 @@ constexpr int disable_s = -1;
 
 sig_atomic_t flag = false;
 
+bool has(const std::unordered_map<std::string, std::string> map, const std::string&& name)
+{
+	return map.find(name) != map.end();
+}
+
 void* get_in_addr(struct sockaddr* sa)
 {
 	if (sa->sa_family == AF_INET) {
@@ -294,13 +299,7 @@ int ToLower(unsigned const char& c)
 template<typename StrT = std::string>
 class HTTPClientResponseBuilder : public ResponseBuilder {
 private:
-	template<typename T>
-	bool has(const T map, const T& name)
-	{
-		map.find(name) != map.end();
-	}
-
-	StrT TrimField(std::string_view in)
+	static StrT TrimField(std::string_view in)
 	{
 		auto begin = in.begin();
 		auto end = in.end();
@@ -400,7 +399,7 @@ private:
 		return response;
 	}
 
-	void ReadFields(std::istream& in, Map& map)
+	static void ReadFields(std::istream& in, Map& map)
 	{
 		std::string line;
 		std::getline(in, line);
@@ -421,15 +420,24 @@ private:
 		}
 	}
 
-	void processPossibleContent(std::istream& in, Map& map, ssize_t max_streamlen = max_buf_len)
+	static std::string processPossibleContent(std::istream& in, Map& map, ssize_t max_streamlen = max_buf_len)
 	{
-		if (!has("content-length", map))
-			return; // no content to possibly read
+		std::string ret {};
+		if (!has(map, "content-length"))
+			return ret; // no content to possibly read
 
 		ssize_t len = std::stol(map.at("content-length"));
 
 		if (len > max_streamlen)
-			return; // @TODO: ERROR! Size given is bigger then what we actually accept to proceed!
+			return ret; // @TODO: ERROR! Size given is bigger then what we accept
+		// @TODO: Shall we force the non-zero check? Actually i think the user should know that
+		// when he wants to read that the content is bigger then 0...
+
+		for (ssize_t i = 0; i < len && in.good(); ++i) {
+			ret += static_cast<char>(in.get());
+		}
+
+		return ret;
 	}
 
 public:
@@ -437,6 +445,7 @@ public:
 	{
 		std::istringstream x(in);
 		auto r = ReadHTTPMethodAndVersion(x);
+		ReadFields(x, r.Fields);
 
 		std::cout << "Parsed! "
 				  << "Method: " << r.Method << "\n"
@@ -444,6 +453,15 @@ public:
 				  << "Version: " << r.Version << "\n"
 				  << std::endl;
 
+		for (auto& debug : r.Fields) {
+			std::cout << "Field: " << debug.first << " "
+					  << "Value: " << debug.second
+					  << "\n";
+		}
+
+		if (r.Fields.find("content-length") != r.Fields.end() && std::stol(r.Fields.at("content-length")) > 0) {
+			std::cout << "Input: " << processPossibleContent(x, r.Fields) << "\n";
+		}
 		// @TODO: FIELDS PARSING
 		// @TODO: BODY PARSING
 		return r;
@@ -642,8 +660,10 @@ public:
 			Out.setStatus(Status200());
 			con.Write(Out.get());
 
-			std::cout << "data:\n------\n "
-					  << clientIn.getResponseOnly() << " \n------\n";
+			std::cout << "RAW:"
+					  << "\n---------------------------------------------------------------------\n"
+					  << clientIn.getResponseOnly()
+					  << "\n---------------------------------------------------------------------\n";
 
 			auto g = con.getPeerName();
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
