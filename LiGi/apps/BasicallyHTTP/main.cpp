@@ -175,46 +175,6 @@ public:
 	}
 };
 
-class ClientConnection : public AbstractConnection<ClientConnection> {
-protected:
-public:
-	ClientConnection() = delete;
-	ClientConnection(const int& S, sockaddr_storage& stor)
-	{
-		setSock(&S);
-		setInfo(stor);
-	}
-
-	void printme()
-	{
-		auto info = getPeerName(this->d->Storage.get());
-		std::cout << "printme() Port: " << info.second << "\n"
-				  << "printme() Addr: " << info.first << std::endl;
-	}
-
-	std::string ReadUntilN(std::vector<char>& into, const ssize_t max = max_buf_len)
-	{
-		std::string ret;
-		into.reserve(static_cast<size_t>(max));
-
-		ssize_t bytes_received = 0;
-		do {
-			bytes_received = recv(Sock, &into[0], into.size(), 0);
-			if (bytes_received == -1) { // error out
-			} else {
-				ret.append(into.begin(), into.end());
-			}
-		} while (bytes_received == max); // errored out!
-
-		return ret;
-	}
-
-	virtual ~ClientConnection()
-	{
-		Close();
-	}
-};
-
 class ServerConnection {
 };
 
@@ -297,7 +257,7 @@ int ToLower(unsigned const char& c)
 }
 
 template<typename StrT = std::string>
-class HTTPClientResponseBuilder : public ResponseBuilder {
+class HTTPClientResponseBuilder {
 private:
 	static StrT TrimField(std::string_view in)
 	{
@@ -441,7 +401,7 @@ private:
 	}
 
 public:
-	static auto parse(const std::string&& in)
+	HTTPClientResponse parse(const std::string&& in)
 	{
 		std::istringstream x(in);
 		auto r = ReadHTTPMethodAndVersion(x);
@@ -562,6 +522,49 @@ public:
 	size_t length() const override { return m_Resp.length(); }
 };
 
+class ClientConnection : public AbstractConnection<ClientConnection> {
+protected:
+public:
+	std::shared_ptr<HTTPResponseBuilder> outResp;
+
+	ClientConnection() = delete;
+	ClientConnection(const int& S, sockaddr_storage& stor)
+	{
+		setSock(&S);
+		setInfo(stor);
+		outResp = std::make_shared<HTTPResponseBuilder>();
+	}
+
+	void printme()
+	{
+		auto info = getPeerName(this->d->Storage.get());
+		std::cout << "printme() Port: " << info.second << "\n"
+				  << "printme() Addr: " << info.first << std::endl;
+	}
+
+	std::string ReadUntilN(std::vector<char>& into, const ssize_t max = max_buf_len)
+	{
+		std::string ret;
+		into.reserve(static_cast<size_t>(max));
+
+		ssize_t bytes_received = 0;
+		do {
+			bytes_received = recv(Sock, &into[0], into.size(), 0);
+			if (bytes_received == -1) { // error out
+			} else {
+				ret.append(into.begin(), into.end());
+			}
+		} while (bytes_received == max); // errored out!
+
+		return ret;
+	}
+
+	virtual ~ClientConnection()
+	{
+		Close();
+	}
+};
+
 /**
  * @brief The AcceptServer class uses the accept() system call to serve a socket listening
  */
@@ -639,11 +642,12 @@ public:
 		memset(&hints, 0, sizeof hints);
 
 		auto AcceptFunc = [this](ClientConnection& con) -> bool {
+			HTTPClientResponseBuilder respB {};
 			bufclear();
 			con.Read(m_tmp_buf);
 			auto clientIn = HTTPResponseBuilder(m_tmp_buf);
-			auto Out = HTTPResponseBuilder();
-			Out.append(
+			auto Out = con.outResp;
+			Out->append(
 				"<!DOCTYPE html><html><meta charset='utf-8'><head><title>Bye-bye baby bye-bye</title>"
 				"<style>body { background-color: #111 }"
 				"h1 { font-size:4cm; text-align: center; color: black;"
@@ -657,8 +661,8 @@ public:
 				"</form>"
 				"</body></html>\r\n");
 
-			Out.setStatus(Status200());
-			con.Write(Out.get());
+			Out->setStatus(Status200());
+			con.Write(Out->get());
 
 			std::cout << "RAW:"
 					  << "\n---------------------------------------------------------------------\n"
@@ -668,14 +672,19 @@ public:
 			auto g = con.getPeerName();
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
 
-			con.Close();
-
 			std::string test(m_tmp_buf.begin(), m_tmp_buf.end());
 
-			HTTPClientResponseBuilder<>::parse(std::move(test));
+			HTTPClientResponse resp = respB.parse(std::move(test));
+			if (m_handlers.find(resp.URL) != m_handlers.end()) {
+				m_handlers.at(resp.URL)(con);
+			} else {
+				std::cout << "didnt find" << resp.URL << "!\n";
+			}
+
+			con.Close();
 			return true;
 		};
-		m_handlers["accept"] = AcceptFunc;
+		m_handlers["http_accept"] = AcceptFunc;
 
 		setupSocket();
 		bindTo();
@@ -774,7 +783,10 @@ public:
 		return true;
 	}
 
-	void RegisterResponseHandler(std::function<void(ClientConnection&, int)> f);
+	void RegisterResponseHandler(const std::function<bool(ClientConnection&)>&& f, std::string_view route)
+	{
+		m_handlers[std::string(route)] = std::move(f);
+	}
 
 	/**
 	 * @brief runAccept runs accept() in a loop and calling the "accept" routine
@@ -787,10 +799,10 @@ public:
 
 			if (cli_fd == -1)
 				perror("Couldn't accept peer: ");
-			if (m_handlers.find("accept") == m_handlers.end())
+			if (m_handlers.find("http_accept") == m_handlers.end())
 				return;
 
-			auto handle = m_handlers["accept"];
+			auto handle = m_handlers["http_accept"];
 			ClientConnection con(cli_fd, cli);
 			m_connections.emplace_back(con);
 			if (handle(con))
@@ -803,12 +815,20 @@ public:
  * @brief The EpollServer class uses Epoll under the hood
  */
 class EpollServer {
+public:
+	static void doSmthing()
+	{
+	}
 };
 
 int main()
 {
-
+	auto SlashRoute = [](ClientConnection&) -> bool {
+		std::cout << "Was here!" << std::endl;
+		return true;
+	};
 	AcceptServer ss { 12312 };
+	ss.RegisterResponseHandler(SlashRoute, "/");
 	ss.runAccept();
 	ss.~AcceptServer();
 	exit(EXIT_SUCCESS);
