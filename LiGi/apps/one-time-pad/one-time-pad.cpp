@@ -1,3 +1,4 @@
+#include "LiGi/external/base64.h"
 #include <bsd/stdlib.h> // arc4_random
 #include <climits>
 #include <iostream>
@@ -45,6 +46,21 @@ public:
 		}
 		return Enciphered;
 	}
+
+	std::string asBase64(std::string str)
+	{
+		int len;
+		std::string res = base64(str.data(), static_cast<int>(str.length()), &len);
+
+		return res;
+	}
+
+	std::string asString(std::string b64)
+	{
+		int len;
+		std::string res = reinterpret_cast<const char*>(unbase64(b64.data(), static_cast<int>(b64.length()), &len));
+		return res;
+	}
 };
 
 int main()
@@ -55,8 +71,11 @@ int main()
 	std::getline(std::cin, input);
 
 	auto cipher = x.genCipher(input.length());
+	auto str_cipher = std::string(cipher.begin(), cipher.end());
 	auto ciphered = x.encipher(input, cipher);
-	std::cout << x.decipher(cipher, ciphered);
+	std::cout << "As           base64: " << x.asBase64(ciphered) << "\n";
+	std::cout << "Cipher in    base64: " << x.asBase64(str_cipher) << "\n";
+	std::cout << "Decoded from base64: " << x.decipher(cipher, x.asString(x.asBase64(ciphered))) << "\n";
 
 	std::cout << std::endl;
 }
