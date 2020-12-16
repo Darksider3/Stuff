@@ -14,7 +14,7 @@ class StreamCipher {
 	void GenX(std::vector<unsigned char>& vec, ssize_t x = cipherRegularBlock)
 	{
 		for (short i = 0; i < x; ++i)
-			vec.emplace_back(static_cast<unsigned char>(arc4random_uniform(UCHAR_MAX - 1)));
+			vec.push_back(static_cast<unsigned char>(arc4random_uniform(UCHAR_MAX - 1)));
 	}
 
 public:
@@ -41,7 +41,7 @@ public:
 		 * @TODO: Warn about insecure usage - cipher should be as long as the string or bigger!
 		 */
 		for (size_t i = 0; i < len; ++i) {
-			Enciphered += (thing[i] ^ cipher[i]);
+			Enciphered.push_back(static_cast<char>(thing[i] ^ cipher[i]));
 		}
 		return Enciphered;
 	}
