@@ -50,7 +50,7 @@ public:
 	std::string asBase64(std::string str)
 	{
 		int len;
-		std::string res = base64(str.data(), static_cast<int>(str.length()), &len);
+		std::string res = base64(str.c_str(), static_cast<int>(str.length()), &len);
 
 		return res;
 	}
@@ -58,7 +58,7 @@ public:
 	std::string asString(std::string b64)
 	{
 		int len;
-		std::string res = reinterpret_cast<const char*>(unbase64(b64.data(), static_cast<int>(b64.length()), &len));
+		std::string res = reinterpret_cast<const char*>(unbase64(b64.c_str(), static_cast<int>(b64.length()), &len));
 		return res;
 	}
 };
