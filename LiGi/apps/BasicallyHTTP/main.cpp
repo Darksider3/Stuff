@@ -260,7 +260,8 @@ public:
 struct HTTPClientResponse {
 	std::string Version {};
 	std::string Method {};
-	std::string URL {};
+	std::string URI {};
+	std::string Query {};
 
 	std::unordered_map<std::string, std::string> Fields {};
 };
@@ -350,7 +351,26 @@ private:
 		if (end == begin) {
 			// @TODO: ERROR! somehow we read 0 size!
 		} else {
-			response.URL = std::string(begin, end);
+			/*
+			 * Because we already know where the URL begins, we just have to search for its end -
+			 * which is also the beginning of the Query portion.
+			 * So
+			 * begin+end == whole URL
+			 * begin+URI_end = /path/to/whatever
+			 * URI_end+end = ?thisWhole=Section&of=Fluff
+			*/
+			auto URI_end = std::find_if(begin, end, [](char cur) -> bool {
+				if (cur == '?')
+					return true;
+				return false;
+			});
+
+			response.URI = std::string(begin, URI_end);
+
+			// @TODO: Query parsing
+			response.Query = std::string(URI_end + 1, end);
+
+			std::cout << "Split up URL and Query: URL: " << response.URI << ", Query: " << response.Query << "\n";
 		}
 		// Step 3: get HTTP-Version
 
@@ -415,8 +435,10 @@ private:
 		return ret;
 	}
 
-	static std::unordered_map<std::string, std::string> parsedResponseBody()
+	static StringMap parsedResponseBody()
 	{
+		StringMap ret {};
+		return ret;
 	}
 
 public:
@@ -428,7 +450,7 @@ public:
 
 		std::cout << "Parsed! "
 				  << "Method: " << r.Method << "\n"
-				  << "URL: " << r.URL << "\n"
+				  << "URL: " << r.URI << "\n"
 				  << "Version: " << r.Version << "\n"
 				  << std::endl;
 
@@ -588,6 +610,9 @@ public:
  * @brief The AcceptServer class uses the accept() system call to serve a socket listening
  */
 class AcceptServer {
+private:
+	using HandlerMap = std::unordered_map<std::string, std::function<bool(ClientConnection&)>>;
+
 protected:
 	/// sin length - ipv6 sin pls
 	socklen_t m_sin_l = sizeof(sockaddr_storage);
@@ -665,40 +690,28 @@ public:
 			bufclear();
 			con.Read(m_tmp_buf);
 			auto clientIn = HTTPResponseBuilder(m_tmp_buf);
-			auto Out = con.outResp;
-			Out->append(
-				"<!DOCTYPE html><html><meta charset='utf-8'><head><title>Bye-bye baby bye-bye</title>\n"
-				"<style>body { background-color: #111 }\n"
-				"h1 { font-size:4cm; text-align: center; color: black;\n"
-				" text-shadow: 0 0 2mm red}</style></head>\n"
-				"<body><h1>Goodbye, world!</h1>\n"
-				"<form method=\"post\">\n"
-				"<label color='white'>Name:\n"
-				"<input name=\"submitted-name\" autocomplete=\"name\">\n"
-				"<input type='date' id='meeting-date' name='meeting-date'>"
-				"</label>\n"
-				"<button>Save</button>\n"
-				"</form>\n"
-				"</body></html>\r\n");
-
-			Out->setStatus(Status200());
-			con.Write(Out->get());
-
+#ifdef HTTP_RAW_DBG
 			std::cout << "RAW:"
 					  << "\n---------------------------------------------------------------------\n"
 					  << clientIn.getResponseOnly()
 					  << "\n---------------------------------------------------------------------\n";
-
+#endif
 			auto g = con.getPeerName();
+#ifdef HTTP_RAW_DBG
 			std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
+#endif
+			std::string InputData(m_tmp_buf.begin(), m_tmp_buf.end());
 
-			std::string test(m_tmp_buf.begin(), m_tmp_buf.end());
-
-			HTTPClientResponse resp = respB.parse(std::move(test));
-			if (m_handlers.find(resp.URL) != m_handlers.end()) {
-				m_handlers.at(resp.URL)(con);
+			HTTPClientResponse resp = respB.parse(std::move(InputData));
+			if (m_handlers.find(resp.URI) != m_handlers.end()) {
+				m_handlers.at(resp.URI)(con);
 			} else {
-				std::cout << "didnt find" << resp.URL << "!\n";
+				if (has<HandlerMap, std::string>(m_handlers, "http_404")) {
+					std::cout << "Found 404 page serve \n";
+					m_handlers["http_404"](con);
+				} else {
+					std::cout << "Didnt find 404 page serve\n";
+				}
 			}
 
 			con.Close();
