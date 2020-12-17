@@ -653,17 +653,18 @@ public:
 			auto clientIn = HTTPResponseBuilder(m_tmp_buf);
 			auto Out = con.outResp;
 			Out->append(
-				"<!DOCTYPE html><html><meta charset='utf-8'><head><title>Bye-bye baby bye-bye</title>"
-				"<style>body { background-color: #111 }"
-				"h1 { font-size:4cm; text-align: center; color: black;"
-				" text-shadow: 0 0 2mm red}</style></head>"
-				"<body><h1>Goodbye, world!</h1>"
-				"<form method=\"post\">"
-				"<label text-color='white'>Name:"
-				"<input name=\"submitted-name\" autocomplete=\"name\">"
-				"</label>"
-				"<button>Save</button>"
-				"</form>"
+				"<!DOCTYPE html><html><meta charset='utf-8'><head><title>Bye-bye baby bye-bye</title>\n"
+				"<style>body { background-color: #111 }\n"
+				"h1 { font-size:4cm; text-align: center; color: black;\n"
+				" text-shadow: 0 0 2mm red}</style></head>\n"
+				"<body><h1>Goodbye, world!</h1>\n"
+				"<form method=\"post\">\n"
+				"<label color='white'>Name:\n"
+				"<input name=\"submitted-name\" autocomplete=\"name\">\n"
+				"<input type='date' id='meeting-date' name='meeting-date'>"
+				"</label>\n"
+				"<button>Save</button>\n"
+				"</form>\n"
 				"</body></html>\r\n");
 
 			Out->setStatus(Status200());
