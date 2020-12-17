@@ -26,6 +26,20 @@ constexpr int max_connections_per_socket = 10;
 constexpr int enable_s = 1;
 constexpr int disable_s = -1;
 
+constexpr char DefaultPage[] = "<!DOCTYPE html><html><meta charset='utf-8'><head><title>Bye-bye baby bye-bye</title>\n"
+							   "<style>body { background-color: #111 }\n"
+							   "h1 { font-size:4cm; text-align: center; color: black;\n"
+							   " text-shadow: 0 0 2mm red}</style></head>\n"
+							   "<body><h1>Goodbye, world!</h1>\n"
+							   "<form method=\"get\">\n"
+							   "<label color='white'>Name:\n"
+							   "<input name=\"submitted-name\" autocomplete=\"name\">\n"
+							   "<input type='date' id='meeting-date' name='meeting-date'>"
+							   "</label>\n"
+							   "<button>Save</button>\n"
+							   "</form>\n"
+							   "</body></html>\r\n";
+
 sig_atomic_t flag = false;
 using StringMap = std::unordered_map<std::string, std::string>;
 
@@ -829,12 +843,25 @@ public:
 
 int main()
 {
-	auto SlashRoute = [](ClientConnection&) -> bool {
+	auto SlashRoute = [](ClientConnection& con) -> bool {
+		con.outResp->append(DefaultPage);
+
+		con.outResp->setStatus(Status200());
+		con.Write(con.outResp->get());
 		std::cout << "Was here!" << std::endl;
+		return true;
+	};
+
+	auto FourZeroFour = [](ClientConnection& con) -> bool {
+		con.outResp->append("<html><head><title>404</title></head><body><h1>404</h1></body></html>");
+		con.outResp->setStatus(Status404());
+		con.Write(con.outResp->get());
+
 		return true;
 	};
 	AcceptServer ss { 12312 };
 	ss.RegisterResponseHandler(SlashRoute, "/");
+	ss.RegisterResponseHandler(FourZeroFour, "http_404");
 	ss.runAccept();
 	ss.~AcceptServer();
 	exit(EXIT_SUCCESS);
