@@ -52,6 +52,9 @@ concept SocketAddrStore = std::is_same_v<std::remove_cvref_t<T>, sockaddr_in>
 
 // clang-format on
 
+std::string urlencode(std::string_view in);
+std::string urldecode(std::string_view in);
+
 sockaddr_in* asIncomingSocketAddress(addrinfo& s)
 {
 	return reinterpret_cast<struct sockaddr_in*>(s.ai_addr);
@@ -396,6 +399,10 @@ private:
 		}
 
 		return ret;
+	}
+
+	static std::unordered_map<std::string, std::string> parsedResponseBody()
+	{
 	}
 
 public:
