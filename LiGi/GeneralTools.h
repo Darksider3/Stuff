@@ -14,6 +14,12 @@
 namespace Li {
 namespace common {
 
+template<typename Findable, typename U>
+bool has(const Findable m, const U&& thing)
+{
+	return m.find(thing) != m.end();
+}
+
 std::vector<std::string> split(const std::string& s, const char delimiter) noexcept
 {
     std::vector<std::string> tokens;
