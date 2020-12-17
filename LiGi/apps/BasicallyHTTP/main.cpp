@@ -27,11 +27,9 @@ constexpr int enable_s = 1;
 constexpr int disable_s = -1;
 
 sig_atomic_t flag = false;
+using StringMap = std::unordered_map<std::string, std::string>;
 
-bool has(const std::unordered_map<std::string, std::string> map, const std::string&& name)
-{
-	return map.find(name) != map.end();
-}
+using Li::common::has;
 
 void* get_in_addr(struct sockaddr* sa)
 {
@@ -383,7 +381,7 @@ private:
 	static std::string processPossibleContent(std::istream& in, Map& map, ssize_t max_streamlen = max_buf_len)
 	{
 		std::string ret {};
-		if (!has(map, "content-length"))
+		if (!has<StringMap, std::string>(map, "content-length"))
 			return ret; // no content to possibly read
 
 		ssize_t len = std::stol(map.at("content-length"));
