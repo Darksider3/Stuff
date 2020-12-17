@@ -367,8 +367,8 @@ private:
 
 			response.URI = std::string(begin, URI_end);
 
-			// @TODO: Query parsing
-			response.Query = std::string(URI_end + 1, end);
+			// @TODO: Query parsing - not the right place to throw out the ?
+			response.Query = std::string(URI_end, end);
 
 			std::cout << "Split up URL and Query: URL: " << response.URI << ", Query: " << response.Query << "\n";
 		}
