@@ -6,21 +6,23 @@
 #include <unordered_map>
 #include <vector>
 // socket include#include <stdio.h>
+#include "LiGi/GeneralTools.h"
 #include <arpa/inet.h>
-#include <errno.h>
+#include <cerrno>
+#include <csignal>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <iomanip>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <signal.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "LiGi/GeneralTools.h"
-
+using size_t = std::size_t;
+constexpr in_port_t port = 12312;
 constexpr size_t max_buf_len = 8192;
 constexpr int max_connections_per_socket = 10;
 constexpr int enable_s = 1;
@@ -48,10 +50,10 @@ using Li::common::has;
 void* get_in_addr(struct sockaddr* sa)
 {
 	if (sa->sa_family == AF_INET) {
-		return &(((struct sockaddr_in*)sa)->sin_addr);
+		return &((reinterpret_cast<struct sockaddr_in*>(sa))->sin_addr);
 	}
 
-	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+	return &((reinterpret_cast<struct sockaddr_in6*>(sa))->sin6_addr);
 }
 void flagFunc(int) // ignore sig - we gonna handle them all the same
 {
@@ -103,25 +105,25 @@ private:
 	}
 
 	std::shared_ptr<sockaddr_storage> Storage;
-	int Sock;
+	int Sock { 0 };
 
 public:
-	bool is_alive() const { return Sock != -1; }
+	[[nodiscard]] bool is_alive() const { return Sock > 0; }
 
 	std::pair<std::string, in_port_t> getPeerName()
 	{
 		if (!d->Storage)
 			return {};
-		return getPeerName(&reinterpret_cast<sockaddr_storage&>(*d->Storage.get()));
+		return getPeerName(&reinterpret_cast<sockaddr_storage&>(*d->Storage));
 	}
 
 	std::pair<std::string, in_port_t> getPeerName(const sockaddr_storage* s)
 	{
 		char ipstr[INET6_ADDRSTRLEN];
 		in_port_t port;
-		inet_ntop(d->Storage.get()->ss_family,
+		inet_ntop(d->Storage->ss_family,
 			get_in_addr((struct sockaddr*)d->Storage.get()),
-			ipstr, sizeof ipstr);
+			&ipstr[0], sizeof ipstr);
 		if (s->ss_family == AF_INET6) { // ipv6
 			struct sockaddr_in6* ad = reinterpret_cast<sockaddr_in6*>(&s);
 			port = ntohs(ad->sin6_port);
@@ -164,7 +166,7 @@ public:
 		return Write(data.c_str(), data.length());
 	}
 
-	ssize_t Write(const std::vector<char>& vec) const
+	[[nodiscard]] ssize_t Write(const std::vector<char>& vec) const
 	{
 		return Write(&vec[0], vec.size());
 	}
@@ -204,7 +206,7 @@ public:
 	 * @brief get returns the appropriate status code as a string
 	 * @return Statuscode as std::string
 	 */
-	virtual const std::string get() const = 0;
+	[[nodiscard]] virtual std::string get() const = 0;
 	/**
 	 * @brief operator std::string std::string conversion operator
 	 * @return Same as `.get()`.
@@ -221,7 +223,7 @@ public:
  */
 class Status200 : public AbstractStatus {
 public:
-	const std::string get() const override { return "200 OK"; }
+	[[nodiscard]] std::string get() const override { return "200 OK"; }
 };
 
 /**
@@ -229,10 +231,7 @@ public:
  */
 class Status404 : public AbstractStatus {
 public:
-	const std::string get() const override
-	{
-		return "404 Not Found";
-	}
+	[[nodiscard]] std::string get() const override { return "404 Not Found"; }
 };
 
 /**
@@ -240,9 +239,7 @@ public:
  */
 class ResponseBuilder {
 private:
-protected:
 public:
-	ResponseBuilder() {};
 	virtual ~ResponseBuilder() = default;
 	/**
 	 * @brief get returns a full fledged response
@@ -254,7 +251,7 @@ public:
 	 * @brief length of(given, gotten) response
 	 * @return Length of Response
 	 */
-	virtual size_t length() const = 0;
+	[[nodiscard]] virtual size_t length() const = 0;
 };
 
 struct HTTPClientResponse {
@@ -300,7 +297,8 @@ private:
 	static HTTPClientResponse ReadHTTPMethodAndVersion(std::istream& in)
 	{
 		HTTPClientResponse response;
-		std::string line, tmp;
+		std::string line;
+		std::string tmp;
 		if (in.tellg() > 0) {
 			return {}; // @TODO: ERROR! Shall not pass in
 					   // some stream in useless state
@@ -360,9 +358,7 @@ private:
 			 * URI_end+end = ?thisWhole=Section&of=Fluff
 			*/
 			auto URI_end = std::find_if(begin, end, [](char cur) -> bool {
-				if (cur == '?')
-					return true;
-				return false;
+				return cur == '?';
 			});
 
 			response.URI = std::string(begin, URI_end);
@@ -442,9 +438,10 @@ private:
 	}
 
 public:
-	HTTPClientResponse parse(const std::string&& in)
+	HTTPClientResponse parse(std::string_view in)
 	{
-		std::istringstream x(in);
+		std::string constr { in };
+		std::istringstream x(constr);
 		auto r = ReadHTTPMethodAndVersion(x);
 		ReadFields(x, r.Fields);
 
@@ -473,7 +470,7 @@ public:
  * @brief The HTTPResponseBuilder class provides an easy, fast interface for basic servings
  */
 class HTTPResponseBuilder : public ResponseBuilder {
-protected:
+private:
 	std::string m_Resp {};
 	std::string m_Status {};
 	std::string m_Content_Type { "text/html" };
@@ -489,7 +486,7 @@ public:
 	 * @param str Contents of the response
 	 * @param Status status code(as a string)
 	 */
-	HTTPResponseBuilder(const std::string_view str, const std::string Status = "200 OK")
+	HTTPResponseBuilder(const std::string_view str, const std::string&& Status = "200 OK")
 		: m_Resp { str }
 		, m_Status { Status }
 	{
@@ -560,20 +557,19 @@ public:
 		return m_Resp;
 	}
 
-	size_t length() const override { return m_Resp.length(); }
+	[[nodiscard]] size_t length() const override { return m_Resp.length(); }
 };
 
 class ClientConnection : public AbstractConnection<ClientConnection> {
-protected:
-public:
-	std::shared_ptr<HTTPResponseBuilder> outResp;
+private:
+	std::shared_ptr<HTTPResponseBuilder> m_OutResponse;
 
-	ClientConnection() = delete;
+public:
 	ClientConnection(const int& S, sockaddr_storage& stor)
 	{
 		setSock(&S);
 		setInfo(stor);
-		outResp = std::make_shared<HTTPResponseBuilder>();
+		m_OutResponse = std::make_shared<HTTPResponseBuilder>();
 	}
 
 	void printme()
@@ -600,7 +596,12 @@ public:
 		return ret;
 	}
 
-	virtual ~ClientConnection()
+	std::shared_ptr<HTTPResponseBuilder> outResp()
+	{
+		return m_OutResponse;
+	}
+
+	~ClientConnection() override
 	{
 		Close();
 	}
@@ -613,18 +614,17 @@ class AcceptServer {
 private:
 	using HandlerMap = std::unordered_map<std::string, std::function<bool(ClientConnection&)>>;
 
-protected:
 	/// sin length - ipv6 sin pls
 	socklen_t m_sin_l = sizeof(sockaddr_storage);
 
 	/// Servers own address
-	addrinfo hints, *m_serv_addr;
+	addrinfo hints {}, *m_serv_addr { nullptr };
 
 	/// servers own port
-	in_port_t m_serv_port;
+	in_port_t m_serv_port {};
 
 	/// servers actual Socket!
-	int m_Sock;
+	int m_Sock {};
 
 	/// Stores all connections established
 	std::vector<ClientConnection> m_connections;
@@ -648,22 +648,23 @@ protected:
 	 */
 	void setsigs()
 	{
-		struct sigaction a;
+		struct sigaction a {
+		};
 		a.sa_handler = flagFunc;
 		a.sa_flags = 0;
 		sigemptyset(&a.sa_mask);
-		sigaction(SIGINT, &a, NULL);
+		sigaction(SIGINT, &a, nullptr);
 		signal(SIGPIPE, SIG_IGN);
 	}
 
 	template<typename SingleArg>
-	int EnableOpts(const int& sockT, const SingleArg& opt)
+	int EnableOpts(int& sockT, const SingleArg& opt)
 	{
 		return setsockopt(m_Sock, sockT, opt, &enable_s, sizeof(int));
 	}
 
 	template<typename FirstArg, typename... Args>
-	void EnableOpts(const int sockT, const FirstArg&& first, const Args&&... args)
+	void EnableOpts(int sockT, const FirstArg&& first, const Args&&... args)
 	{
 		EnableOpts(sockT, first);
 		EnableOpts(sockT, args...);
@@ -677,6 +678,12 @@ protected:
 	}
 
 public:
+	AcceptServer(AcceptServer&) = delete;
+	AcceptServer(AcceptServer&&) = delete;
+	AcceptServer(const AcceptServer&&) = delete;
+	AcceptServer operator=(AcceptServer& other) = delete;
+	AcceptServer operator=(AcceptServer&& other) = delete;
+
 	AcceptServer(const in_port_t p)
 		: m_serv_port { p }
 	{
@@ -702,7 +709,7 @@ public:
 #endif
 			std::string InputData(m_tmp_buf.begin(), m_tmp_buf.end());
 
-			HTTPClientResponse resp = respB.parse(std::move(InputData));
+			HTTPClientResponse resp = respB.parse(InputData);
 			if (m_handlers.find(resp.URI) != m_handlers.end()) {
 				m_handlers.at(resp.URI)(con);
 			} else {
@@ -724,7 +731,7 @@ public:
 		Listen();
 	}
 
-	virtual ~AcceptServer()
+	~AcceptServer()
 	{
 		std::cout << "Usage exit: " << m_connections.size() << std::endl;
 		unbind();
@@ -747,7 +754,9 @@ public:
 		hints.ai_socktype = hintSockT;
 		hints.ai_flags = hintFlags; // fill my ip!
 
-		getaddrinfo(NULL, std::string(std::to_string(m_serv_port)).c_str(), &hints, &m_serv_addr);
+		if (getaddrinfo(nullptr, std::string(std::to_string(m_serv_port)).c_str(), &hints, &m_serv_addr) != 0) {
+			perror("getaddrinfo");
+		}
 
 		m_Sock = socket(m_serv_addr->ai_family, m_serv_addr->ai_socktype, m_serv_addr->ai_protocol);
 		if (m_Sock == -1) {
@@ -816,7 +825,7 @@ public:
 		return true;
 	}
 
-	void RegisterResponseHandler(const std::function<bool(ClientConnection&)>&& f, std::string_view route)
+	void RegisterResponseHandler(std::function<bool(ClientConnection&)>&& f, std::string_view route)
 	{
 		m_handlers[std::string(route)] = std::move(f);
 	}
@@ -827,7 +836,7 @@ public:
 	void runAccept()
 	{
 		while (!flag) {
-			sockaddr_storage cli;
+			sockaddr_storage cli {};
 			int cli_fd = accept(m_Sock, reinterpret_cast<sockaddr*>(&cli), &m_sin_l);
 
 			if (cli_fd == -1)
@@ -857,22 +866,24 @@ public:
 int main()
 {
 	auto SlashRoute = [](ClientConnection& con) -> bool {
-		con.outResp->append(DefaultPage);
+		auto Out = con.outResp();
+		Out->append(&DefaultPage[0]);
 
-		con.outResp->setStatus(Status200());
-		con.Write(con.outResp->get());
+		Out->setStatus(Status200());
+		con.Write(Out->get());
 		std::cout << "Was here!" << std::endl;
 		return true;
 	};
 
 	auto FourZeroFour = [](ClientConnection& con) -> bool {
-		con.outResp->append("<html><head><title>404</title></head><body><h1>404</h1></body></html>");
-		con.outResp->setStatus(Status404());
-		con.Write(con.outResp->get());
+		auto Out = con.outResp();
+		Out->append("<html><head><title>404</title></head><body><h1>404</h1></body></html>");
+		Out->setStatus(Status404());
+		con.Write(Out->get());
 
 		return true;
 	};
-	AcceptServer ss { 12312 };
+	AcceptServer ss { port };
 	ss.RegisterResponseHandler(SlashRoute, "/");
 	ss.RegisterResponseHandler(FourZeroFour, "http_404");
 	ss.runAccept();
