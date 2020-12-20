@@ -133,16 +133,15 @@ public:
 		auto it = m_cached_references.find(key);
 		if (it == m_cached_references.end()) {
 			throw std::range_error("Ther is no such key '"s + std::to_string(key) + "' in cache"s);
-		} else {
-			// put the used item in front of the list
-			m_cached_items.splice(m_cached_items.begin(), m_cached_items, it->second);
+		}
+		// put the used item in front of the list
+		m_cached_items.splice(m_cached_items.begin(), m_cached_items, it->second);
 
-			/*m_cached_items.insert(m_cached_items.begin(),
+		/*m_cached_items.insert(m_cached_items.begin(),
 				std::make_move_iterator(it->second),
 				std::make_move_iterator(it->second));*/
 
-			return it->second->second;
-		}
+		return it->second->second;
 	}
 
 	/**
@@ -150,7 +149,8 @@ public:
 	 * @param t Key to lookup
 	 * @return `val_t` Value of `key`
 	 */
-	inline const val_t& operator[](const key_t t)
+	inline const val_t&
+	operator[](const key_t t)
 	{
 		return get(t);
 	}
@@ -179,7 +179,7 @@ public:
 	 * @brief size Returns size of LRU
 	 * @return `LRU::Size`
 	 */
-	Size size() const
+	[[nodiscard]] Size size() const
 	{
 		return m_cached_items.size();
 	}
@@ -188,7 +188,7 @@ public:
 	 * @brief Capacity of given LRU
 	 * @return `LRU::Size`
 	 */
-	Size Capacity() const
+	[[nodiscard]] Size Capacity() const
 	{
 		return m_Capacity;
 	}
