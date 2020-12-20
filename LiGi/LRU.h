@@ -1,5 +1,6 @@
 #ifndef LRU_H
 #define LRU_H
+#include "Decls.h"
 #include <list>
 #include <memory>
 #include <unordered_map>
@@ -35,7 +36,7 @@ namespace Li {
 4406ms measured 30000000 random items search.
  */
 
-const size_t lru_default_size = 8 * 256; ///< The default LRU size when no arguments are supplied
+const Size lru_default_size = 8 * 256; ///< The default LRU size when no arguments are supplied
 
 /**
  *  @brief LRU caching class
@@ -51,10 +52,9 @@ const size_t lru_default_size = 8 * 256; ///< The default LRU size when no argum
  */
 template<typename key_t, typename val_t>
 class LRU : public std::enable_shared_from_this<LRU<key_t, val_t>> {
-protected:
+private:
 	using key_value_t = std::pair<key_t, val_t>;                       ///< Key-Pair of Key and Value supplied through template parameters
 	using pair_iterator_t = typename std::list<key_value_t>::iterator; ///< key_value_t iterator
-	using Size = size_t;                                               ///< used Size throughout the class
 	Size m_Capacity;                                                   ///< Capacity of given LRU
 
 public:
@@ -197,7 +197,7 @@ public:
 	 * @brief Resize resizes the LRU. !!!WARNING!!! destructible! Also clears out everything first!
 	 * @param cap Size to resize to
 	 */
-	void Resize(size_t cap)
+	void Resize(Size cap)
 	{
 		clear();
 		m_cached_items.resize(cap);
@@ -242,13 +242,13 @@ TEST_SUITE("LRU")
 
 	TEST_CASE("LRU Capacity")
 	{
-		auto m_ = Li::LRU<size_t, size_t>(small_case_size);
+		auto m_ = Li::LRU<Size, Size>(small_case_size);
 		CHECK(m_.Capacity() == small_case_size);
 	}
 
 	TEST_CASE("LRU get & operator[]")
 	{
-		auto m = Li::LRU<int, int>(static_cast<size_t>(small_case_size));
+		auto m = Li::LRU<int, int>(static_cast<Size>(small_case_size));
 		for (int i = 0; i != small_case_size; ++i) {
 			m.movable_put(i, i + 1);
 		}
@@ -263,8 +263,8 @@ TEST_SUITE("LRU")
 
 	TEST_CASE("LRU Deletion")
 	{
-		auto m = Li::LRU<size_t, size_t>(small_case_size);
-		for (size_t i = 0; i != small_case_size; ++i) {
+		auto m = Li::LRU<Size, Size>(small_case_size);
+		for (Size i = 0; i != small_case_size; ++i) {
 			m.put(i, i);
 		}
 		m[small_case_size - 1];
@@ -294,7 +294,7 @@ TEST_SUITE("Benchmark" * doctest::skip())
 	TEST_CASE("LRU Bench")
 	{
 
-		constexpr size_t bench_size = 30000000;
+		constexpr Size bench_size = 30000000;
 		auto start = []() {
 			return std::chrono::high_resolution_clock::now();
 		};
@@ -305,19 +305,19 @@ TEST_SUITE("Benchmark" * doctest::skip())
 		};
 
 		auto cur = start();
-		auto m = Li::LRU<size_t, std::string>(bench_size);
+		auto m = Li::LRU<Size, std::string>(bench_size);
 		auto end = stop(cur);
 		auto msg = "\n" + std::to_string(end) + "ms construction time.\n";
 
 		cur = start();
-		for (size_t i = 0; i != bench_size; ++i) {
+		for (Size i = 0; i != bench_size; ++i) {
 			m.movable_put(i, std::to_string(i)); // faster insertion through copy-ellision and moving value
 		}
 		end = stop(cur);
 		msg += std::to_string(end) + "ms measured " + std::to_string(bench_size) + " items insertion.\n";
 
 		cur = start();
-		for (size_t i = 0; i != bench_size; ++i) {
+		for (Size i = 0; i != bench_size; ++i) {
 			m.get(i);
 		}
 		end = stop(cur);
@@ -325,16 +325,16 @@ TEST_SUITE("Benchmark" * doctest::skip())
 
 		std::random_device rd;  //Will be used to obtain a seed for the random number engine
 		std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-		std::uniform_int_distribution<size_t> distrib(0, bench_size - 1);
+		std::uniform_int_distribution<Size> distrib(0, bench_size - 1);
 
-		std::stack<size_t> RandomNums {};
-		for (size_t i = 0; i != bench_size; ++i)
+		std::stack<Size> RandomNums {};
+		for (Size i = 0; i != bench_size; ++i)
 			RandomNums.emplace(distrib(gen));
 
 		cur = start();
 
 		while (true) {
-			if (RandomNums.size() == 0) {
+			if (RandomNums.empty()) {
 				break;
 			}
 
