@@ -21,6 +21,8 @@ private:
     std::shared_ptr<HTTPResponseBuilder> m_OutResponse {};
 
 public:
+    ClientConnection(const ClientConnection&) = delete;
+    ClientConnection& operator=(ClientConnection const&) = delete;
     ClientConnection(const int& Socket, sockaddr_storage& stor)
     {
         setSock(&Socket);
@@ -45,21 +47,25 @@ public:
      * @param ssize_t maximum read length
      * @return std::string
      */
-    std::string_view ReadUntilN(std::vector<char>& into, const ssize_t max = max_buf_len)
+    std::string ReadUntilN(std::vector<char>& into, const size_t max_read, const size_t buf_max = max_buf_len)
     {
+        std::cout << "got length: " << max_read << std::endl;
         std::string ret;
-        into.reserve(max * 2);
+        into.reserve(buf_max);
 
-        ssize_t bytes_received = 0;
+        size_t bytes_received = 0;
+        size_t counter = 0;
         do {
-            bytes_received = recv(Sock, &into[bytes_received], into.size(), 0);
+            bytes_received = recv(Sock, &into[0], into.size(), 0);
             if (bytes_received == -1) { // error out
+                std::cout << "out" << std::endl;
+                perror("recv");
             } else {
                 ret.append(into.begin(), into.end());
             }
-        } while (bytes_received == max); // errored out!
+            counter += bytes_received;
+        } while (bytes_received == buf_max && counter <= max_read); // errored out!
 
-        std::cout << "have read: " << bytes_received << std::endl;
         return ret;
     }
 
@@ -68,8 +74,6 @@ public:
         return m_OutResponse;
     }
 
-    ClientConnection(const ClientConnection&) = delete;
-    ClientConnection& operator=(ClientConnection const&) = delete;
     ~ClientConnection() override
     {
         Close();

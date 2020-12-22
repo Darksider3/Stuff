@@ -33,7 +33,6 @@ struct HTTPClientResponse {
  * @brief Build responses to Clients, Servers or... other things! :^)
  */
 class ResponseBuilder {
-private:
 public:
     ResponseBuilder() = default;
     ResponseBuilder(const ResponseBuilder&) = delete;

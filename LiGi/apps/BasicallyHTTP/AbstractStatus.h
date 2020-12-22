@@ -7,12 +7,15 @@
 
 #include <string>
 /**
- * @brief The AbstractStatus class provides an base class for status codes, like the `Status404` class.
+ * @brief The AbstractStatus class provides an base class for status codes, like the `Status404` class
+ * @note It doesnt allow copying nor moving. It is meant to be constructed in place
  */
 class AbstractStatus {
-private:
-protected:
 public:
+    AbstractStatus(const AbstractStatus&) = delete;
+    AbstractStatus& operator=(AbstractStatus const&) = delete;
+    AbstractStatus(AbstractStatus&&) = delete;
+    AbstractStatus& operator=(AbstractStatus&&) = delete;
     /**
      * @brief get returns the appropriate status code as a string
      * @return Statuscode as std::string
@@ -27,10 +30,6 @@ public:
         return get();
     }
     AbstractStatus() = default;
-    AbstractStatus(const AbstractStatus&) = delete;
-    AbstractStatus& operator=(AbstractStatus const&) = delete;
-    AbstractStatus(AbstractStatus&&) = delete;
-    AbstractStatus& operator=(AbstractStatus&&) = delete;
     virtual ~AbstractStatus() = default;
 };
 #endif //LIGI_APPS_ABSTRACTSTATUS_H

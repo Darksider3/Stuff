@@ -44,6 +44,10 @@ private:
     int Sock { 0 };
 
 public:
+    AbstractConnection(const AbstractConnection&) = delete;
+    AbstractConnection& operator=(AbstractConnection const&) = delete;
+    AbstractConnection& operator=(AbstractConnection&&) = delete;
+
     /**
      * @brief Weither a socket is still alive or not
      * @return bool True, when still alive, false when not
@@ -136,14 +140,12 @@ public:
         return read(d->Sock, thing, maxlen);
     }
 
-    AbstractConnection(const AbstractConnection&) = delete;
-    AbstractConnection& operator=(AbstractConnection const&) = delete;
     AbstractConnection(AbstractConnection&& other) noexcept
     {
         this->d->Storage = std::move(other.Storage);
         this->d->Sock = { other.d->Sock };
     }
-    AbstractConnection& operator=(AbstractConnection&&) = delete;
+
     virtual ~AbstractConnection()
     {
         Close();
