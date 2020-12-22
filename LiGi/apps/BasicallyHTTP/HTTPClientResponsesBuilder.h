@@ -242,26 +242,19 @@ public:
             auto out = con.outResp();
             if (std::size_t len = std::stoul(r.Fields.at("content-length")); len > 0) {
                 std::cout << "LEN: " << len << std::endl;
-                std::vector<char> vec = std::vector<char>(8096);
+                std::vector<char> vec = std::vector<char>(max_buf_len);
                 std::string possible_content {}; // @TODO: Magic number(4096)
-                size_t already_read = 0;
-                while (x.good()) {
-                    /*
-                     * We have to cast here because just get an "int_like" type
-                     */
-                    possible_content += static_cast<char>(x.get());
-                    ++already_read;
-                }
-                if (!(already_read >= len)) {
+                possible_content.reserve(x.rdbuf()->in_avail());
+                x.read(&possible_content[0], x.rdbuf()->in_avail());
+
+                if (possible_content.length() <= len) {
                     // @TODO: REFACTOR THIS SHIT OMG
-                    possible_content.append(con.ReadUntilN(vec, len, 8096));
+                    possible_content.append(con.ReadUntilN(vec, len, max_buf_len));
                     std::istringstream Content(possible_content);
                     possible_content = processPossibleContent(Content, r.Fields, len);
                 }
                 if (!possible_content.empty()) {
-                    std::cout << "Got a file! Full return size: " << possible_content.size() << "\n";
-                    std::cout << "------------------------------------------------------------------\n"
-                              << possible_content
+                    std::cout << "Got a file! Full return size: " << possible_content.size()
                               << std::endl;
                 } else {
                 }

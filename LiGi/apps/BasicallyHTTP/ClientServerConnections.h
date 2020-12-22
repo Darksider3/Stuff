@@ -47,10 +47,11 @@ public:
      * @param ssize_t maximum read length
      * @return std::string
      */
-    std::string ReadUntilN(std::vector<char>& into, const size_t max_read, const size_t buf_max = max_buf_len)
+    std::string ReadUntilN(std::vector<char>& into, const size_t max_read, const ssize_t buf_max = max_buf_len)
     {
         std::cout << "got length: " << max_read << std::endl;
         std::string ret;
+        ret.reserve(max_read);
         into.reserve(buf_max);
 
         ssize_t bytes_received = 0;
@@ -58,8 +59,8 @@ public:
         do {
             bytes_received = recv(Sock, &into[0], into.size(), 0);
             if (bytes_received == -1) { // error out
-                std::cout << "out" << std::endl;
                 perror("recv");
+                std::exit(1);
             } else {
                 ret.append(into.begin(), into.end());
             }
