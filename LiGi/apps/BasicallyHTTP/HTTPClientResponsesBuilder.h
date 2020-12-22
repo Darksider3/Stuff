@@ -244,7 +244,7 @@ public:
                 std::cout << "LEN: " << len << std::endl;
                 std::vector<char> vec = std::vector<char>(8096);
                 std::string possible_content {}; // @TODO: Magic number(4096)
-                std::size_t already_read = 0;
+                size_t already_read = 0;
                 while (x.good()) {
                     /*
                      * We have to cast here because just get an "int_like" type
@@ -254,7 +254,7 @@ public:
                 }
                 if (!(already_read >= len)) {
                     // @TODO: REFACTOR THIS SHIT OMG
-                    possible_content.append(con.ReadUntilN(vec, static_cast<ssize_t>(len - already_read)));
+                    possible_content.append(con.ReadUntilN(vec, len, 8096));
                     std::istringstream Content(possible_content);
                     possible_content = processPossibleContent(Content, r.Fields, len);
                 }
