@@ -20,13 +20,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++2a -g -pedantic-errors -Wuseles
 # Include threads(but prefer PTHREAD, ty)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-if(NOT CMAKE_USE_PTHREADS_INIT)
-  message(FATAL_ERROR "Currently i just support pthreads. :/")
-endif()
+if (NOT CMAKE_USE_PTHREADS_INIT)
+    message(FATAL_ERROR "Currently i just support pthreads. :/")
+endif ()
 
 # Set include directory
 get_filename_component(PARENT_DIR ../../../ ABSOLUTE)
 include_directories(${PARENT_DIR}/)
 message("Trace for PARENT_DIR ${PARENT_DIR}")
-add_executable(BasicallyHTTP main.cpp)
+add_executable(BasicallyHTTP main.cpp AbstractConnection.h AbstractStatus.h ConcreteStatuses.h Responses.h ClientServerConnections.h HTTPClientResponsesBuilder.h)
 
