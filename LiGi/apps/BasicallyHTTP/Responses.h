@@ -17,15 +17,21 @@ int ToLower(unsigned const char& c)
     return std::tolower(c);
 }
 
+/**
+ * @brief The HTTPClientResponse holds all relevant data send from a client to a server
+ */
 struct HTTPClientResponse {
-    std::string Version {};
-    std::string Method {};
-    std::string URI {};
-    std::string Query {};
+    std::string Version {}; /// @brief HTTP Verison
+    std::string Method {};  /// @brief HTTP Method
+    std::string URI {};     /// @brief URI accessed
+    std::string Query {};   /// @brief Query(a.k.a GET/POST/whatever fields)
 
-    StringMap Fields {};
+    StringMap Fields {}; /// HTTP Fields send
 };
 
+/**
+ * @brief Build responses to Clients, Servers or... other things! :^)
+ */
 class ResponseBuilder {
 private:
 public:

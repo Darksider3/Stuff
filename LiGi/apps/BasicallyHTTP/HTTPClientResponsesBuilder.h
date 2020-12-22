@@ -7,7 +7,7 @@
 
 #include "Responses.h"
 #include <algorithm>
-#include <ctype.h>
+#include <cctype>
 #include <iostream>
 #include <istream>
 #include <string>
@@ -17,6 +17,11 @@
 template<typename StrT = std::string>
 class HTTPClientResponseBuilder {
 private:
+    /**
+     * @brief Trims a string(remove Spaces from the immediate beginning and end)
+     * @param std::string_view String to trim
+     * @return trimmed String
+     */
     static StrT TrimField(std::string_view in)
     {
         auto begin = in.begin();
@@ -32,6 +37,10 @@ private:
         return StrT(begin, end);
     }
 
+    /**
+     * @brief Skip whitespace in a istream
+     * @param std::istream& Stream to skip in
+     */
     void SkipWhitespace(std::istream& in)
     {
         while (std::isspace(in.peek())) {
@@ -231,18 +240,24 @@ public:
 
         if (r.Fields.find("content-length") != r.Fields.end()) {
             auto out = con.outResp();
-            if (auto len = std::stoi(r.Fields.at("content-length")); len > 0) {
+            if (std::size_t len = std::stoul(r.Fields.at("content-length")); len > 0) {
                 std::cout << "LEN: " << len << std::endl;
                 std::vector<char> vec = std::vector<char>(8096);
                 std::string possible_content {}; // @TODO: Magic number(4096)
+                std::size_t already_read = 0;
                 while (x.good()) {
-                    possible_content += x.get();
+                    /*
+                     * We have to cast here because just get an "int_like" type
+                     */
+                    possible_content += static_cast<char>(x.get());
+                    ++already_read;
                 }
-
-                // @TODO: REFACTOR THIS SHIT OMG
-                possible_content.append(con.ReadUntilN(vec, len + 5));
-                std::istringstream Content(possible_content);
-                possible_content = processPossibleContent(Content, r.Fields, len + 5);
+                if (!(already_read >= len)) {
+                    // @TODO: REFACTOR THIS SHIT OMG
+                    possible_content.append(con.ReadUntilN(vec, static_cast<ssize_t>(len - already_read)));
+                    std::istringstream Content(possible_content);
+                    possible_content = processPossibleContent(Content, r.Fields, len);
+                }
                 if (!possible_content.empty()) {
                     std::cout << "Got a file! Full return size: " << possible_content.size() << "\n";
                     std::cout << "------------------------------------------------------------------\n"

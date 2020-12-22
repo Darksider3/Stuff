@@ -5,6 +5,7 @@
 #ifndef LIGI_APPS_CLIENTSERVERCONNECTIONS_H
 #define LIGI_APPS_CLIENTSERVERCONNECTIONS_H
 #include "AbstractConnection.h"
+#include "Constants.h"
 #include "Responses.h"
 #include <memory>
 #include <string>
@@ -38,14 +39,20 @@ public:
         return *this;
     }
 
-    std::string ReadUntilN(std::vector<char>& into, const ssize_t max = 4096)
+    /**
+     * @brief Return up to N bytes. Will read either till the specified maximum len or, in case of close or error, return the content read up to this point
+     * @param std::vector<char>& Temporary buffer - Subject to change here, will probably just allocate one myself at that point
+     * @param ssize_t maximum read length
+     * @return std::string
+     */
+    std::string_view ReadUntilN(std::vector<char>& into, const ssize_t max = max_buf_len)
     {
         std::string ret;
         into.reserve(max * 2);
 
         ssize_t bytes_received = 0;
         do {
-            bytes_received = recv(Sock, &into[0], into.size(), 0);
+            bytes_received = recv(Sock, &into[bytes_received], into.size(), 0);
             if (bytes_received == -1) { // error out
             } else {
                 ret.append(into.begin(), into.end());

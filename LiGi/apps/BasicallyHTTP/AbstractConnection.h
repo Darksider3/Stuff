@@ -5,6 +5,7 @@
 #ifndef LIGI_APPS_ABSTRACTCONNECTION_H
 #define LIGI_APPS_ABSTRACTCONNECTION_H
 
+#include "Constants.h"
 #include "LiGi/GeneralTools.h"
 #include <arpa/inet.h>
 #include <memory>
@@ -130,7 +131,7 @@ public:
         return Read(&vec[0], vec.size());
     }
 
-    ssize_t Read(char* thing, const size_t maxlen)
+    ssize_t Read(char* thing, const size_t maxlen = max_buf_len)
     {
         return read(d->Sock, thing, maxlen);
     }

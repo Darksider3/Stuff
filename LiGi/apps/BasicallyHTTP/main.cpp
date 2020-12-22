@@ -1,5 +1,6 @@
 ﻿#include "ClientServerConnections.h"
 #include "ConcreteStatuses.h"
+#include "Constants.h"
 #include "HTTPClientResponsesBuilder.h"
 #include "Responses.h"
 #include <csignal>
@@ -10,7 +11,6 @@
 
 using size_t = std::size_t;
 constexpr in_port_t port = 12312;
-constexpr size_t max_buf_len = 4096;
 constexpr int max_connections_per_socket = 10;
 constexpr int enable_s = 1;
 constexpr int disable_s = -1;
