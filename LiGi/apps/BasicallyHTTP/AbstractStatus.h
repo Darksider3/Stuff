@@ -5,6 +5,7 @@
 #ifndef LIGI_APPS_ABSTRACTSTATUS_H
 #define LIGI_APPS_ABSTRACTSTATUS_H
 
+#include <string>
 /**
  * @brief The AbstractStatus class provides an base class for status codes, like the `Status404` class.
  */

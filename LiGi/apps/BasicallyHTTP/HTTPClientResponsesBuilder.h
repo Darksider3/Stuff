@@ -4,7 +4,16 @@
 
 #ifndef LIGI_APPS_HTTPCLIENTRESPONSESBUILDER_H
 #define LIGI_APPS_HTTPCLIENTRESPONSESBUILDER_H
+
 #include "Responses.h"
+#include <algorithm>
+#include <ctype.h>
+#include <iostream>
+#include <istream>
+#include <string>
+#include <string_view>
+#include <vector>
+
 template<typename StrT = std::string>
 class HTTPClientResponseBuilder {
 private:

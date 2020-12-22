@@ -1,31 +1,12 @@
-﻿#include <concepts>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <unordered_map>
-#include <vector>
-// socket include#include <stdio.h>
-#include "LiGi/GeneralTools.h"
-#include <arpa/inet.h>
-#include <cerrno>
-#include <csignal>
-#include <cstddef>
-#include <cstdlib>
-#include <cstring>
-#include <iomanip>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-#include "AbstractConnection.h"
-#include "ClientServerConnections.h"
+﻿#include "ClientServerConnections.h"
 #include "ConcreteStatuses.h"
 #include "HTTPClientResponsesBuilder.h"
 #include "Responses.h"
+#include <csignal>
+#include <netdb.h>
+// socket include#include <stdio.h>
+#include "AbstractConnection.h"
+#include "LiGi/GeneralTools.h"
 
 using size_t = std::size_t;
 constexpr in_port_t port = 12312;

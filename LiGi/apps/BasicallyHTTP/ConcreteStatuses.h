@@ -5,6 +5,7 @@
 #ifndef LIGI_APPS_CONCRETESTATUSES_H
 #define LIGI_APPS_CONCRETESTATUSES_H
 #include "AbstractStatus.h"
+#include <string>
 
 /**
  * @brief The Status200 class implements Status Code 200

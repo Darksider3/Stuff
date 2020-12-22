@@ -6,6 +6,8 @@
 #define LIGI_APPS_CLIENTSERVERCONNECTIONS_H
 #include "AbstractConnection.h"
 #include "Responses.h"
+#include <memory>
+#include <string>
 
 class ServerConnection {
 };
