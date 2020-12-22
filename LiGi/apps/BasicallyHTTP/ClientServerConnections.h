@@ -53,7 +53,7 @@ public:
         std::string ret;
         into.reserve(buf_max);
 
-        size_t bytes_received = 0;
+        ssize_t bytes_received = 0;
         size_t counter = 0;
         do {
             bytes_received = recv(Sock, &into[0], into.size(), 0);
