@@ -16,7 +16,7 @@ class ServerConnection {
 /**
  * @brief The ResponseBuilder class provides the interface for Responses
  */
-class ClientConnection : public AbstractConnection<ClientConnection> {
+class ClientConnection final : public AbstractConnection<ClientConnection> {
 private:
     std::shared_ptr<HTTPResponseBuilder> m_OutResponse {};
 

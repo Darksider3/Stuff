@@ -7,10 +7,13 @@
 #include "AbstractStatus.h"
 #include "ClientServerConnections.h"
 #include <unordered_map>
+namespace {
 
 using Map = std::unordered_map<std::string, std::string>;
 using StringMap = std::unordered_map<std::string, std::string>;
 using Li::common::has;
+
+}
 
 int ToLower(unsigned const char& c)
 {
@@ -27,6 +30,8 @@ struct HTTPClientResponse {
     std::string Query {};   /// @brief Query(a.k.a GET/POST/whatever fields)
 
     StringMap Fields {}; /// HTTP Fields send
+
+    std::string body {};
 };
 
 /**
@@ -57,7 +62,7 @@ public:
 /**
  * @brief The HTTPResponseBuilder class provides an easy, fast interface for basic servings
  */
-class HTTPResponseBuilder : public ResponseBuilder {
+class HTTPResponseBuilder final : public ResponseBuilder {
 private:
     std::string m_Resp {};
     std::string m_Status {};

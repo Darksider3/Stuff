@@ -14,9 +14,16 @@
 #include <string_view>
 #include <vector>
 
+#include <fstream>
+
 template<typename StrT = std::string>
 class HTTPClientResponseBuilder {
 private:
+    static bool isSpace(const char& cur)
+    {
+        return std::isspace(cur);
+    }
+
     /**
      * @brief Trims a string(remove Spaces from the immediate beginning and end)
      * @param std::string_view String to trim
@@ -26,13 +33,9 @@ private:
     {
         auto begin = in.begin();
         auto end = in.end();
-        begin = std::find_if_not(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
+        begin = std::find_if_not(begin, end, isSpace);
 
-        end = std::find_if(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
+        end = std::find_if(begin, end, isSpace);
 
         return StrT(begin, end);
     }
@@ -56,6 +59,7 @@ private:
      */
     static HTTPClientResponse ReadHTTPMethodAndVersion(std::istream& in)
     {
+
         HTTPClientResponse response;
         std::string line;
         std::string tmp;
@@ -77,12 +81,8 @@ private:
         // Step 1: get the method
         auto begin = line.begin();
         auto end = line.end();
-        begin = std::find_if_not(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
-        end = std::find_if(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
+        begin = std::find_if_not(begin, end, isSpace);
+        end = std::find_if(begin, end, isSpace);
 
         if (end == begin) {
             // matching error
@@ -98,13 +98,9 @@ private:
         begin = end;
         end = line.end();
 
-        begin = std::find_if_not(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
+        begin = std::find_if_not(begin, end, isSpace);
 
-        end = std::find_if(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
+        end = std::find_if(begin, end, isSpace);
 
         if (end == begin) {
             // @TODO: ERROR! somehow we read 0 size!
@@ -133,13 +129,9 @@ private:
         begin = end;
         end = line.end();
 
-        begin = std::find_if_not(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
+        begin = std::find_if_not(begin, end, isSpace);
 
-        end = std::find_if(begin, end, [](char cur) -> bool {
-            return std::isspace(cur);
-        });
+        end = std::find_if(begin, end, isSpace);
 
         if (end == begin) {
             // @TODO: ERROR! Still shouldn't be 0!
@@ -190,6 +182,7 @@ private:
             return ret; // no content to possibly read
 
         ssize_t len = std::stol(map.at("content-length"));
+        ret.reserve(max_streamlen);
 
         if (len > max_streamlen) {
             return ret; // @TODO: ERROR! Size given is bigger then what we accept
@@ -221,8 +214,8 @@ public:
      */
     HTTPClientResponse parse(std::string_view in, ClientConnection& con)
     {
-        std::string constr { in };
-        std::istringstream x(constr);
+        std::string tmpstr { in };
+        std::istringstream x(tmpstr);
         auto r = ReadHTTPMethodAndVersion(x);
         ReadFields(x, r.Fields);
 
@@ -243,12 +236,10 @@ public:
             if (std::size_t len = std::stoul(r.Fields.at("content-length")); len > 0) {
                 std::cout << "LEN: " << len << std::endl;
                 std::vector<char> vec = std::vector<char>(max_buf_len);
-                std::string possible_content {}; // @TODO: Magic number(4096)
-                possible_content.reserve(len);
-                size_t already_read = 0;
-                auto it = std::make_move_iterator(constr.begin() + x.tellg());
-                possible_content.append(it, std::make_move_iterator(constr.end()));
-                already_read = (possible_content.length());
+                r.body.reserve(len);
+                auto it = std::make_move_iterator(tmpstr.begin() + x.tellg());
+                r.body.append(it, std::make_move_iterator(tmpstr.end()));
+                size_t already_read = (r.body.length());
                 // old method: Not looking at iterators at all
                 //                while (x.good()) {
                 //                    /*
@@ -260,16 +251,21 @@ public:
                 //                }
                 if (!(already_read >= len)) {
                     // @TODO: REFACTOR THIS SHIT OMG
-                    possible_content.append(con.ReadUntilN(vec, max_buf_len));
-                    std::istringstream Content(possible_content);
-                    possible_content = processPossibleContent(Content, r.Fields, len);
-                }
-                if (!possible_content.empty()) {
-                    std::cout << "Got a file! Full return size: " << possible_content.size() << "\n";
-                    std::cout << "------------------------------------------------------------------\n"
-                              << possible_content
-                              << std::endl;
+                    do {
+                        r.body.append(con.ReadUntilN(vec, max_buf_len));
+                    } while (r.body.length() < len);
+                    std::istringstream Content(r.body);
+                    r.body = processPossibleContent(Content, r.Fields, len);
                 } else {
+                }
+                if (!r.body.empty()) {
+                    std::cout << "Got a file! Full return size: " << r.body.size() << "\n";
+                    std::cout << "------------------------------------------------------------------\n"
+                              //<< r.body
+                              << std::endl;
+                    std::ofstream("out.txt", std::ios::binary).write(r.body.c_str(), r.body.length());
+                } else {
+                    std::cout << "came here.. somehow?" << std::endl;
                 }
             }
         }
