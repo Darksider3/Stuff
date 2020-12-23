@@ -47,13 +47,9 @@ public:
      * @param ssize_t maximum read length
      * @return std::string
      */
-    std::string ReadUntilN(std::vector<char>& into, const size_t max_read, const ssize_t buf_max = max_buf_len)
+    std::string ReadUntilN(std::vector<char>& into, const ssize_t buf_max = max_buf_len)
     {
-        std::cout << "got length: " << max_read << std::endl;
         std::string ret;
-        ret.reserve(max_read);
-        into.reserve(buf_max);
-
         ssize_t bytes_received = 0;
         size_t counter = 0;
         do {
@@ -65,7 +61,7 @@ public:
                 ret.append(into.begin(), into.end());
             }
             counter += bytes_received;
-        } while (bytes_received == buf_max && counter <= max_read); // errored out!
+        } while (bytes_received == buf_max); // errored out!
 
         return ret;
     }

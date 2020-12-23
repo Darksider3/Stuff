@@ -244,17 +244,30 @@ public:
                 std::cout << "LEN: " << len << std::endl;
                 std::vector<char> vec = std::vector<char>(max_buf_len);
                 std::string possible_content {}; // @TODO: Magic number(4096)
-                possible_content.reserve(x.rdbuf()->in_avail());
-                x.read(&possible_content[0], x.rdbuf()->in_avail());
-
-                if (possible_content.length() <= len) {
+                possible_content.reserve(len);
+                size_t already_read = 0;
+                auto it = std::make_move_iterator(constr.begin() + x.tellg());
+                possible_content.append(it, std::make_move_iterator(constr.end()));
+                already_read = (possible_content.length());
+                // old method: Not looking at iterators at all
+                //                while (x.good()) {
+                //                    /*
+                //                         * We have to cast here because just get an "int_like" type
+                //                         */
+                //                    possible_content += static_cast<char>(x.get());
+                //
+                //                    ++already_read;
+                //                }
+                if (!(already_read >= len)) {
                     // @TODO: REFACTOR THIS SHIT OMG
-                    possible_content.append(con.ReadUntilN(vec, len, max_buf_len));
+                    possible_content.append(con.ReadUntilN(vec, max_buf_len));
                     std::istringstream Content(possible_content);
                     possible_content = processPossibleContent(Content, r.Fields, len);
                 }
                 if (!possible_content.empty()) {
-                    std::cout << "Got a file! Full return size: " << possible_content.size()
+                    std::cout << "Got a file! Full return size: " << possible_content.size() << "\n";
+                    std::cout << "------------------------------------------------------------------\n"
+                              << possible_content
                               << std::endl;
                 } else {
                 }
