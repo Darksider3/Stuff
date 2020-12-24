@@ -11,13 +11,12 @@
 #include <unistd.h>
 #include <vector>
 
-namespace Li {
-namespace common {
+namespace Li::common {
 
 template<typename Findable, typename U>
 bool has(const Findable m, const U&& thing)
 {
-	return m.find(thing) != m.end();
+    return m.find(thing) != m.end();
 }
 
 std::vector<std::string> split(const std::string& s, const char delimiter) noexcept
@@ -34,9 +33,9 @@ std::vector<std::string> split(const std::string& s, const char delimiter) noexc
 template<typename StrT>
 std::pair<StrT, StrT> SplitPair(StrT str, char delim)
 {
-	auto split_pos = std::find(str.begin(), str.end(), delim);
-	auto second_begin = split_pos != str.end() ? std::next(split_pos) : split_pos;
-	return { { str.begin(), split_pos }, { second_begin, str.end() } };
+    auto split_pos = std::find(str.begin(), str.end(), delim);
+    auto second_begin = split_pos != str.end() ? std::next(split_pos) : split_pos;
+    return { { str.begin(), split_pos }, { second_begin, str.end() } };
 }
 
 template<typename Characters = std::string, typename Stack = std::list<Characters>>
@@ -80,6 +79,10 @@ Characters strip(const Characters& Input, const Delimiter& CharToStrip)
     return result;
 }
 
+inline bool isSpace(const char& c)
+{
+    return std::isspace(c);
+}
 /* @TODO: Generalized Parser for easy of use on the other parsers im going to write... ._,
  */
 /* @TODO: URN, URI, URL-Parser
@@ -87,6 +90,5 @@ Characters strip(const Characters& Input, const Delimiter& CharToStrip)
  * URL: Edit-Distance maybe helpfull by misspelling?
  * URN: Scheme://authority:AuthorityPort/PathOnAuthority?query=Value#Fragment
  */
-}
 }
 #endif // GENERALTOOLS_H
