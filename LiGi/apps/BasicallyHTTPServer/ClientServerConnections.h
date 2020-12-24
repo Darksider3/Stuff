@@ -47,9 +47,10 @@ public:
      * @param ssize_t maximum read length
      * @return std::string
      */
-    std::string ReadUntilN(std::vector<char>& into, const ssize_t buf_max = max_buf_len)
+    std::string ReadUntilN(const ssize_t buf_max = max_buf_len)
     {
         std::string ret;
+        std::vector<char> into = std::vector<char>(max_buf_len);
         ssize_t bytes_received = 0;
         size_t counter = 0;
         do {
