@@ -15,6 +15,7 @@
 #include <string_view>
 #include <vector>
 
+#include <cmath>
 #include <fstream>
 
 template<typename StrT = std::string>
@@ -231,10 +232,13 @@ public:
             auto out = con.outResp();
             if (std::size_t len = std::stoul(r.Fields.at("content-length")); len > 0) {
                 std::cout << "LEN: " << len << std::endl;
-                std::vector<char> vec = std::vector<char>(max_buf_len);
-                r.body.reserve(len);
+                r.body.reserve(llround((len * 1.5)));
+
+                // move iterators to **move** the values
                 auto it = std::make_move_iterator(tmpstr.begin() + x.tellg());
                 r.body.append(it, std::make_move_iterator(tmpstr.end()));
+                tmpstr.clear();
+
                 size_t already_read = (r.body.length());
                 // old method: Not looking at iterators at all
                 //                while (x.good()) {
@@ -245,10 +249,11 @@ public:
                 //
                 //                    ++already_read;
                 //                }
+
                 if (!(already_read >= len)) {
                     // @TODO: REFACTOR THIS SHIT OMG
                     do {
-                        r.body.append(con.ReadUntilN(vec, max_buf_len));
+                        r.body.append(con.ReadUntilN(max_buf_len));
                     } while (r.body.length() < len);
                     std::istringstream Content(r.body);
                     r.body = processPossibleContent(Content, r.Fields, len);
@@ -259,7 +264,7 @@ public:
                     std::cout << "------------------------------------------------------------------\n"
                               //<< r.body
                               << std::endl;
-                    std::ofstream("out.txt", std::ios::binary).write(r.body.c_str(), r.body.length());
+                    //std::ofstream("out.txt", std::ios::binary).write(r.body.c_str(), r.body.length());
                 } else {
                     std::cout << "came here.. somehow?" << std::endl;
                 }
