@@ -50,11 +50,11 @@ public:
     std::string ReadUntilN(const ssize_t buf_max = max_buf_len)
     {
         std::string ret;
-        std::vector<char> into = std::vector<char>(max_buf_len);
+        std::vector<uint8_t> into = std::vector<uint8_t>(buf_max);
         ssize_t bytes_received = 0;
         size_t counter = 0;
         do {
-            bytes_received = recv(Sock, &into[0], into.size(), 0);
+            bytes_received = read(Sock, &into[0], buf_max);
             if (bytes_received == -1) { // error out
                 perror("recv");
                 std::exit(1);

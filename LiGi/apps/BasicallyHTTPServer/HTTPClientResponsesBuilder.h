@@ -209,10 +209,9 @@ public:
      * @param std::string_view Input to parse
      * @return A filled HTTPClientResponse. Empty when not.
      */
-    HTTPClientResponse parse(std::string_view in, ClientConnection& con)
+    HTTPClientResponse parse(const std::string&& in, ClientConnection& con)
     {
-        std::string tmpstr { in };
-        std::istringstream x(tmpstr);
+        std::istringstream x(in);
         auto r = ReadHTTPMethodAndVersion(x);
         ReadFields(x, r.Fields);
 
@@ -235,9 +234,9 @@ public:
                 r.body.reserve(llround((len * 1.5)));
 
                 // move iterators to **move** the values
-                auto it = std::make_move_iterator(tmpstr.begin() + x.tellg());
-                r.body.append(it, std::make_move_iterator(tmpstr.end()));
-                tmpstr.clear();
+                auto it = std::make_move_iterator(in.begin() + x.tellg());
+                r.body.append(it, std::make_move_iterator(in.end()));
+                x.clear();
 
                 size_t already_read = (r.body.length());
                 // old method: Not looking at iterators at all
@@ -254,7 +253,7 @@ public:
                     // @TODO: REFACTOR THIS SHIT OMG
                     do {
                         r.body.append(con.ReadUntilN(max_buf_len));
-                    } while (r.body.length() < len);
+                    } while (r.body.length() < (len + max_buf_len));
                     std::istringstream Content(r.body);
                     r.body = processPossibleContent(Content, r.Fields, len);
                 } else {
@@ -262,7 +261,7 @@ public:
                 if (!r.body.empty()) {
                     std::cout << "Got a file! Full return size: " << r.body.size() << "\n";
                     std::cout << "------------------------------------------------------------------\n"
-                              //<< r.body
+                              << r.body
                               << std::endl;
                     //std::ofstream("out.txt", std::ios::binary).write(r.body.c_str(), r.body.length());
                 } else {

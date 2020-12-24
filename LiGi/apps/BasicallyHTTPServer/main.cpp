@@ -147,7 +147,7 @@ public:
             std::cout << "got it!!!: " << g.first << ":" << g.second << "\n";
 #endif
             std::string InputData(m_tmp_buf.begin(), m_tmp_buf.end());
-            HTTPClientResponse resp = respB.parse(InputData, con);
+            HTTPClientResponse resp = respB.parse(std::move(InputData), con);
 
             if (m_handlers.find(resp.URI) != m_handlers.end()) {
                 m_handlers.at(resp.URI)(con);
