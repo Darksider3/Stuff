@@ -5,6 +5,7 @@
 #ifndef LIGI_APPS_HTTPCLIENTRESPONSESBUILDER_H
 #define LIGI_APPS_HTTPCLIENTRESPONSESBUILDER_H
 
+#include "LiGi/GeneralTools.h"
 #include "Responses.h"
 #include <algorithm>
 #include <cctype>
@@ -19,11 +20,6 @@
 template<typename StrT = std::string>
 class HTTPClientResponseBuilder {
 private:
-    static bool isSpace(const char& cur)
-    {
-        return std::isspace(cur);
-    }
-
     /**
      * @brief Trims a string(remove Spaces from the immediate beginning and end)
      * @param std::string_view String to trim
@@ -33,9 +29,9 @@ private:
     {
         auto begin = in.begin();
         auto end = in.end();
-        begin = std::find_if_not(begin, end, isSpace);
+        begin = std::find_if_not(begin, end, Li::common::isSpace);
 
-        end = std::find_if(begin, end, isSpace);
+        end = std::find_if(begin, end, Li::common::isSpace);
 
         return StrT(begin, end);
     }
@@ -81,8 +77,8 @@ private:
         // Step 1: get the method
         auto begin = line.begin();
         auto end = line.end();
-        begin = std::find_if_not(begin, end, isSpace);
-        end = std::find_if(begin, end, isSpace);
+        begin = std::find_if_not(begin, end, Li::common::isSpace);
+        end = std::find_if(begin, end, Li::common::isSpace);
 
         if (end == begin) {
             // matching error
@@ -98,9 +94,9 @@ private:
         begin = end;
         end = line.end();
 
-        begin = std::find_if_not(begin, end, isSpace);
+        begin = std::find_if_not(begin, end, Li::common::isSpace);
 
-        end = std::find_if(begin, end, isSpace);
+        end = std::find_if(begin, end, Li::common::isSpace);
 
         if (end == begin) {
             // @TODO: ERROR! somehow we read 0 size!
@@ -129,9 +125,9 @@ private:
         begin = end;
         end = line.end();
 
-        begin = std::find_if_not(begin, end, isSpace);
+        begin = std::find_if_not(begin, end, Li::common::isSpace);
 
-        end = std::find_if(begin, end, isSpace);
+        end = std::find_if(begin, end, Li::common::isSpace);
 
         if (end == begin) {
             // @TODO: ERROR! Still shouldn't be 0!
