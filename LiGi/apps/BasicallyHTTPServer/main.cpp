@@ -7,6 +7,7 @@
 #include <netdb.h>
 // socket include#include <stdio.h>
 #include "AbstractConnection.h"
+#include "ConcreteContentTypes.h"
 #include "LiGi/GeneralTools.h"
 
 using size_t = std::size_t;
@@ -313,6 +314,7 @@ int main()
         auto Out = con.outResp();
         Out->append(&DefaultPage[0]);
         Out->setStatus(Status200());
+        Out->setContentType(HTMLType());
         if (con.Write(Out->get()) == -1)
             perror("write: ");
         return true;

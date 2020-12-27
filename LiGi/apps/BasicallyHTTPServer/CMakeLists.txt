@@ -28,5 +28,5 @@ endif ()
 get_filename_component(PARENT_DIR ../../../ ABSOLUTE)
 include_directories(${PARENT_DIR}/)
 message("Trace for PARENT_DIR ${PARENT_DIR}")
-add_executable(BasicallyHTTP main.cpp AbstractConnection.h AbstractStatus.h ConcreteStatuses.h Responses.h ClientServerConnections.h HTTPClientResponsesBuilder.h Constants.h)
+add_executable(BasicallyHTTP main.cpp AbstractConnection.h AbstractStatus.h ConcreteStatuses.h Responses.h ClientServerConnections.h HTTPClientResponsesBuilder.h Constants.h AbstractContentType.h ConcreteContentTypes.h)
 

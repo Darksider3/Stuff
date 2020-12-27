@@ -4,6 +4,7 @@
 
 #ifndef LIGI_APPS_RESPONSES_H
 #define LIGI_APPS_RESPONSES_H
+#include "AbstractContentType.h"
 #include "AbstractStatus.h"
 #include "ClientServerConnections.h"
 #include <unordered_map>
@@ -66,7 +67,7 @@ class HTTPResponseBuilder final : public ResponseBuilder {
 private:
     std::string m_Resp {};
     std::string m_Status {};
-    std::string m_Content_Type { "text/html" };
+    std::string m_Content_Type { "Content-Type: text/html" };
     std::string m_Charset { "charset=UTF-8" };
 
     std::string m_out {};
@@ -111,11 +112,19 @@ public:
 	 */
     void setStatus(AbstractStatus const&& Status) { m_Status = Status.get(); }
 
+    void setContentType(AbstractContentType const&& Type)
+    {
+        m_Content_Type = (Type.fieldname().append(Type.get()));
+    }
+
     /**
 	 * @brief setStatus set string as status
 	 * @param str Statusstring
 	 */
-    void setStatus(std::string_view str) { m_Status = str; }
+    void setStatus(std::string_view str)
+    {
+        m_Status = str;
+    }
 
     /**
 	 * @brief get Get current build of response
@@ -126,18 +135,19 @@ public:
         m_out = "HTTP/1.1 ";
         m_out.append(m_Status);
         m_out.append(CLRF());
-        m_out.append(m_Content_Type);
-        m_out.append("; ");
-        m_out.append(m_Charset);
         if (!m_Resp.empty()) {
-            m_out.append(CLRF());
             m_out.append("Content-Length: " + std::to_string(m_Resp.length()));
+            m_out.append(CLRF());
         }
-        m_out.append(CLRF());
+        if (!m_Content_Type.empty()) {
+            m_out.append(m_Content_Type);
+            m_out.append("; ");
+            m_out.append(m_Charset);
+            m_out.append(CLRF());
+        }
         m_out.append(CLRF());
 
         m_out.append(m_Resp);
-
         return m_out;
     }
 

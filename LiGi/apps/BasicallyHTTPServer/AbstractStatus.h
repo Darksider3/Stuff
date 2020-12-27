@@ -16,6 +16,8 @@ public:
     AbstractStatus& operator=(AbstractStatus const&) = delete;
     AbstractStatus(AbstractStatus&&) = delete;
     AbstractStatus& operator=(AbstractStatus&&) = delete;
+    AbstractStatus() = default;
+    virtual ~AbstractStatus() = default;
     /**
      * @brief get returns the appropriate status code as a string
      * @return Statuscode as std::string
@@ -29,7 +31,5 @@ public:
     {
         return get();
     }
-    AbstractStatus() = default;
-    virtual ~AbstractStatus() = default;
 };
 #endif //LIGI_APPS_ABSTRACTSTATUS_H
