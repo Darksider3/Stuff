@@ -129,8 +129,13 @@ public:
         m_out.append(m_Content_Type);
         m_out.append("; ");
         m_out.append(m_Charset);
+        if (!m_Resp.empty()) {
+            m_out.append(CLRF());
+            m_out.append("Content-Length: " + std::to_string(m_Resp.length()));
+        }
         m_out.append(CLRF());
         m_out.append(CLRF());
+
         m_out.append(m_Resp);
 
         return m_out;
