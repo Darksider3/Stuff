@@ -253,7 +253,7 @@ public:
                     // @TODO: REFACTOR THIS SHIT OMG
                     do {
                         r.body.append(con.ReadUntilN(max_buf_len));
-                    } while (r.body.length() < (len + max_buf_len));
+                    } while (r.body.length() < (len));
                     std::istringstream Content(r.body);
                     r.body = processPossibleContent(Content, r.Fields, len);
                 } else {
