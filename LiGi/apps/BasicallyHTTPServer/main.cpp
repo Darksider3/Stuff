@@ -317,6 +317,7 @@ int main()
         Out->setContentType(HTMLType());
         if (con.Write(Out->get()) == -1)
             perror("write: ");
+        con.Close();
         return true;
     };
 

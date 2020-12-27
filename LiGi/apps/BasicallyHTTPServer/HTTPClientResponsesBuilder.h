@@ -252,7 +252,8 @@ public:
                 if (!(already_read >= len)) {
                     // @TODO: REFACTOR THIS SHIT OMG
                     do {
-                        r.body.append(con.ReadUntilN(max_buf_len));
+                        r.body.append(con.ReadUntilN(len, max_buf_len));
+                        // @TODO: This is probably wrong because we have to parse the different dispositions one by one instead of just getting them all in one go
                     } while (r.body.length() < (len));
                     std::istringstream Content(r.body);
                     r.body = processPossibleContent(Content, r.Fields, len);

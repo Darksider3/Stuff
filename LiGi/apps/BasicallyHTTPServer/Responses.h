@@ -84,6 +84,7 @@ public:
         : m_Resp { str }
         , m_Status { Status }
     {
+        m_out.reserve(max_buf_len);
     }
 
     /**
@@ -145,6 +146,9 @@ public:
             m_out.append(m_Charset);
             m_out.append(CLRF());
         }
+
+        m_out.append("Connection: close");
+        m_out.append(CLRF());
         m_out.append(CLRF());
 
         m_out.append(m_Resp);

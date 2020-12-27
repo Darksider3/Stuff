@@ -7,6 +7,7 @@
 #include "AbstractConnection.h"
 #include "Constants.h"
 #include "Responses.h"
+#include <cstdio>
 #include <memory>
 #include <string>
 
@@ -47,22 +48,21 @@ public:
      * @param ssize_t maximum read length
      * @return std::string
      */
-    std::string ReadUntilN(const ssize_t buf_max = max_buf_len)
+    std::string ReadUntilN(size_t len, const ssize_t buf_max = max_buf_len)
     {
         std::string ret;
         std::vector<uint8_t> into = std::vector<uint8_t>(buf_max);
         ssize_t bytes_received = 0;
         size_t counter = 0;
         do {
-            bytes_received = read(Sock, &into[0], buf_max);
+            bytes_received = read(Sock, &into[0], buf_max - 1);
             if (bytes_received == -1) { // error out
-                perror("recv");
-                std::exit(1);
+                std::perror("recv");
             } else {
                 ret.append(into.begin(), into.end());
             }
             counter += bytes_received;
-        } while (bytes_received == buf_max); // errored out!
+        } while (bytes_received == buf_max - 1 && counter <= upload_tolerance + len); // errored out!
 
         return ret;
     }
