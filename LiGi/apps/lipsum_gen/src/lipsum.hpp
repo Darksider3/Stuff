@@ -22,7 +22,7 @@ class lipsum;
 
 class lipsum {
 private:
-    std::size_t m_default_gen_size { Lipsum_Default_Len }; // BYTES!
+    std::size_t m_default_gen_size; // BYTES!
 
 public:
     lipsum(std::size_t default_len = Lipsum_Default_Len)
