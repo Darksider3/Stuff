@@ -3,8 +3,9 @@
 //
 
 #include "lipsum.hpp"
+#include <string>
 
-std::string&& lipsum::getBytes(std::size_t size, std::string&& in) const
+std::string&& Lipsum::lipsum::getBytes(std::size_t size, std::string&& in) const
 {
     in.reserve(size);
     size_t wholes = size / LipsumData.size();
