@@ -18,6 +18,10 @@ constexpr size_t max_epoll_events = 12000;
 constexpr in_port_t sPort = 8080;
 constexpr size_t listen_backlog = 10;
 
+struct ClientData {
+    int fd {};
+};
+
 int main(int argc, char** argv)
 {
     int flags = 0;
@@ -72,7 +76,8 @@ int main(int argc, char** argv)
     std::cout << "Bound socket\n";
 
     ev.events = EPOLLIN | EPOLLET;
-    ev.data.fd = sock;
+    // ev.data.fd = sock;
+    ev.data.ptr = new ClientData { .fd = sock };
 
     if (ret = listen(sock, listen_backlog); ret < 0) {
         perror("listen");
@@ -127,7 +132,9 @@ int main(int argc, char** argv)
 
         int n = 0;
         for (; n < nfds; ++n) {
-            int tmpFD = events[n].data.fd;
+            auto n_event_ptr = [&]() { return reinterpret_cast<ClientData*&>(events[n].data.ptr); };
+            // gather FD from client struct
+            int tmpFD = n_event_ptr()->fd;
             if ((events[n].events & EPOLLIN) != 0x0) {
                 // ======== accepting clients =========
                 if (tmpFD == sock) {
@@ -154,8 +161,9 @@ int main(int argc, char** argv)
                         std::exit(12);
                     }
 
+                    // create client data!
                     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-                    ev.data.fd = cli_sock;
+                    ev.data.ptr = new ClientData { .fd = cli_sock };
 
                     if (epoll_ctl(epollFD, EPOLL_CTL_ADD, cli_sock, &ev) == -1) {
                         perror("epoll_ctl_add_cli_addr");
@@ -175,12 +183,15 @@ int main(int argc, char** argv)
                     } else if (n_data == 0) { // client close
                         std::cout << "Client closed!\n";
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, tmpFD, NULL);
+
+                        //delete client data
                         close(tmpFD);
+                        delete (n_event_ptr());
                     }
 
                     // read loop
                     do {
-                        std::cout << "Remote Message: " << bf << std::endl;
+                        std::cout << "Remote Message: " << bf << "\n";
                         bf[n_data] = '\0';
 
                         // Zero out buffer!
@@ -196,10 +207,9 @@ int main(int argc, char** argv)
             } else if (events[n].events & EPOLLERR) {
                 std::cout << "TCP Server EPOLL Error!\n";
             }
-            std::cout << std::endl;
+            std::flush(std::cout);
         }
     }
-#pragma clang diagnostic pop
-
     return 0;
+#pragma clang diagnostic pop
 }
