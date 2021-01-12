@@ -16,10 +16,14 @@
 constexpr long recv_size = 1024l;
 constexpr size_t max_epoll_events = 12000;
 constexpr in_port_t sPort = 8080;
-constexpr size_t listen_backlog = 10;
+constexpr size_t listen_backlog = 1024;
 
 struct ClientData {
-    int fd {};
+    int fd { -1 };
+    ~ClientData()
+    {
+        delete std::to_address(this); // dirty hack but working lol
+    }
 };
 
 int main(int argc, char** argv)
@@ -186,7 +190,6 @@ int main(int argc, char** argv)
 
                         //delete client data
                         close(tmpFD);
-                        delete (n_event_ptr());
                     }
 
                     // read loop
