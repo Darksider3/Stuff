@@ -189,6 +189,7 @@ int main(int argc, char** argv)
                 }
             }
 
+            // ========= writing to clients =========
             if ((events[n].events & EPOLLOUT) && tmpFD != sock) {
                 n_data = write(tmpFD, "WRITE TIME BABY: ", 17);
                 std::cout << "TCP Server ready to write data!\n";
