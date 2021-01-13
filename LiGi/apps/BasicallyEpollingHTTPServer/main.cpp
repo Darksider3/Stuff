@@ -40,8 +40,8 @@ public:
     void buffer(std::string_view str) { m_Data.buf = str; }
     std::string buffer() const { return m_Data.buf; }
 
-    void advance_pos(int by = 1) { ++m_Data.pos; }
-    int pos() { return m_Data.pos; }
+    void advance_pos(int by = 1) { m_Data.pos = m_Data.pos += by; }
+    ptrdiff_t pos() { return m_Data.pos; }
 };
 
 // FIXME: Decided upon this. Im going to maintain that list of shared_ptrs which represents our connections. Later usage of them are going to be referenced shared_ptrs
@@ -242,6 +242,8 @@ int ServerLoop(int timeout = -1)
             } else if (events[n].events & EPOLLERR) {
                 std::cout << "TCP Server EPOLL Error!\n";
             }
+
+            // ========= Cleanup in case we marked it =========
             if (cleanup_cur)
                 delete static_cast<ClientDataStruct*>(events[n].data.ptr);
             std::flush(std::cout);
