@@ -25,30 +25,27 @@ struct ClientDataStruct {
     int fd { -1 };
     ptrdiff_t pos { 0 };
     std::string buf {};
-
-    ~ClientDataStruct()
-    {
-        delete std::to_address(this); // dirty hack but working lol
-    }
 };
 
-class ClientData {
+class ClientData : std::enable_shared_from_this<ClientData> {
 private:
-    std::unique_ptr<ClientDataStruct> m_Data = std::make_unique<ClientDataStruct>();
+    ClientDataStruct m_Data {};
 
 public:
+    std::shared_ptr<ClientData> getptr() { return shared_from_this(); }
     ClientData& the() { return *this; }
-    void fd(int fd) { m_Data->fd = fd; }
-    int fd() const { return m_Data->fd; }
+    void fd(int fd) { m_Data.fd = fd; }
+    int fd() const { return m_Data.fd; }
 
-    void buffer(std::string_view str) { m_Data->buf = str; }
-    std::string buffer() const { return m_Data->buf; }
+    void buffer(std::string_view str) { m_Data.buf = str; }
+    std::string buffer() const { return m_Data.buf; }
 
-    void advance_pos(int by = 1) { ++m_Data->pos; }
-    int pos() { return m_Data->pos; }
+    void advance_pos(int by = 1) { ++m_Data.pos; }
+    int pos() { return m_Data.pos; }
 };
 
-using ClientsVector = std::vector<ClientData>;
+// FIXME: Decided upon this. Im going to maintain that list of shared_ptrs which represents our connections. Later usage of them are going to be referenced shared_ptrs
+using ClientsVec = std::vector<std::shared_ptr<ClientData>>;
 
 int ServerLoop(int timeout = -1)
 {
@@ -163,11 +160,13 @@ int ServerLoop(int timeout = -1)
 
         int n = 0;
         for (; n < nfds; ++n) {
+            bool cleanup_cur = false;
             auto n_event_ptr = [&]() { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
             // gather FD from client struct
             int tmpFD = n_event_ptr()->fd;
             if ((events[n].events & EPOLLIN) != 0x0) {
-                // ======== accepting clients =========
+
+                // ========= accepting clients =========
                 if (tmpFD == sock) {
                     cli_sock = accept(sock, (sockaddr*)&serveraddr, &len);
                     if (cli_sock < 0) {
@@ -192,7 +191,7 @@ int ServerLoop(int timeout = -1)
                         std::exit(12);
                     }
 
-                    // create client data!
+                    // ======== create client data! ========
                     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
                     ev.data.ptr = new ClientDataStruct { .fd = cli_sock };
 
@@ -203,7 +202,8 @@ int ServerLoop(int timeout = -1)
                         std::exit(13);
                     }
                 } else {
-                    // ======== reading clients =======
+
+                    // ======== reading clients ========
                     n_data = read(tmpFD, bf, recv_size);
                     if (n_data < 0) { // READ ERROR
                         perror("read");
@@ -219,6 +219,7 @@ int ServerLoop(int timeout = -1)
 
                         //delete client data
                         close(tmpFD);
+                        cleanup_cur = true;
                     }
 
                     // read loop
@@ -241,6 +242,8 @@ int ServerLoop(int timeout = -1)
             } else if (events[n].events & EPOLLERR) {
                 std::cout << "TCP Server EPOLL Error!\n";
             }
+            if (cleanup_cur)
+                delete static_cast<ClientDataStruct*>(events[n].data.ptr);
             std::flush(std::cout);
         }
     }
