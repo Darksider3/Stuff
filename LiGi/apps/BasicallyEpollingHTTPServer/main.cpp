@@ -3,30 +3,54 @@
 //
 
 #include <arpa/inet.h>
+#include <atomic>
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
+#include <memory>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 constexpr long recv_size = 1024l;
 constexpr size_t max_epoll_events = 12000;
 constexpr in_port_t sPort = 8080;
 constexpr size_t listen_backlog = 1024;
 
-struct ClientData {
+struct ClientDataStruct {
     int fd { -1 };
-    ~ClientData()
+    ptrdiff_t pos { 0 };
+    std::string buf {};
+
+    ~ClientDataStruct()
     {
         delete std::to_address(this); // dirty hack but working lol
     }
 };
 
-int main(int argc, char** argv)
+class ClientData {
+private:
+    std::unique_ptr<ClientDataStruct> m_Data = std::make_unique<ClientDataStruct>();
+
+public:
+    ClientData& the() { return *this; }
+    void fd(int fd) { m_Data->fd = fd; }
+    int fd() const { return m_Data->fd; }
+
+    void buffer(std::string_view str) { m_Data->buf = str; }
+    std::string buffer() const { return m_Data->buf; }
+
+    void advance_pos(int by = 1) { ++m_Data->pos; }
+    int pos() { return m_Data->pos; }
+};
+
+using ClientsVector = std::vector<ClientData>;
+
+int ServerLoop(int timeout = -1)
 {
     int flags = 0;
     int reuse = 1;
@@ -81,7 +105,9 @@ int main(int argc, char** argv)
 
     ev.events = EPOLLIN | EPOLLET;
     // ev.data.fd = sock;
-    ev.data.ptr = new ClientData { .fd = sock };
+    ev.data.ptr = new ClientDataStruct { .fd = sock };
+
+    auto& orig = ev;
 
     if (ret = listen(sock, listen_backlog); ret < 0) {
         perror("listen");
@@ -119,10 +145,11 @@ int main(int argc, char** argv)
     std::cout << "Listening in nonblocking mode now!\n";
 
     int cnt = 0;
+
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
     while (true) {
-        int nfds = epoll_wait(epollFD, events, max_epoll_events, -1);
+        int nfds = epoll_wait(epollFD, events, max_epoll_events, timeout);
         if (nfds < 0) {
             perror("epoll_wait");
             close(sock);
@@ -131,12 +158,12 @@ int main(int argc, char** argv)
         }
 
         if (nfds == 0) {
-            std::cout << "Server HeartBeat[1S]: " << cnt++;
+            std::cout << "Server HeartBeat[1S]: " << cnt++ << std::endl;
         }
 
         int n = 0;
         for (; n < nfds; ++n) {
-            auto n_event_ptr = [&]() { return reinterpret_cast<ClientData*&>(events[n].data.ptr); };
+            auto n_event_ptr = [&]() { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
             // gather FD from client struct
             int tmpFD = n_event_ptr()->fd;
             if ((events[n].events & EPOLLIN) != 0x0) {
@@ -167,7 +194,7 @@ int main(int argc, char** argv)
 
                     // create client data!
                     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-                    ev.data.ptr = new ClientData { .fd = cli_sock };
+                    ev.data.ptr = new ClientDataStruct { .fd = cli_sock };
 
                     if (epoll_ctl(epollFD, EPOLL_CTL_ADD, cli_sock, &ev) == -1) {
                         perror("epoll_ctl_add_cli_addr");
@@ -186,6 +213,8 @@ int main(int argc, char** argv)
                         std::exit(14);
                     } else if (n_data == 0) { // client close
                         std::cout << "Client closed!\n";
+                        std::cout << "read from it: " << n_event_ptr()->pos << " bytes!\n";
+                        std::cout << "latest read: " << n_event_ptr()->buf << "\n";
                         epoll_ctl(epollFD, EPOLL_CTL_DEL, tmpFD, NULL);
 
                         //delete client data
@@ -195,10 +224,12 @@ int main(int argc, char** argv)
                     // read loop
                     do {
                         std::cout << "Remote Message: " << bf << "\n";
+                        n_event_ptr()->buf = bf;
                         bf[n_data] = '\0';
 
                         // Zero out buffer!
                         memset(bf, '\0', recv_size);
+                        n_event_ptr()->pos += n_data;
                     } while ((n_data = read(tmpFD, bf, recv_size)) > 0);
                 }
             }
@@ -213,6 +244,19 @@ int main(int argc, char** argv)
             std::flush(std::cout);
         }
     }
+
+    /*close(sock);
+    close(epollFD);
+    close(cli_sock);
+    delete (static_cast<ClientData*>(orig.data.ptr));
+
+    std::cout << "Cleaned up. Exiting." << std::endl;
+     */
     return 0;
 #pragma clang diagnostic pop
+}
+
+int main(int argc, char** argv)
+{
+    return ServerLoop();
 }
