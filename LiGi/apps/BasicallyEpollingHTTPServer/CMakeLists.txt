@@ -29,4 +29,5 @@ get_filename_component(PARENT_DIR ../../../ ABSOLUTE)
 include_directories(${PARENT_DIR}/)
 message("Trace for PARENT_DIR ${PARENT_DIR}")
 add_executable(BasicallyEpollingHTTP main.cpp)
+target_link_libraries(BasicallyEpollingHTTP Threads::Threads)
 

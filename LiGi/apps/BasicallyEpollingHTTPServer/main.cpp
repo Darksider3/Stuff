@@ -4,15 +4,19 @@
 
 #include <arpa/inet.h>
 #include <atomic>
+#include <condition_variable>
 #include <cstring>
 #include <fcntl.h>
 #include <iostream>
 #include <memory>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <signal.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <thread>
 #include <unistd.h>
 #include <vector>
 
@@ -40,14 +44,34 @@ public:
     void buffer(std::string_view str) { m_Data.buf = str; }
     std::string buffer() const { return m_Data.buf; }
 
-    void advance_pos(int by = 1) { m_Data.pos = m_Data.pos += by; }
+    void advance_pos(int by = 1) { m_Data.pos = m_Data.pos + by; }
     ptrdiff_t pos() { return m_Data.pos; }
 };
 
 // FIXME: Decided upon this. Im going to maintain that list of shared_ptrs which represents our connections. Later usage of them are going to be referenced shared_ptrs
 using ClientsVec = std::vector<std::shared_ptr<ClientData>>;
 
-int ServerLoop(int timeout = -1)
+class EpollManager {
+private:
+    ClientsVec m_Vec;
+    ClientDataStruct* m_server_data { nullptr };
+    sockaddr_in m_serveraddr {};
+    socklen_t m_accept_len = 0;
+
+    epoll_event m_epoll_construction_event;
+    epoll_event m_total_events[max_epoll_events];
+
+    ptrdiff_t m_epollFD { -1 };
+
+public:
+    void read()
+    {
+    }
+};
+
+std::atomic_bool c_v = false;
+
+int ServerLoop(int efd, int timeout = -1)
 {
     int flags = 0;
     int reuse = 1;
@@ -102,9 +126,8 @@ int ServerLoop(int timeout = -1)
 
     ev.events = EPOLLIN | EPOLLET;
     // ev.data.fd = sock;
-    ev.data.ptr = new ClientDataStruct { .fd = sock };
-
-    auto& orig = ev;
+    ClientDataStruct* orig = new ClientDataStruct { .fd = sock };
+    ev.data.ptr = orig;
 
     if (ret = listen(sock, listen_backlog); ret < 0) {
         perror("listen");
@@ -116,6 +139,20 @@ int ServerLoop(int timeout = -1)
 
     if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, sock, &ev); ret < 0) {
         perror("epoll_ctl");
+        close(sock);
+        close(epollFD);
+        std::exit(6);
+    }
+
+    std::cout << "inserting eventfd for good measure to kill later"
+              << "\n";
+
+    // ========= Add sentinel to epolls FD set =========
+    epoll_event fd_event {};
+    fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN;
+    fd_event.data.ptr = new ClientDataStruct { .fd = efd };
+    if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, efd, &fd_event); ret < 0) {
+        perror("epoll_ctl_sentinel");
         close(sock);
         close(epollFD);
         std::exit(6);
@@ -145,7 +182,7 @@ int ServerLoop(int timeout = -1)
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
-    while (true) {
+    while (!c_v) {
         int nfds = epoll_wait(epollFD, events, max_epoll_events, timeout);
         if (nfds < 0) {
             perror("epoll_wait");
@@ -161,12 +198,18 @@ int ServerLoop(int timeout = -1)
         int n = 0;
         for (; n < nfds; ++n) {
             bool cleanup_cur = false;
-            auto n_event_ptr = [&]() { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
+            auto n_event_ptr = [&]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
             // gather FD from client struct
             int tmpFD = n_event_ptr()->fd;
             if ((events[n].events & EPOLLIN) != 0x0) {
 
                 // ========= accepting clients =========
+
+                // ========= check for efd sentinel =========
+                if (efd == tmpFD) {
+                    // stop all actions
+                    goto end;
+                }
                 if (tmpFD == sock) {
                     cli_sock = accept(sock, (sockaddr*)&serveraddr, &len);
                     if (cli_sock < 0) {
@@ -249,19 +292,42 @@ int ServerLoop(int timeout = -1)
             std::flush(std::cout);
         }
     }
-
-    /*close(sock);
-    close(epollFD);
+end:
+    close(sock);
     close(cli_sock);
-    delete (static_cast<ClientData*>(orig.data.ptr));
+    close(epollFD);
+    delete orig;
+    delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
 
     std::cout << "Cleaned up. Exiting." << std::endl;
-     */
     return 0;
 #pragma clang diagnostic pop
 }
 
+void flagFunc(int)
+{
+    c_v = true;
+    return;
+}
+
 int main(int argc, char** argv)
 {
-    return ServerLoop();
+    int efd;
+    efd = eventfd(0, EFD_NONBLOCK);
+    struct sigaction a {
+    };
+    a.sa_handler = &flagFunc;
+    a.sa_flags = 0;
+    sigemptyset(&a.sa_mask);
+    sigaction(SIGINT, &a, nullptr);
+    signal(SIGPIPE, SIG_IGN); // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) -> cant influence this
+
+    std::thread b = std::thread(ServerLoop, efd, -1);
+    while (!c_v) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    std::cout << "Killing... " << std::endl;
+    write(efd, &a, sizeof(a));
+    close(efd);
+    b.join();
 }
