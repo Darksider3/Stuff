@@ -10,6 +10,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <mutex>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <signal.h>
@@ -52,11 +53,12 @@ public:
 };
 
 // FIXME: Decided upon this. Im going to maintain that list of shared_ptrs which represents our connections. Later usage of them are going to be referenced shared_ptrs
+using ClientsVec = std::vector<std::shared_ptr<ClientData>>;
+
 struct EpollSet {
     int epoll_fd {};
     epoll_event events[max_epoll_events];
 };
-using ClientsVec = std::vector<std::shared_ptr<ClientData>>;
 
 struct ServerSet {
     ClientsVec Clients;
@@ -70,7 +72,7 @@ struct ServerSet {
     int reuse_addr { -1 };
 };
 
-struct Srv {
+class Srv {
 private:
     sockaddr_in serveraddr {};
     sockaddr_in clientaddr {};
@@ -125,6 +127,11 @@ private:
     }
 
 public:
+    void operator()(int& e_fd, int timeout)
+    {
+        ServerLoop(e_fd, timeout);
+    }
+
     void ThreadLoop(int timeout, int _flags)
     {
         epoll_event ev, events[max_epoll_events];
@@ -188,14 +195,14 @@ public:
                             return;
                         }
                     } else {
-                        std::lock_guard<std::mutex> _guard { n_event_ptr()->_struct_lock };
+                        std::scoped_lock<std::mutex> _guard { n_event_ptr()->_struct_lock };
                         // ======== reading clients ========
                         n_data = read(tmpFD, bf, recv_size);
                         if (n_data < 0) { // READ ERROR
                             perror("read");
                             return;
                         } else if (n_data == 0) { // client close
-                            rm_fd(n_event_ptr(), &tmpFD);
+                            rm_fd(n_event_ptr(), &tmpFD, &epollFD);
                             cleanup_cur = true;
                         }
 
@@ -229,7 +236,7 @@ public:
         }
     }
 
-    int ServerLoop(int _efd, int timeout = -1)
+    int ServerLoop(int& _efd, int timeout = -1)
     {
         epoll_event ev, events[max_epoll_events];
         efd = _efd;
@@ -274,7 +281,7 @@ public:
         // ========= Add sentinel to epolls FD set =========
         epoll_event fd_event {};
         fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN;
-        fd_event.data.ptr = new ClientDataStruct { .fd = efd };
+        fd_event.data.ptr = new ClientDataStruct { .fd = _efd };
         if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, efd, &fd_event); ret < 0) {
             perror("epoll_ctl_sentinel");
             close(server_socket);
@@ -305,8 +312,8 @@ public:
 
         std::cout << "Listening in nonblocking mode now!\n";
 
-        std::jthread thread1 = std::jthread([this, flags] { ThreadLoop(-1, flags); });
-        ThreadLoop(-1, flags);
+        ThreadLoop(timeout, flags);
+
         close(server_socket);
         close(cli_sock);
         close(epollFD);
@@ -315,11 +322,6 @@ public:
 
         std::cout << "Cleaned up. Exiting." << std::endl;
         return 0;
-    }
-
-    void operator()(int efd, int timeout)
-    {
-        ServerLoop(efd, timeout);
     }
 
     static void handle_remote_msg(ClientDataStruct* data, int tmpFD, char* bf, long& read_size)
@@ -336,13 +338,13 @@ public:
         } while ((read_size = read(tmpFD, bf, recv_size)) > 0);
     }
 
-    void rm_fd(ClientDataStruct* data, int* tmpFD)
+    static void rm_fd(ClientDataStruct* data, int* tmpFD, int* epollFD)
     {
 
         std::cout << "Client closed!\n";
         std::cout << "read from it: " << data->pos << " bytes!\n";
         std::cout << "latest read: " << data->buf << "\n";
-        epoll_ctl(epollFD, EPOLL_CTL_DEL, *tmpFD, NULL);
+        epoll_ctl(*epollFD, EPOLL_CTL_DEL, *tmpFD, NULL);
 
         //delete client data
         close(*tmpFD);
@@ -371,9 +373,8 @@ int main(int argc, char** argv)
 
     // ========= thread =========
     Srv Server;
-    std::jthread b = std::jthread(Server, efd, -1);
-    //std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    //std::jthread h = std::jthread(std::bind(&Srv::ThreadLoop, std::ref(Server), -1, 0));
+    std::jthread b = std::jthread(Server, std::ref(efd), -1);
+
     while (!c_v) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
@@ -382,4 +383,5 @@ int main(int argc, char** argv)
     // ========= cleanup thread =========
     write(efd, &a, sizeof(a));
     close(efd);
+    b.join();
 }
