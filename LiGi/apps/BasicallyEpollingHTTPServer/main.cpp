@@ -24,6 +24,7 @@ constexpr long recv_size = 1024l;
 constexpr size_t max_epoll_events = 12000;
 constexpr in_port_t sPort = 8080;
 constexpr size_t listen_backlog = 1024;
+std::atomic_bool c_v = false;
 
 struct ClientDataStruct {
     int fd { -1 };
@@ -68,265 +69,295 @@ public:
     {
     }
 };
-
-std::atomic_bool c_v = false;
-
-int ServerLoop(int efd, int timeout = -1)
-{
-    int flags = 0;
-    int reuse = 1;
-    int ret = -1;
-    int sock = 0;
-    int cli_sock = 0;
-    char bf[recv_size + 1] = {};
-    long n_data = 0;
-
+struct Srv {
+private:
     sockaddr_in serveraddr {};
     sockaddr_in clientaddr {};
-    socklen_t len = 0;
-
-    int epollFD = 0;
-
+    int epollFD {};
     epoll_event ev, events[max_epoll_events];
 
-    epollFD = epoll_create1(0);
-    if (epollFD < 0) {
-        perror("epoll_create1 failed: ");
-        std::exit(1);
+    int sock = 0;
+    int cli_sock = 0;
+
+    int EpollCreate()
+    {
+        epollFD = epoll_create1(0);
+        if (epollFD < 0) {
+            perror("epoll_create1 failed: ");
+            return 1;
+        }
+
+        std::cout << "Successfully initialised epoll socket.\n";
+        return 0;
     }
 
-    std::cout << "Successfully initialised epoll socket.\n";
+    int CreateSock()
+    {
 
-    if (sock = socket(AF_INET, SOCK_STREAM, 0); sock < 0) {
-        perror("socket failed: ");
-        std::exit(2);
+        if (sock = socket(AF_INET, SOCK_STREAM, 0); sock < 0) {
+            perror("socket failed: ");
+            return 1;
+        }
+
+        std::cout << "Successfully initialised servers socket\n";
+
+        return 0;
     }
 
-    std::cout << "Successfully initialised servers socket\n";
+    int BindSock()
+    {
 
-    if (ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)); ret < 0) {
-        perror("setsockopt");
-        close(sock);
-        std::exit(3);
+        serveraddr.sin_family = AF_INET;
+        serveraddr.sin_port = htons(sPort);
+        serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+        if (bind(sock, (sockaddr*)&serveraddr, sizeof(serveraddr)) < 0) {
+            perror("bind");
+            close(sock);
+            c_v = true;
+            return 4;
+        }
+        return 1;
     }
 
-    std::cout << "Set socket reuse flag\n";
+public:
+    int ServerLoop(int efd, int timeout = -1)
+    {
+        int flags = 0;
+        int reuse = 1;
+        int ret = -1;
+        char bf[recv_size + 1] = {};
+        long n_data = 0;
 
-    serveraddr.sin_family = AF_INET;
-    serveraddr.sin_port = htons(sPort);
-    serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
+        socklen_t len = 0;
 
-    if (ret = bind(sock, (sockaddr*)&serveraddr, sizeof(serveraddr)); ret < 0) {
-        perror("bind");
-        close(sock);
-        std::exit(4);
-    }
+        // ========= setup =========
+        if (EpollCreate() != 0)
+            return 1;
 
-    std::cout << "Bound socket\n";
+        if (CreateSock() != 0)
+            return 1;
 
-    ev.events = EPOLLIN | EPOLLET;
-    // ev.data.fd = sock;
-    ClientDataStruct* orig = new ClientDataStruct { .fd = sock };
-    ev.data.ptr = orig;
+        BindSock();
 
-    if (ret = listen(sock, listen_backlog); ret < 0) {
-        perror("listen");
-        close(sock);
-        std::exit(5);
-    }
+        ev.events = EPOLLIN | EPOLLET;
+        // ev.data.fd = sock;
+        ClientDataStruct* orig = new ClientDataStruct { .fd = sock };
+        ev.data.ptr = orig;
 
-    std::cout << "Listening!\n";
+        if (ret = listen(sock, listen_backlog); ret < 0) {
+            perror("listen");
+            close(sock);
+            c_v = true;
+            return 5;
+        }
 
-    if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, sock, &ev); ret < 0) {
-        perror("epoll_ctl");
-        close(sock);
-        close(epollFD);
-        std::exit(6);
-    }
+        std::cout << "Listening!\n";
 
-    std::cout << "inserting eventfd for good measure to kill later"
-              << "\n";
-
-    // ========= Add sentinel to epolls FD set =========
-    epoll_event fd_event {};
-    fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN;
-    fd_event.data.ptr = new ClientDataStruct { .fd = efd };
-    if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, efd, &fd_event); ret < 0) {
-        perror("epoll_ctl_sentinel");
-        close(sock);
-        close(epollFD);
-        std::exit(6);
-    }
-
-    std::cout << "Added listening socket to epoll set! \n";
-
-    if (flags = fcntl(sock, F_GETFL); flags < 0) {
-        perror("fcntl");
-        close(sock);
-        close(epollFD);
-        std::exit(7);
-    }
-
-    flags = flags | O_NONBLOCK;
-
-    if (ret = fcntl(sock, F_SETFL, flags); ret < 0) {
-        perror("fcntl f_setfl");
-        close(sock);
-        close(epollFD);
-        std::exit(8);
-    }
-
-    std::cout << "Listening in nonblocking mode now!\n";
-
-    int cnt = 0;
-
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "EndlessLoop"
-    while (!c_v) {
-        int nfds = epoll_wait(epollFD, events, max_epoll_events, timeout);
-        if (nfds < 0) {
-            perror("epoll_wait");
+        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, sock, &ev); ret < 0) {
+            perror("epoll_ctl");
             close(sock);
             close(epollFD);
-            std::exit(9);
+            c_v = true;
+            return 6;
         }
 
-        if (nfds == 0) {
-            std::cout << "Server HeartBeat[1S]: " << cnt++ << std::endl;
+        std::cout << "inserting eventfd for good measure to kill later"
+                  << "\n";
+
+        // ========= Add sentinel to epolls FD set =========
+        epoll_event fd_event {};
+        fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN;
+        fd_event.data.ptr = new ClientDataStruct { .fd = efd };
+        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, efd, &fd_event); ret < 0) {
+            perror("epoll_ctl_sentinel");
+            close(sock);
+            close(epollFD);
+            c_v = true;
+            return 6;
         }
 
-        int n = 0;
-        for (; n < nfds; ++n) {
-            bool cleanup_cur = false;
-            auto n_event_ptr = [&]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
-            // gather FD from client struct
-            int tmpFD = n_event_ptr()->fd;
-            if ((events[n].events & EPOLLIN) != 0x0) {
+        std::cout << "Added listening socket to epoll set! \n";
 
-                // ========= accepting clients =========
+        if (flags = fcntl(sock, F_GETFL); flags < 0) {
+            perror("fcntl");
+            close(sock);
+            close(epollFD);
+            c_v = true;
+            return 7;
+        }
 
-                // ========= check for efd sentinel =========
-                if (efd == tmpFD) {
-                    // stop all actions
-                    goto end;
-                }
-                if (tmpFD == sock) {
-                    cli_sock = accept(sock, (sockaddr*)&serveraddr, &len);
-                    if (cli_sock < 0) {
-                        perror("accept");
-                        close(sock);
-                        close(epollFD);
-                        std::exit(10);
-                    }
+        flags = flags | O_NONBLOCK;
 
-                    if (flags = fcntl(cli_sock, F_GETFL); flags < 0) {
-                        perror("cli_sock_fcntl_getfl");
-                        close(sock);
-                        close(epollFD);
-                        std::exit(11);
-                    }
+        if (ret = fcntl(sock, F_SETFL, flags); ret < 0) {
+            perror("fcntl f_setfl");
+            close(sock);
+            close(epollFD);
+            c_v = true;
+            return 8;
+        }
 
-                    flags |= O_NONBLOCK;
-                    if (ret = fcntl(cli_sock, F_SETFL, flags); ret < 0) {
-                        perror("cli_sock_fcntl_setfl");
-                        close(sock);
-                        close(epollFD);
-                        std::exit(12);
-                    }
+        std::cout << "Listening in nonblocking mode now!\n";
 
-                    // ======== create client data! ========
-                    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-                    ev.data.ptr = new ClientDataStruct { .fd = cli_sock };
+        int cnt = 0;
 
-                    if (epoll_ctl(epollFD, EPOLL_CTL_ADD, cli_sock, &ev) == -1) {
-                        perror("epoll_ctl_add_cli_addr");
-                        close(sock);
-                        close(epollFD);
-                        std::exit(13);
-                    }
-                } else {
-
-                    // ======== reading clients ========
-                    n_data = read(tmpFD, bf, recv_size);
-                    if (n_data < 0) { // READ ERROR
-                        perror("read");
-                        close(sock);
-                        close(epollFD);
-                        close(tmpFD);
-                        std::exit(14);
-                    } else if (n_data == 0) { // client close
-                        std::cout << "Client closed!\n";
-                        std::cout << "read from it: " << n_event_ptr()->pos << " bytes!\n";
-                        std::cout << "latest read: " << n_event_ptr()->buf << "\n";
-                        epoll_ctl(epollFD, EPOLL_CTL_DEL, tmpFD, NULL);
-
-                        //delete client data
-                        close(tmpFD);
-                        cleanup_cur = true;
-                    }
-
-                    // read loop
-                    do {
-                        std::cout << "Remote Message: " << bf << "\n";
-                        n_event_ptr()->buf = bf;
-                        bf[n_data] = '\0';
-
-                        // Zero out buffer!
-                        memset(bf, '\0', recv_size);
-                        n_event_ptr()->pos += n_data;
-                    } while ((n_data = read(tmpFD, bf, recv_size)) > 0);
-                }
+        while (!c_v) {
+            int nfds = epoll_wait(epollFD, events, max_epoll_events, timeout);
+            if (nfds < 0) {
+                perror("epoll_wait");
+                goto end;
             }
 
-            // ========= writing to clients =========
-            if ((events[n].events & EPOLLOUT) && tmpFD != sock) {
-                n_data = write(tmpFD, "WRITE TIME BABY: ", 17);
-                std::cout << "TCP Server ready to write data!\n";
-            } else if (events[n].events & EPOLLERR) {
-                std::cout << "TCP Server EPOLL Error!\n";
+            if (nfds == 0) {
+                std::cout << "Server HeartBeat[1S]: " << cnt++ << std::endl;
             }
 
-            // ========= Cleanup in case we marked it =========
-            if (cleanup_cur)
-                delete static_cast<ClientDataStruct*>(events[n].data.ptr);
-            std::flush(std::cout);
+            int n = 0;
+            for (; n < nfds; ++n) {
+                bool cleanup_cur = false;
+                auto n_event_ptr = [&]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
+                // gather FD from client struct
+                int tmpFD = n_event_ptr()->fd;
+                if ((events[n].events & EPOLLIN) != 0x0) {
+
+                    // ========= accepting clients =========
+
+                    // ========= check for efd sentinel =========
+                    if (efd == tmpFD) {
+                        // ========= stop all actions =========
+                        goto end;
+                    }
+                    if (tmpFD == sock) {
+                        cli_sock = accept(sock, (sockaddr*)&serveraddr, &len);
+                        if (cli_sock < 0) {
+                            perror("accept");
+                            goto end;
+                        }
+
+                        if (flags = fcntl(cli_sock, F_GETFL); flags < 0) {
+                            perror("cli_sock_fcntl_getfl");
+                            goto end;
+                        }
+
+                        flags |= O_NONBLOCK;
+                        if (ret = fcntl(cli_sock, F_SETFL, flags); ret < 0) {
+                            perror("cli_sock_fcntl_setfl");
+                            goto end;
+                        }
+
+                        // ======== create client data! ========
+                        ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+                        ev.data.ptr = new ClientDataStruct { .fd = cli_sock };
+
+                        if (epoll_ctl(epollFD, EPOLL_CTL_ADD, cli_sock, &ev) == -1) {
+                            perror("epoll_ctl_add_cli_addr");
+                            goto end;
+                        }
+                    } else {
+
+                        // ======== reading clients ========
+                        n_data = read(tmpFD, bf, recv_size);
+                        if (n_data < 0) { // READ ERROR
+                            perror("read");
+                            goto end;
+                        } else if (n_data == 0) { // client close
+                            std::cout << "Client closed!\n";
+                            std::cout << "read from it: " << n_event_ptr()->pos << " bytes!\n";
+                            std::cout << "latest read: " << n_event_ptr()->buf << "\n";
+                            epoll_ctl(epollFD, EPOLL_CTL_DEL, tmpFD, NULL);
+
+                            //delete client data
+                            close(tmpFD);
+                            cleanup_cur = true;
+                        }
+
+                        // read loop
+                        /*                        do {
+                            std::cout << "Remote Message: " << bf << "\n";
+                            n_event_ptr()->buf = bf;
+                            bf[n_data] = '\0';
+
+                            // Zero out buffer!
+                            memset(bf, '\0', recv_size);
+                            n_event_ptr()->pos += n_data;
+                        } while ((n_data = read(tmpFD, bf, recv_size)) > 0);*/
+                        handle_remote_msg(n_event_ptr(), tmpFD, bf, n_data);
+                    }
+                }
+
+                // ========= writing to clients =========
+                if ((events[n].events & EPOLLOUT) && tmpFD != sock) {
+                    n_data = write(tmpFD, "WRITE TIME BABY: ", 17);
+                    std::cout << "TCP Server ready to write data!\n";
+                } else if (events[n].events & EPOLLERR) {
+                    std::cout << "TCP Server EPOLL Error!\n";
+                }
+
+                // ========= Cleanup in case we marked it =========
+                if (cleanup_cur)
+                    delete static_cast<ClientDataStruct*>(events[n].data.ptr);
+                std::flush(std::cout);
+            }
         }
+    end:
+        close(sock);
+        close(cli_sock);
+        close(epollFD);
+        delete orig;
+        delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
+
+        std::cout << "Cleaned up. Exiting." << std::endl;
+        return 0;
     }
-end:
-    close(sock);
-    close(cli_sock);
-    close(epollFD);
-    delete orig;
-    delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
 
-    std::cout << "Cleaned up. Exiting." << std::endl;
-    return 0;
-#pragma clang diagnostic pop
-}
+    void operator()(int efd, int timeout)
+    {
+        ServerLoop(efd, timeout);
+    }
 
-void flagFunc(int)
-{
-    c_v = true;
-    return;
-}
+    void handle_remote_msg(ClientDataStruct* data, int tmpFD, char* bf, long& read_size)
+    {
+        do {
+            std::cout << "Remote Message: " << bf << "\n";
+            data->buf = bf;
+            bf[read_size] = '\0';
+
+            // Zero out buffer!
+            memset(bf, '\0', recv_size);
+            data->pos += read_size;
+        } while ((read_size = read(tmpFD, bf, recv_size)) > 0);
+    }
+};
 
 int main(int argc, char** argv)
 {
+    // ========= eventfd sentinel =========
     int efd;
     efd = eventfd(0, EFD_NONBLOCK);
+
+    // ========= signal handling =========
+    // ====== Flag function =======
+    auto flagFunc = [](int) -> void {
+        c_v = true;
+        return;
+    };
     struct sigaction a {
     };
-    a.sa_handler = &flagFunc;
+    a.sa_handler = flagFunc;
     a.sa_flags = 0;
     sigemptyset(&a.sa_mask);
     sigaction(SIGINT, &a, nullptr);
     signal(SIGPIPE, SIG_IGN); // NOLINT(cppcoreguidelines-pro-type-cstyle-cast) -> cant influence this
 
-    std::thread b = std::thread(ServerLoop, efd, -1);
+    // ========= thread =========
+    Srv Server;
+    std::thread b = std::thread(Server, efd, -1);
     while (!c_v) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
     std::cout << "Killing... " << std::endl;
+
+    // ========= cleanup thread =========
     write(efd, &a, sizeof(a));
     close(efd);
     b.join();
