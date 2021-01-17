@@ -22,6 +22,8 @@
 #include <unistd.h>
 #include <vector>
 
+#include <exception>
+
 constexpr long recv_size = 1024l;
 constexpr size_t max_epoll_events = 1024;
 constexpr in_port_t sPort = 8080;
@@ -35,54 +37,119 @@ struct ClientDataStruct {
     std::mutex _struct_lock {};
 };
 
-class ClientData : std::enable_shared_from_this<ClientData> {
+class Socket {
 private:
-    ClientDataStruct m_Data {};
+    int Sock { -1 };
 
 public:
-    std::shared_ptr<ClientData> getptr() { return shared_from_this(); }
-    ClientData& the() { return *this; }
-    void fd(int fd) { m_Data.fd = fd; }
-    int fd() const { return m_Data.fd; }
+    struct ErrnoConverting : public std::runtime_error {
+        ErrnoConverting(int err)
+            : std::runtime_error(strerror(err))
+        {
+        }
+    };
 
-    void buffer(std::string_view str) { m_Data.buf = str; }
-    std::string buffer() const { return m_Data.buf; }
+    struct OptionInvalid : public ErrnoConverting {
+        OptionInvalid(int err)
+            : ErrnoConverting(err)
+        {
+        }
+    };
 
-    void advance_pos(int by = 1) { m_Data.pos = m_Data.pos + by; }
-    ptrdiff_t pos() { return m_Data.pos; }
-};
+    Socket() = default;
+    Socket(Socket&&) = default;
+    Socket& operator=(Socket&&) = default;
 
-// FIXME: Decided upon this. Im going to maintain that list of shared_ptrs which represents our connections. Later usage of them are going to be referenced shared_ptrs
-using ClientsVec = std::vector<std::shared_ptr<ClientData>>;
+    // don't ever copy a socket. This would break anything related!
+    Socket(const Socket&) = delete;
+    Socket& operator=(const Socket&) = delete;
 
-struct EpollSet {
-    int epoll_fd {};
-    epoll_event events[max_epoll_events];
-};
+    explicit Socket(int s)
+        : Sock { s }
+    {
+    }
 
-struct ServerSet {
-    ClientsVec Clients;
-    sockaddr_in srv_addr {};
-    sockaddr_in cli_addr {};
+    void create(int domain, int type, int proto)
+    {
+        Sock = socket(domain, type, proto);
+        if (Sock > 0) {
+            throw std::runtime_error("Couldn't create socket: " + std::string(strerror(errno)));
+        }
+    }
 
-    EpollSet epoll {};
-    int server_socket { -1 };
-    int cli_sock { -1 };
-    int event_fd { -1 };
-    int reuse_addr { -1 };
+    void Option(int Ftype, int Flag, bool Enable)
+    {
+        if (setsockopt(Sock, Ftype, Flag, &Enable, sizeof(Enable)) == -1) {
+            throw OptionInvalid(errno);
+        }
+
+        return;
+    }
+
+    void bind(const sockaddr& Addr)
+    {
+        if (::bind(Sock, &Addr, sizeof(Addr)) < 0) {
+            throw ErrnoConverting(errno);
+        }
+    }
+
+    void listen(int backlog = listen_backlog)
+    {
+        if (::listen(Sock, backlog) < 0) {
+            throw ErrnoConverting(errno);
+        }
+    }
+
+    void on(std::function<void(int)>& f) // currently for things like.. to call fcntl and such
+    {
+        f(Sock);
+    }
+
+    ~Socket()
+    {
+        if (Sock > 0)
+            close(Sock);
+    }
 };
 
 class Srv {
 private:
+    // Server address
     sockaddr_in serveraddr {};
+
+    // client address
     sockaddr_in clientaddr {};
+
+    // epoll watch set
     int epollFD {};
 
+    // length for the accept call(race condition?)
     socklen_t len = 0;
+
+    // servers socket it operates on
     int server_socket = 0;
+
+    // client tmp socket
     int cli_sock = 0;
 
+    // eventfd
     int efd { -1 };
+
+    // first function to call
+    int CreateSock()
+    {
+
+        if (server_socket = socket(AF_INET, SOCK_STREAM, 0); server_socket < 0) {
+            perror("socket failed: ");
+            return 1;
+        }
+
+        std::cout << "Successfully initialised servers socket\n";
+
+        return 0;
+    }
+
+    // create an epoll set - meant to be used after the general socket setup
     int EpollCreate()
     {
         epollFD = epoll_create1(0);
@@ -97,19 +164,7 @@ private:
         return 0;
     }
 
-    int CreateSock()
-    {
-
-        if (server_socket = socket(AF_INET, SOCK_STREAM, 0); server_socket < 0) {
-            perror("socket failed: ");
-            return 1;
-        }
-
-        std::cout << "Successfully initialised servers socket\n";
-
-        return 0;
-    }
-
+    // third function to call
     int BindSock()
     {
 
@@ -127,11 +182,104 @@ private:
     }
 
 public:
+    // makes life easier with threads
     void operator()(int& e_fd, int timeout)
     {
         ServerLoop(e_fd, timeout);
     }
 
+    // Setups things for the server and call ThreadLoop
+    int ServerLoop(int& _efd, int timeout = -1)
+    {
+        epoll_event ev, events[max_epoll_events];
+        efd = _efd;
+        int reuse = 1;
+        int ret = -1;
+        int flags = 0;
+
+        // ========= setup =========
+        if (EpollCreate() != 0)
+            return 1;
+
+        if (CreateSock() != 0)
+            return 1;
+
+        BindSock();
+
+        ev.events = EPOLLIN | EPOLLET;
+        // ev.data.fd = sock;
+        ClientDataStruct* orig = new ClientDataStruct { .fd = server_socket };
+        ev.data.ptr = orig;
+
+        if (ret = listen(server_socket, listen_backlog); ret < 0) {
+            perror("listen");
+            close(server_socket);
+            c_v = true;
+            return 5;
+        }
+
+        std::cout << "Listening!\n";
+
+        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, server_socket, &ev); ret < 0) {
+            perror("epoll_ctl");
+            close(server_socket);
+            close(epollFD);
+            c_v = true;
+            return 6;
+        }
+
+        std::cout << "inserting eventfd for good measure to kill later"
+                  << "\n";
+
+        // ========= Add sentinel to epolls FD set =========
+        epoll_event fd_event {};
+        fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN;
+        fd_event.data.ptr = new ClientDataStruct { .fd = _efd };
+        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, efd, &fd_event); ret < 0) {
+            perror("epoll_ctl_sentinel");
+            close(server_socket);
+            close(epollFD);
+            c_v = true;
+            return 6;
+        }
+
+        std::cout << "Added listening socket to epoll set! \n";
+
+        // Setting the servers socket to nonblocking mode
+        // by editing it's flags through fcntl
+        if (flags = fcntl(server_socket, F_GETFL); flags < 0) {
+            perror("fcntl");
+            close(server_socket);
+            close(epollFD);
+            c_v = true;
+            return 7;
+        }
+
+        flags = flags | O_NONBLOCK;
+
+        if (ret = fcntl(server_socket, F_SETFL, flags); ret < 0) {
+            perror("fcntl f_setfl");
+            close(server_socket);
+            close(epollFD);
+            c_v = true;
+            return 8;
+        }
+
+        std::cout << "Listening in nonblocking mode now!\n";
+
+        ThreadLoop(timeout, flags);
+
+        close(server_socket);
+        close(cli_sock);
+        close(epollFD);
+        delete orig;
+        delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
+
+        std::cout << "Cleaned up. Exiting." << std::endl;
+        return 0;
+    }
+
+    // Loop for threads
     void ThreadLoop(int timeout, int _flags)
     {
         epoll_event ev, events[max_epoll_events];
@@ -234,94 +382,6 @@ public:
                 std::flush(std::cout);
             }
         }
-    }
-
-    int ServerLoop(int& _efd, int timeout = -1)
-    {
-        epoll_event ev, events[max_epoll_events];
-        efd = _efd;
-        int reuse = 1;
-        int ret = -1;
-        int flags = 0;
-
-        // ========= setup =========
-        if (EpollCreate() != 0)
-            return 1;
-
-        if (CreateSock() != 0)
-            return 1;
-
-        BindSock();
-
-        ev.events = EPOLLIN | EPOLLET;
-        // ev.data.fd = sock;
-        ClientDataStruct* orig = new ClientDataStruct { .fd = server_socket };
-        ev.data.ptr = orig;
-
-        if (ret = listen(server_socket, listen_backlog); ret < 0) {
-            perror("listen");
-            close(server_socket);
-            c_v = true;
-            return 5;
-        }
-
-        std::cout << "Listening!\n";
-
-        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, server_socket, &ev); ret < 0) {
-            perror("epoll_ctl");
-            close(server_socket);
-            close(epollFD);
-            c_v = true;
-            return 6;
-        }
-
-        std::cout << "inserting eventfd for good measure to kill later"
-                  << "\n";
-
-        // ========= Add sentinel to epolls FD set =========
-        epoll_event fd_event {};
-        fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN;
-        fd_event.data.ptr = new ClientDataStruct { .fd = _efd };
-        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, efd, &fd_event); ret < 0) {
-            perror("epoll_ctl_sentinel");
-            close(server_socket);
-            close(epollFD);
-            c_v = true;
-            return 6;
-        }
-
-        std::cout << "Added listening socket to epoll set! \n";
-
-        if (flags = fcntl(server_socket, F_GETFL); flags < 0) {
-            perror("fcntl");
-            close(server_socket);
-            close(epollFD);
-            c_v = true;
-            return 7;
-        }
-
-        flags = flags | O_NONBLOCK;
-
-        if (ret = fcntl(server_socket, F_SETFL, flags); ret < 0) {
-            perror("fcntl f_setfl");
-            close(server_socket);
-            close(epollFD);
-            c_v = true;
-            return 8;
-        }
-
-        std::cout << "Listening in nonblocking mode now!\n";
-
-        ThreadLoop(timeout, flags);
-
-        close(server_socket);
-        close(cli_sock);
-        close(epollFD);
-        delete orig;
-        delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
-
-        std::cout << "Cleaned up. Exiting." << std::endl;
-        return 0;
     }
 
     static void handle_remote_msg(ClientDataStruct* data, int tmpFD, char* bf, long& read_size)
