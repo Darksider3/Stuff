@@ -325,7 +325,6 @@ public:
         for (size_t thrds = 0; thrds < thread_num; ++thrds) {
             write(efd, &Params, sizeof(Params));
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            std::cout << "Killing Threads..." << std::endl;
         }
         for (auto& buckets : Threads)
             buckets.join();
@@ -346,9 +345,10 @@ public:
         int flags = _flags;
         int ret;
         int thread_id = ++Running_Threads;
-        std::cout << "I am Thread #" << Running_Threads << ", successfully started!!\n";
+        bool exit_loop = false;
+        std::cout << "I am Thread #" << thread_id << ", successfully started!!\n";
 
-        while (!c_v) {
+        while (!c_v && !exit_loop) {
             int nfds = epoll_wait(Params.epollFD, events, max_epoll_events, timeout);
             if (nfds < 0) {
                 perror("epoll_wait");
@@ -373,24 +373,28 @@ public:
                     // ========= check for efd sentinel =========
                     if (Params.efd == tmpFD) {
                         // ========= stop all actions =========
-                        return;
+                        exit_loop = true;
+                        break;
                     }
                     if (tmpFD == Params.server_socket) {
                         Params.cli_sock = accept(Params.server_socket, (sockaddr*)&Params.serveraddr, &Params.len);
                         if (Params.cli_sock < 0) {
                             perror("accept");
-                            return;
+                            exit_loop = true;
+                            break;
                         }
 
                         if (flags = fcntl(Params.cli_sock, F_GETFL); flags < 0) {
                             perror("cli_sock_fcntl_getfl");
-                            return;
+                            exit_loop = true;
+                            break;
                         }
 
                         flags |= O_NONBLOCK;
                         if (ret = fcntl(Params.cli_sock, F_SETFL, flags); ret < 0) {
                             perror("cli_sock_fcntl_setfl");
-                            return;
+                            exit_loop = true;
+                            break;
                         }
 
                         // ======== create client data! ========
@@ -399,7 +403,8 @@ public:
 
                         if (epoll_ctl(Params.epollFD, EPOLL_CTL_ADD, Params.cli_sock, &ev) == -1) {
                             perror("epoll_ctl_add_cli_addr");
-                            return;
+                            exit_loop = true;
+                            break;
                         }
                     } else if (tmpFD > 0) {
                         // ======== reading clients ========
@@ -448,6 +453,11 @@ public:
                 std::flush(std::cout);
             }
         }
+
+        std::cout << "Exiting Thread: " << thread_id << std::endl;
+        --Running_Threads;
+
+        return;
     }
 
     static void handle_remote_msg(ClientDataStruct* data, int tmpFD, char* bf, long& read_size)
