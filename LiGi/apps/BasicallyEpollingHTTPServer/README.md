@@ -43,4 +43,8 @@ support the littlest of the little of edge cases. What is planned to get working
 
 Also am still trying to figure my path through the C way out... It's not like i don't know how to use what, but it's
 really rather the fact it's just a C thing. And you can see it. Wrapping could be not enough, which scares me(kinda).
-  
+
+* 18.01.2021
+  > > eventfd-Notification/Killnotifications working, multiple Threads working, errno consolidation functionality
+  > essentially done. Moving onto other things now e.g. the wrapping again. The C-C++-Mixing isn't nice. It really isn't.
+  > Shall remove that ugliness right away.
