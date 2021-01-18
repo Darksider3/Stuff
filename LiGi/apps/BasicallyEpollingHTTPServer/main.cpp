@@ -379,7 +379,7 @@ public:
             int n = 0;
             for (; n < nfds; ++n) {
                 bool cleanup_cur = false;
-                auto n_event_ptr = [&]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
+                auto n_event_ptr = [&events, &n ]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
                 // gather FD from client struct
                 auto& tmpFD = n_event_ptr()->fd;
                 std::scoped_lock<std::mutex> _guard { n_event_ptr()->_struct_lock };
