@@ -13,6 +13,19 @@
 
 namespace Li::common {
 
+[[nodiscard("This gives you the Map you desired!")]] std::vector<std::pair<int, long>> ErrnoConsolidation(const std::vector<int> errs)
+{
+    std::vector<std::pair<int, long>> Vec {};
+    for (auto it = std::cbegin(errs); it != std::cend(errs);) {
+
+        long dups = std::count(it, std::cend(errs), *it);
+        Vec.emplace_back(std::pair<int, long> { *it, dups });
+        for (auto last = *it; *++it == last;)
+            ;
+    }
+
+    return Vec;
+}
 template<typename Findable, typename U>
 bool has(const Findable m, const U&& thing)
 {
