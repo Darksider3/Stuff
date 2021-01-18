@@ -24,12 +24,12 @@
 
 #include <exception>
 
-constexpr long recv_size = 1024l;
+constexpr long recv_size = 8192l;
 constexpr size_t max_epoll_events = 1024;
 constexpr in_port_t sPort = 8080;
-constexpr size_t listen_backlog = 1024;
+constexpr size_t listen_backlog = 8192l;
 std::atomic_bool c_v = false;
-std::atomic_ulong thread_num = 5;
+std::atomic_ulong thread_num = 6;
 std::atomic_int Running_Threads = 0;
 
 struct ClientDataStruct {
@@ -203,6 +203,7 @@ public:
         int cli_sock;
 
         int efd;
+        std::vector<int> errors { 1024 };
     };
 
     // makes life easier with threads
@@ -331,8 +332,20 @@ public:
         close(server_socket);
         close(cli_sock);
         close(epollFD);
+        std::sort(Params.errors.begin(), Params.errors.end());
+
+        for (auto it = std::cbegin(Params.errors); it != std::cend(Params.errors);) {
+
+            long dups = std::count(it, std::cend(Params.errors), *it);
+            if (dups > 1)
+                std::cout << "Errno: " << *it << ", times: " << dups << "\n";
+            for (auto last = *it; *++it == last;)
+                ;
+        }
         delete orig;
         delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
+        std::flush(std::cout);
+        return EXIT_SUCCESS;
     }
 
     // Loop for threads
@@ -415,11 +428,16 @@ public:
                                 cleanup_cur = true;
                                 break;
                             default:
+#ifdef DBG_READS
                                 perror("read");
                                 std::cout << "errno: " << errno << "\n";
+#endif
+#ifndef NERRNO_STATS
+                                Params.errors.push_back(errno);
+#endif
                                 continue;
                             }
-                        } else if (n_data == 0) { // client close
+                        } else if (n_data == 0 && tmpFD > 0) { // client close
                             rm_fd(n_event_ptr(), &tmpFD, &Params.epollFD);
                             cleanup_cur = true;
                         }
@@ -441,9 +459,11 @@ public:
                 // ========= writing to clients =========
                 if ((events[n].events & EPOLLOUT) && tmpFD != Params.server_socket && n_event_ptr()->fd > 0) {
                     n_data = write(tmpFD, "WRITE TIME BABY: ", 17);
+#ifdef DBG_WRITE
                     std::cout << "TCP Server ready to write data!\n";
+#endif
                 } else if (events[n].events & EPOLLERR) {
-                    std::cout << "TCP Server EPOLL Error!\n";
+                    std::cout << "TCP Server EPOLLERR Error!\n";
                 }
 
                 // ========= Cleanup in case we marked it =========
@@ -523,4 +543,6 @@ int main(int argc, char** argv)
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     b.join();
     close(efd);
+
+    return EXIT_SUCCESS;
 }
