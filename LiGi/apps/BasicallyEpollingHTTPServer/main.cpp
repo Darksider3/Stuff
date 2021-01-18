@@ -4,7 +4,6 @@
 
 #include <arpa/inet.h>
 #include <atomic>
-#include <condition_variable>
 #include <cstring>
 #include <fcntl.h>
 #include <functional>
@@ -12,7 +11,6 @@
 #include <memory>
 #include <mutex>
 #include <netinet/in.h>
-#include <netinet/ip.h>
 #include <signal.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
@@ -337,7 +335,6 @@ public:
         close(server_socket);
         close(cli_sock);
         close(epollFD);
-        std::sort(Params.errors.begin(), Params.errors.end());
         if (Params.errors.size() > 1) {
             auto ErrnoMap = Li::common::ErrnoConsolidation(Params.errors);
 

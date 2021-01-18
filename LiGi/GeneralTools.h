@@ -13,8 +13,9 @@
 
 namespace Li::common {
 
-[[nodiscard("This gives you the Map you desired!")]] std::vector<std::pair<int, long>> ErrnoConsolidation(const std::vector<int> errs)
+[[nodiscard("This gives you the Map you desired!")]] std::vector<std::pair<int, long>> ErrnoConsolidation(std::vector<int> errs)
 {
+    std::sort(errs.begin(), errs.end());
     std::vector<std::pair<int, long>> Vec {};
     for (auto it = std::cbegin(errs); it != std::cend(errs);) {
 
