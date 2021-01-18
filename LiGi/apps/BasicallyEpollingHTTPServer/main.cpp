@@ -166,16 +166,14 @@ private:
         }
         int reuse = 1;
 
-        struct timeval timeout;
-        timeout.tv_sec = 3;
-        timeout.tv_usec = 0;
+        timeval timeout { .tv_sec = 3, .tv_usec = 0 };
 
         setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
-        if (setsockopt(server_socket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+        if (setsockopt(server_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)) < 0) {
             perror("setsockopt failed");
         }
 
-        if (setsockopt(server_socket, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeout, sizeof(timeout)) < 0) {
+        if (setsockopt(server_socket, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)) < 0) {
             perror("setsockopt failed^");
         }
         std::cout << "Successfully initialised epoll socket.\n";
@@ -190,7 +188,7 @@ private:
         serveraddr.sin_port = htons(sPort);
         serveraddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-        if (bind(server_socket, (sockaddr*)&serveraddr, sizeof(serveraddr)) < 0) {
+        if (bind(server_socket, reinterpret_cast<sockaddr*>(&serveraddr), sizeof(serveraddr)) < 0) {
             perror("bind");
             close(server_socket);
             c_v = true;
@@ -201,14 +199,14 @@ private:
 
 public:
     struct ThreadParams {
-        int epollFD;
-        int server_socket;
-        sockaddr serveraddr;
-        socklen_t len;
-        int cli_sock;
+        int epollFD { -1 };
+        int server_socket { -1 };
+        sockaddr serveraddr {};
+        socklen_t len { 0 };
+        int cli_sock { -1 };
 
-        int efd;
-        std::vector<int> errors;
+        int efd { -1 };
+        std::vector<int> errors {};
     };
 
     // makes life easier with threads
@@ -220,11 +218,11 @@ public:
     // Setups things for the server and call ThreadLoop
     int ServerLoop(int& _efd, int timeout = -1)
     {
-        epoll_event ev, events[max_epoll_events];
+        epoll_event ev {};
+
         efd = _efd;
-        int reuse = 1;
-        int ret = -1;
-        int flags = 0;
+        int ret;
+        int flags;
 
         // ========= setup =========
         if (CreateSock() != 0)
@@ -236,6 +234,7 @@ public:
         BindSock();
 
         ev.events = EPOLLIN | EPOLLET;
+
         // ev.data.fd = sock;
         ClientDataStruct* orig = new ClientDataStruct { .fd = server_socket };
         ev.data.ptr = orig;
@@ -244,7 +243,7 @@ public:
             perror("listen");
             close(server_socket);
             c_v = true;
-            return 5;
+            return EXIT_FAILURE;
         }
 
         std::cout << "Listening!\n";
@@ -254,7 +253,7 @@ public:
             close(server_socket);
             close(epollFD);
             c_v = true;
-            return 6;
+            return EXIT_FAILURE;
         }
 
         std::cout << "inserting eventfd for good measure to kill later"
@@ -269,7 +268,7 @@ public:
             close(server_socket);
             close(epollFD);
             c_v = true;
-            return 6;
+            return EXIT_FAILURE;
         }
 
         std::cout << "Added listening socket to epoll set! \n";
@@ -281,7 +280,7 @@ public:
             close(server_socket);
             close(epollFD);
             c_v = true;
-            return 7;
+            return EXIT_FAILURE;
         }
 
         flags = flags | O_NONBLOCK;
@@ -291,7 +290,7 @@ public:
             close(server_socket);
             close(epollFD);
             c_v = true;
-            return 8;
+            return EXIT_FAILURE;
         }
 
         std::cout << "Listening in nonblocking mode now!\n";
@@ -311,7 +310,7 @@ public:
          */
         Params.epollFD = epollFD;
         Params.server_socket = server_socket;
-        Params.serveraddr = (sockaddr&)serveraddr;
+        Params.serveraddr = reinterpret_cast<sockaddr&>(serveraddr);
         Params.len = len;
         Params.cli_sock = cli_sock;
         Params.efd = efd;
