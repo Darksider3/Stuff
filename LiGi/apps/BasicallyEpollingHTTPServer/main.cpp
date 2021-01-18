@@ -24,10 +24,13 @@
 
 #include <exception>
 
+#include "LiGi/GeneralTools.h"
+
 constexpr long recv_size = 8192l;
 constexpr size_t max_epoll_events = 1024;
 constexpr in_port_t sPort = 8080;
 constexpr size_t listen_backlog = 8192l;
+constexpr size_t max_errnos = 1024;
 std::atomic_bool c_v = false;
 std::atomic_ulong thread_num = 6;
 std::atomic_int Running_Threads = 0;
@@ -203,7 +206,7 @@ public:
         int cli_sock;
 
         int efd;
-        std::vector<int> errors { 1024 };
+        std::vector<int> errors;
     };
 
     // makes life easier with threads
@@ -311,6 +314,8 @@ public:
         Params.cli_sock = cli_sock;
         Params.efd = efd;
 
+        Params.errors.reserve(max_errnos);
+
         std::vector<std::thread> Threads;
         Threads.reserve(thread_num);
         for (size_t buckets = 0; buckets < thread_num; ++buckets) {
@@ -333,14 +338,12 @@ public:
         close(cli_sock);
         close(epollFD);
         std::sort(Params.errors.begin(), Params.errors.end());
+        if (Params.errors.size() > 1) {
+            auto ErrnoMap = Li::common::ErrnoConsolidation(Params.errors);
 
-        for (auto it = std::cbegin(Params.errors); it != std::cend(Params.errors);) {
-
-            long dups = std::count(it, std::cend(Params.errors), *it);
-            if (dups > 1)
-                std::cout << "Errno: " << *it << ", times: " << dups << "\n";
-            for (auto last = *it; *++it == last;)
-                ;
+            for (auto& ErrnoPair : ErrnoMap) {
+                std::cout << "Errno: " << ErrnoPair.first << ", times: " << ErrnoPair.second << std::endl;
+            }
         }
         delete orig;
         delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
