@@ -39,6 +39,7 @@ std::atomic_int Running_Threads = 0;
 
 struct ClientDataStruct {
     int fd { -1 };
+    int cli_sock { -1 };
     ptrdiff_t pos { 0 };
     std::string buf {};
     std::mutex _struct_lock {};
@@ -203,7 +204,6 @@ public:
         int server_socket { -1 };
         sockaddr serveraddr {};
         socklen_t len { 0 };
-        int cli_sock { -1 };
 
         int efd { -1 };
         std::vector<int> errors {};
@@ -312,7 +312,6 @@ public:
         Params.server_socket = server_socket;
         Params.serveraddr = reinterpret_cast<sockaddr&>(serveraddr);
         Params.len = len;
-        Params.cli_sock = cli_sock;
         Params.efd = efd;
 
         Params.errors.reserve(max_errnos);
@@ -393,21 +392,21 @@ public:
                         break;
                     }
                     if (tmpFD == Params.server_socket) {
-                        Params.cli_sock = accept(Params.server_socket, (sockaddr*)&Params.serveraddr, &Params.len);
-                        if (Params.cli_sock < 0) {
+                        n_event_ptr()->cli_sock = accept(Params.server_socket, (sockaddr*)&Params.serveraddr, &Params.len);
+                        if (n_event_ptr()->cli_sock < 0) {
                             perror("accept");
                             exit_loop = true;
                             break;
                         }
 
-                        if (flags = fcntl(Params.cli_sock, F_GETFL); flags < 0) {
+                        if (flags = fcntl(n_event_ptr()->cli_sock, F_GETFL); flags < 0) {
                             perror("cli_sock_fcntl_getfl");
                             exit_loop = true;
                             break;
                         }
 
                         flags |= O_NONBLOCK;
-                        if (ret = fcntl(Params.cli_sock, F_SETFL, flags); ret < 0) {
+                        if (ret = fcntl(n_event_ptr()->cli_sock, F_SETFL, flags); ret < 0) {
                             perror("cli_sock_fcntl_setfl");
                             exit_loop = true;
                             break;
@@ -415,9 +414,9 @@ public:
 
                         // ======== create client data! ========
                         ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-                        ev.data.ptr = new ClientDataStruct { .fd = Params.cli_sock };
+                        ev.data.ptr = new ClientDataStruct { .fd = n_event_ptr()->cli_sock };
 
-                        if (epoll_ctl(Params.epollFD, EPOLL_CTL_ADD, Params.cli_sock, &ev) == -1) {
+                        if (epoll_ctl(Params.epollFD, EPOLL_CTL_ADD, n_event_ptr()->cli_sock, &ev) == -1) {
                             perror("epoll_ctl_add_cli_addr");
                             exit_loop = true;
                             break;
