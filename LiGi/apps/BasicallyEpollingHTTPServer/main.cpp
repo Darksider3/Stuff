@@ -28,7 +28,11 @@ constexpr long recv_size = 8192l;
 constexpr size_t max_epoll_events = 1024;
 constexpr in_port_t sPort = 8080;
 constexpr size_t listen_backlog = 8192l;
+
 constexpr size_t max_errnos = 1024;
+
+constexpr auto wait_tick_time = std::chrono::milliseconds(50);
+
 std::atomic_bool c_v = false;
 std::atomic_ulong thread_num = 6;
 std::atomic_int Running_Threads = 0;
@@ -319,16 +323,16 @@ public:
         for (size_t buckets = 0; buckets < thread_num; ++buckets) {
             auto Thread = std::thread(ThreadLoop, std::ref(Params), timeout, flags);
             Threads.emplace_back(std::move(Thread));
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            std::this_thread::sleep_for(wait_tick_time);
         }
 
         while (!c_v) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            std::this_thread::sleep_for(wait_tick_time);
         }
 
         for (size_t thrds = 0; thrds < thread_num; ++thrds) {
             write(efd, &Params, sizeof(Params));
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(wait_tick_time);
         }
         for (auto& buckets : Threads)
             buckets.join();
@@ -535,12 +539,12 @@ int main(int argc, char** argv)
     //Server(efd, -1);
 
     while (!c_v) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(wait_tick_time);
     }
     std::cout << "Killing... " << std::endl;
 
     // ========= cleanup thread =========
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    std::this_thread::sleep_for(wait_tick_time);
     b.join();
     close(efd);
 
