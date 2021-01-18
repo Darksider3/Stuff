@@ -30,6 +30,7 @@ constexpr in_port_t sPort = 8080;
 constexpr size_t listen_backlog = 1024;
 std::atomic_bool c_v = false;
 std::atomic_ulong thread_num = 5;
+std::atomic_int Running_Threads = 0;
 
 struct ClientDataStruct {
     int fd { -1 };
@@ -338,13 +339,14 @@ public:
     // Loop for threads
     static void ThreadLoop(ThreadParams& Params, int timeout, int _flags)
     {
-        std::cout << "Looking for writes, baby!\n";
         epoll_event ev, events[max_epoll_events];
         char bf[recv_size + 1] = {};
         long n_data = 0;
         int cnt = 0;
         int flags = _flags;
         int ret;
+        int thread_id = ++Running_Threads;
+        std::cout << "I am Thread #" << Running_Threads << ", successfully started!!\n";
 
         while (!c_v) {
             int nfds = epoll_wait(Params.epollFD, events, max_epoll_events, timeout);
