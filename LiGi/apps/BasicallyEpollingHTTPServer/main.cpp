@@ -143,6 +143,7 @@ private:
     // eventfd
     int efd { -1 };
 
+    std::shared_ptr<ClientDataStruct> m_original;
     // first function to call
     int CreateSock()
     {
@@ -236,7 +237,9 @@ public:
         ev.events = EPOLLIN | EPOLLET;
 
         // ev.data.fd = sock;
-        ClientDataStruct* orig = new ClientDataStruct { .fd = server_socket };
+        m_original = std::make_shared<ClientDataStruct>();
+        m_original->fd = server_socket;
+        ClientDataStruct* orig = m_original.get();
         ev.data.ptr = orig;
 
         if (ret = listen(server_socket, listen_backlog); ret < 0) {
@@ -353,7 +356,6 @@ public:
     // Loop for threads
     static void ThreadLoop(ThreadParams& Params, int timeout, int _flags)
     {
-        epoll_event ev, events[max_epoll_events];
         char bf[recv_size + 1] = {};
         long n_data = 0;
         int cnt = 0;
@@ -364,6 +366,8 @@ public:
         std::cout << "I am Thread #" << thread_id << ", successfully started!!\n";
 
         while (!c_v && !exit_loop) {
+            epoll_event ev;
+            epoll_event events[max_epoll_events];
             int nfds = epoll_wait(Params.epollFD, events, max_epoll_events, timeout);
             if (nfds < 0) {
                 perror("epoll_wait");
@@ -380,8 +384,8 @@ public:
                 bool cleanup_cur = false;
                 auto n_event_ptr = [&events, &n ]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
                 // gather FD from client struct
+                //std::scoped_lock<std::mutex> _guard { n_event_ptr()->_struct_lock };
                 auto& tmpFD = n_event_ptr()->fd;
-                std::scoped_lock<std::mutex> _guard { n_event_ptr()->_struct_lock };
                 if ((events[n].events & EPOLLIN) != 0x0) {
                     // ========= accepting clients =========
 
@@ -427,7 +431,6 @@ public:
                         if (n_data < 0) { // READ ERROR
                             switch (errno) {
                             case (ECONNRESET):
-                                cleanup_cur = true;
                                 break;
                             default:
 #ifdef DBG_READS
@@ -459,7 +462,7 @@ public:
                 }
 
                 // ========= writing to clients =========
-                if ((events[n].events & EPOLLOUT) && tmpFD != Params.server_socket && n_event_ptr()->fd > 0) {
+                if (n_event_ptr()->fd > 0 && (events[n].events & EPOLLOUT) && tmpFD != Params.server_socket) {
                     n_data = write(tmpFD, "WRITE TIME BABY: ", 17);
 #ifdef DBG_WRITE
                     std::cout << "TCP Server ready to write data!\n";
