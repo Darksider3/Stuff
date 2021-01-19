@@ -473,6 +473,7 @@ public:
 
                 // ========= Cleanup in case we marked it =========
                 if (cleanup_cur) {
+                    close(static_cast<ClientDataStruct*>(events[n].data.ptr)->fd);
                     delete static_cast<ClientDataStruct*>(events[n].data.ptr);
                 }
                 std::flush(std::cout);
@@ -518,7 +519,7 @@ void flagFunc(int)
     return;
 }
 
-int main(int argc, char** argv)
+int main(/*int argc, char** argv*/)
 {
     // ========= eventfd sentinel =========
     int efd;
@@ -535,9 +536,7 @@ int main(int argc, char** argv)
 
     // ========= thread =========
     Srv Server;
-    std::jthread b = std::jthread(Server, std::ref(efd), -1);
-
-    //Server(efd, -1);
+    std::thread b = std::thread(std::ref(Server), std::ref(efd), -1);
 
     while (!c_v) {
         std::this_thread::sleep_for(wait_tick_time);
