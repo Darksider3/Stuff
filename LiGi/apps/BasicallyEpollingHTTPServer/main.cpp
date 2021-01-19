@@ -156,6 +156,18 @@ private:
             perror("socket failed: ");
             return 1;
         }
+        int reuse = 1;
+
+        timeval timeout { .tv_sec = 3, .tv_usec = 0 };
+
+        setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+        if (setsockopt(server_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)) < 0) {
+            perror("setsockopt failed");
+        }
+
+        if (setsockopt(server_socket, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)) < 0) {
+            perror("setsockopt failed^");
+        }
 
         std::cout << "Successfully initialised servers socket\n";
 
@@ -169,18 +181,6 @@ private:
         if (epollFD < 0) {
             perror("epoll_create1 failed: ");
             return 1;
-        }
-        int reuse = 1;
-
-        timeval timeout { .tv_sec = 3, .tv_usec = 0 };
-
-        setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
-        if (setsockopt(server_socket, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)) < 0) {
-            perror("setsockopt failed");
-        }
-
-        if (setsockopt(server_socket, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&timeout), sizeof(timeout)) < 0) {
-            perror("setsockopt failed^");
         }
         std::cout << "Successfully initialised epoll socket.\n";
         return 0;
@@ -268,9 +268,9 @@ public:
 
         // ========= Add sentinel to epolls FD set =========
         epoll_event fd_event {};
-        fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN;
+        fd_event.events = EPOLLHUP | EPOLLET | EPOLLIN | EPOLLERR | EPOLLEXCLUSIVE;
         fd_event.data.ptr = new ClientDataStruct { .fd = _efd };
-        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, efd, &fd_event); ret < 0) {
+        if (ret = epoll_ctl(epollFD, EPOLL_CTL_ADD, _efd, &fd_event); ret < 0) {
             perror("epoll_ctl_sentinel");
             close(server_socket);
             close(epollFD);
@@ -361,6 +361,8 @@ public:
     // Loop for threads
     static void ThreadLoop(ThreadParams& Params, int timeout, int _flags)
     {
+
+        int activated = 0;
         int thread_id = ++Running_Threads;
 
         // local buffer to read/write to
@@ -379,7 +381,6 @@ public:
         std::cout << "I am Thread #" << thread_id << ", successfully started!!\n";
 
         while (!c_v) {
-            epoll_event ev {};
             epoll_event events[max_epoll_events];
             int nfds = epoll_wait(Params.epollFD, events, max_epoll_events, timeout);
             if (nfds < 0) {
@@ -393,7 +394,8 @@ public:
             }
 
             for (int n = 0; n < nfds; ++n) {
-                auto n_event_ptr = [&events, &n ]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
+                epoll_event ev {};
+                auto n_event_ptr = [&events, &n]() -> ClientDataStruct* { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
                 bool cleanup_cur = false;
                 std::scoped_lock cli_lock { n_event_ptr()->_struct_lock };
                 // gather FD from client struct
@@ -433,7 +435,7 @@ public:
                         ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
                         ev.data.ptr = new ClientDataStruct { .fd = n_event_ptr()->cli_sock };
 
-                        if (epoll_ctl(Params.epollFD, EPOLL_CTL_ADD, n_event_ptr()->cli_sock, &ev) == -1) {
+                        if (epoll_ctl(Params.epollFD, EPOLL_CTL_ADD, ((ClientDataStruct*)ev.data.ptr)->fd, &ev) == -1) {
                             perror("epoll_ctl_add_cli_addr");
                             c_v = true;
                             break;
@@ -443,7 +445,11 @@ public:
                         n_data = read(tmpFD, bf, recv_size);
                         if (n_data < 0) { // READ ERROR
                             switch (errno) {
+                            case (EAGAIN):
+                                continue;
+                            case (EBADF):
                             case (ECONNRESET):
+                                cleanup_cur = true;
                                 break;
                             default:
 #ifdef DBG_READS
@@ -453,7 +459,6 @@ public:
 #ifndef NERRNO_STATS
                                 Params.errors.push_back(errno);
 #endif
-                                continue;
                             }
                         } else if (tmpFD > 0 && n_data == 0) { // client close
                             cleanup_cur = true;
@@ -481,11 +486,12 @@ public:
 #endif
                 } else if (events[n].events & EPOLLERR) {
                     std::cout << "TCP Server EPOLLERR Error!\n";
+                    cleanup_cur = true;
                 }
 
                 // ========= Cleanup in case we marked it =========
                 if (cleanup_cur) {
-                    rm_fd(n_event_ptr(), &tmpFD, &Params.epollFD);
+                    rm_fd(n_event_ptr(), &Params.epollFD);
                 }
 
                 std::flush(std::cout);
@@ -512,17 +518,13 @@ public:
         } while ((read_size = read(tmpFD, bf, recv_size)) > 0);
     }
 
-    static void rm_fd(ClientDataStruct* data, int* tmpFD, int* epollFD)
+    static void rm_fd(ClientDataStruct* data, int* epollFD)
     {
 
         std::cout << "Client closed!\n";
         std::cout << "read from it: " << data->pos << " bytes!\n";
         std::cout << "latest read: " << data->buf << "\n";
-        close(*tmpFD);
-        delete data;
-        epoll_ctl(*epollFD, EPOLL_CTL_DEL, *tmpFD, NULL);
-
-        //delete client data
+        epoll_ctl(*epollFD, EPOLL_CTL_DEL, data->fd, nullptr);
     }
 
     static int safe_write(int& fd, char* buf, ssize_t count)
