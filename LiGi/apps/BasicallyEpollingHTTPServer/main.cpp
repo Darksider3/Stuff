@@ -122,6 +122,9 @@ public:
 
 class Srv {
 private:
+    // Thread Vector
+    std::vector<std::thread> m_Threads;
+
     // Server address
     sockaddr_in serveraddr {};
 
@@ -319,23 +322,25 @@ public:
 
         Params.errors.reserve(max_errnos);
 
-        std::vector<std::thread> Threads;
-        Threads.reserve(thread_num);
+        m_Threads.reserve(thread_num);
         for (size_t buckets = 0; buckets < thread_num; ++buckets) {
             auto Thread = std::thread(ThreadLoop, std::ref(Params), timeout, flags);
-            Threads.emplace_back(std::move(Thread));
+            m_Threads.emplace_back(std::move(Thread));
             std::this_thread::sleep_for(wait_tick_time);
         }
 
-        while (!c_v) {
-            std::this_thread::sleep_for(wait_tick_time);
-        }
+        auto serverRunningSleep = [&]() {
+            while (!c_v) {
+                std::this_thread::sleep_for(wait_tick_time);
+        } };
+
+        serverRunningSleep();
 
         for (size_t thrds = 0; thrds < thread_num; ++thrds) {
             write(efd, &Params, sizeof(Params));
             std::this_thread::sleep_for(wait_tick_time);
         }
-        for (auto& buckets : Threads)
+        for (auto& buckets : m_Threads)
             buckets.join();
         close(server_socket);
         close(cli_sock);
@@ -347,7 +352,6 @@ public:
                 std::cout << "Errno: " << ErrnoPair.first << ", times: " << ErrnoPair.second << std::endl;
             }
         }
-        delete orig;
         delete (static_cast<ClientDataStruct*>(fd_event.data.ptr));
         std::flush(std::cout);
         return EXIT_SUCCESS;
