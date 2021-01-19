@@ -360,13 +360,24 @@ public:
     // Loop for threads
     static void ThreadLoop(ThreadParams& Params, int timeout, int _flags)
     {
-        char bf[recv_size + 1] = {};
-        long n_data = 0;
-        int cnt = 0;
-        int flags = _flags;
-        int ret;
         int thread_id = ++Running_Threads;
+
+        // local buffer to read/write to
+        char bf[recv_size + 1] = {};
+
+        // Size of event's given by epoll
+        long n_data = 0;
+
+        // HeartBeat-Counter in case timeout is not -1
+        int cnt = 0;
+
+        // epoll flags we receive and put back into
+        int flags;
+
+        // stopping the (while-)loop in case we've got to a specific event, refactor to single variable@TODO
         bool exit_loop = false;
+
+        // inform the User about the Thread number
         std::cout << "I am Thread #" << thread_id << ", successfully started!!\n";
 
         while (!c_v && !exit_loop) {
@@ -385,8 +396,9 @@ public:
 
             int n = 0;
             for (; n < nfds; ++n) {
-                bool cleanup_cur = false;
                 auto n_event_ptr = [&events, &n ]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
+                bool cleanup_cur = false;
+                std::scoped_lock cli_lock { n_event_ptr()->_struct_lock };
                 // gather FD from client struct
                 //std::scoped_lock<std::mutex> _guard { n_event_ptr()->_struct_lock };
                 auto& tmpFD = n_event_ptr()->fd;
@@ -414,7 +426,7 @@ public:
                         }
 
                         flags |= O_NONBLOCK;
-                        if (ret = fcntl(n_event_ptr()->cli_sock, F_SETFL, flags); ret < 0) {
+                        if (fcntl(n_event_ptr()->cli_sock, F_SETFL, flags) < 0) {
                             perror("cli_sock_fcntl_setfl");
                             exit_loop = true;
                             break;
@@ -446,7 +458,7 @@ public:
 #endif
                                 continue;
                             }
-                        } else if (n_data == 0 && tmpFD > 0) { // client close
+                        } else if (tmpFD > 0 && n_data == 0) { // client close
                             rm_fd(n_event_ptr(), &tmpFD, &Params.epollFD);
                             cleanup_cur = true;
                         }
