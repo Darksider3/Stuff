@@ -365,7 +365,7 @@ public:
         // local buffer to read/write to
         char bf[recv_size + 1] = {};
 
-        // Size of event's given by epoll
+        // Size of read content
         long n_data = 0;
 
         // HeartBeat-Counter in case timeout is not -1
@@ -374,14 +374,11 @@ public:
         // epoll flags we receive and put back into
         int flags;
 
-        // stopping the (while-)loop in case we've got to a specific event, refactor to single variable@TODO
-        bool exit_loop = false;
-
         // inform the User about the Thread number
         std::cout << "I am Thread #" << thread_id << ", successfully started!!\n";
 
-        while (!c_v && !exit_loop) {
-            epoll_event ev;
+        while (!c_v) {
+            epoll_event ev {};
             epoll_event events[max_epoll_events];
             int nfds = epoll_wait(Params.epollFD, events, max_epoll_events, timeout);
             if (nfds < 0) {
@@ -394,8 +391,7 @@ public:
                 std::cout << "Server HeartBeat[1S]: " << cnt++ << std::endl;
             }
 
-            int n = 0;
-            for (; n < nfds; ++n) {
+            for (int n = 0; n < nfds; ++n) {
                 auto n_event_ptr = [&events, &n ]() constexpr { return static_cast<ClientDataStruct*>(events[n].data.ptr); };
                 bool cleanup_cur = false;
                 std::scoped_lock cli_lock { n_event_ptr()->_struct_lock };
@@ -408,27 +404,27 @@ public:
                     // ========= check for efd sentinel =========
                     if (Params.efd == tmpFD) {
                         // ========= stop all actions =========
-                        exit_loop = true;
+                        c_v = true;
                         break;
                     }
                     if (tmpFD == Params.server_socket) {
                         n_event_ptr()->cli_sock = accept(Params.server_socket, (sockaddr*)&Params.serveraddr, &Params.len);
                         if (n_event_ptr()->cli_sock < 0) {
                             perror("accept");
-                            exit_loop = true;
+                            c_v = true;
                             break;
                         }
 
                         if (flags = fcntl(n_event_ptr()->cli_sock, F_GETFL); flags < 0) {
                             perror("cli_sock_fcntl_getfl");
-                            exit_loop = true;
+                            c_v = true;
                             break;
                         }
 
                         flags |= O_NONBLOCK;
                         if (fcntl(n_event_ptr()->cli_sock, F_SETFL, flags) < 0) {
                             perror("cli_sock_fcntl_setfl");
-                            exit_loop = true;
+                            c_v = true;
                             break;
                         }
 
@@ -438,7 +434,7 @@ public:
 
                         if (epoll_ctl(Params.epollFD, EPOLL_CTL_ADD, n_event_ptr()->cli_sock, &ev) == -1) {
                             perror("epoll_ctl_add_cli_addr");
-                            exit_loop = true;
+                            c_v = true;
                             break;
                         }
                     } else if (tmpFD > 0) {
@@ -459,7 +455,6 @@ public:
                                 continue;
                             }
                         } else if (tmpFD > 0 && n_data == 0) { // client close
-                            rm_fd(n_event_ptr(), &tmpFD, &Params.epollFD);
                             cleanup_cur = true;
                         }
 
@@ -479,7 +474,7 @@ public:
 
                 // ========= writing to clients =========
                 if (n_event_ptr()->fd > 0 && (events[n].events & EPOLLOUT) && tmpFD != Params.server_socket) {
-                    n_data = write(tmpFD, "WRITE TIME BABY: ", 17);
+                    n_data = safe_write(tmpFD, (char*)"WRITE TIME BABY: ", 17);
 #ifdef DBG_WRITE
                     std::cout << "TCP Server ready to write data!\n";
 #endif
@@ -489,9 +484,9 @@ public:
 
                 // ========= Cleanup in case we marked it =========
                 if (cleanup_cur) {
-                    close(static_cast<ClientDataStruct*>(events[n].data.ptr)->fd);
-                    delete static_cast<ClientDataStruct*>(events[n].data.ptr);
+                    rm_fd(n_event_ptr(), &tmpFD, &Params.epollFD);
                 }
+
                 std::flush(std::cout);
             }
         }
@@ -526,6 +521,25 @@ public:
 
         //delete client data
         close(*tmpFD);
+        delete data;
+    }
+
+    static int safe_write(int& fd, char* buf, ssize_t count)
+    {
+        int return_value = 0;
+        for (int n = 0; n < count;) {
+            int ret = write(fd, (char*)buf + n, count - n);
+            if (ret < 0) {
+                if (errno == EINTR || errno == EAGAIN)
+                    continue; // try again
+                return_value = -1;
+                break;
+            } else {
+                n += ret;
+            }
+        }
+
+        return return_value;
     }
 };
 
