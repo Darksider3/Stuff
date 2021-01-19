@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <exception>
+#include <poll.h>
 
 #include "LiGi/GeneralTools.h"
 
@@ -517,11 +518,11 @@ public:
         std::cout << "Client closed!\n";
         std::cout << "read from it: " << data->pos << " bytes!\n";
         std::cout << "latest read: " << data->buf << "\n";
+        close(*tmpFD);
+        delete data;
         epoll_ctl(*epollFD, EPOLL_CTL_DEL, *tmpFD, NULL);
 
         //delete client data
-        close(*tmpFD);
-        delete data;
     }
 
     static int safe_write(int& fd, char* buf, ssize_t count)
@@ -530,8 +531,12 @@ public:
         for (int n = 0; n < count;) {
             int ret = write(fd, (char*)buf + n, count - n);
             if (ret < 0) {
-                if (errno == EINTR || errno == EAGAIN)
+                if (errno == EINTR || errno == EAGAIN) {
+                    pollfd wait_for[1];
+                    wait_for[0] = { .fd = fd, .events = POLLOUT };
+                    poll(wait_for, 1, 1);
                     continue; // try again
+                }
                 return_value = -1;
                 break;
             } else {
