@@ -1,8 +1,10 @@
 // main logic
+#include "Poco/Crypto/DigestEngine.h"
 #include "Poco/DigestStream.h"
 #include "Poco/File.h"
 #include "Poco/FileStream.h"
 #include "Poco/MD5Engine.h"
+#include "Poco/SHA1Engine.h"
 
 // Application interface
 #include "Poco/Util/Application.h"
@@ -19,26 +21,43 @@
 #include <variant>
 #include <vector>
 
-int exitHelp(char** args)
-{
-    std::cout << args[0] << " file1 file2 file3...." << std::endl;
-    return EXIT_FAILURE;
-}
+/*class SHA256Engine : public Poco::Crypto::DigestEngine {
+public:
+    enum {
+        BLOCK_SIZE = 64,
+        DIGEST_SIZE = 32
+    };
 
-void PrintMD5(const std::string& in)
+    SHA256Engine()
+        : Poco::Crypto::DigestEngine("SHA256")
+    {
+    }
+};*/
+
+void PrintMD5(const std::string& in, const std::string& Method)
 {
     Poco::File iFile { in };
-    Poco::MD5Engine md5;
-    Poco::DigestOutputStream ds(md5);
+    std::unique_ptr<Poco::Crypto::DigestEngine> Engine;
+    if (Method == "sha1") {
+        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA1");
+    } else if (Method == "sha256") {
+        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA256");
+    } else {
+        Engine = std::make_unique<Poco::Crypto::DigestEngine>("MD5");
+    }
+    Poco::DigestOutputStream ds(*Engine.get());
     if (!iFile.exists() || !iFile.canRead()) {
         std::cout << "File: " << in << " could not be found or read.\n";
     }
 
     Poco::FileInputStream fiS { iFile.path() };
+
     std::string read;
-    fiS >> read;
-    ds << read;
-    std::cout << iFile.path() << ": " << Poco::DigestEngine::digestToHex(md5.digest()) << "\n";
+    while (fiS.good())
+        fiS >> read;
+    Engine->update(read);
+    std::cout << iFile.path() << ": " << Poco::DigestEngine::digestToHex(Engine->digest()) << "\n";
+
     return;
 }
 
@@ -130,7 +149,7 @@ protected:
             config().setString(name, value);
     }
 
-    virtual int main(const ArgVec& args) override
+    int main(const ArgVec& args) override
     {
         if (_needsHelp) {
             displayHelp();
@@ -147,12 +166,17 @@ protected:
 
         if (auto* detectedMD5 = std::get_if<_md5>(&RequestedDigest); detectedMD5 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintMD5(path);
+                std::cout << path;
+                PrintMD5(path, "md5");
             }
         } else if (auto* detectedSHA1 = std::get_if<_sha1>(&RequestedDigest); detectedSHA1 != nullptr) {
-            std::cout << "sha1!";
+            for (auto& path : _fileVec) {
+                PrintMD5(path, "sha1");
+            }
         } else if (auto* detectedSHA256 = std::get_if<_sha256>(&RequestedDigest); detectedSHA256 != nullptr) {
-            std::cout << "sha256!";
+            for (auto& path : _fileVec) {
+                PrintMD5(path, "sha256");
+            }
         }
         return 0;
     };
@@ -160,35 +184,18 @@ protected:
 private:
     struct _sha1 {
     };
+
     struct _sha256 {
     };
+
     struct _md5 {
     };
+
     std::variant<_sha1, _sha256, _md5> RequestedDigest { _md5 {} };
 
     std::vector<std::string> _fileVec {};
     bool _needsHelp { false };
 };
-
-/*int main(int argc, char** argv)
-{
-
-    if (argc < 2) {
-        return exitHelp(argv);
-    }
-
-    // split argv based on range(ignore [0](which is our binaries path)
-    std::vector<std::string> SplitInput { argv + 1, argv + argc };
-    std::for_each(SplitInput.begin(), SplitInput.end(), PrintMD5);
-
-
-    //ds << "abcdefghijklmnopqrstuvwxyz";
-    //ds.close();
-    //std::cout << Poco::DigestEngine::digestToHex(md5.digest()) << std::endl;
-
-    std::flush(std::cout);
-    return 0;
-}*/
 
 int main(int argc, char** argv)
 {
