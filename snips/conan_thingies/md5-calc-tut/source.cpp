@@ -107,7 +107,7 @@ protected:
         HelpFormatter HF(options());
         HF.setCommand(commandName());
         HF.setHeader("A simple file hashing application");
-        HF.setUsage("-f file [OPTIONS]");
+        HF.setUsage("[OPTIONS] file1 file2 file3...");
         HF.format(std::cout);
     }
 
@@ -139,6 +139,8 @@ protected:
                     return true;
                 if (in == " ")
                     return true;
+
+                return false;
             }),
                 in.end());
         };
