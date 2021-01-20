@@ -22,34 +22,38 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
 {
     if (in.empty())
         std::cout << "empty arg?!" << std::endl;
+
     Poco::File iFile { in };
-    std::unique_ptr<Poco::Crypto::DigestEngine> Engine;
-    if (Method == "sha1") {
-        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA1");
-    } else if (Method == "sha256") {
-        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA256");
-    } else {
-        Engine = std::make_unique<Poco::Crypto::DigestEngine>("MD5");
-    }
-    Poco::DigestOutputStream ds(*Engine.get());
     if (!iFile.exists() || !iFile.canRead()) {
         std::cout << "File: " << in << " could not be found or read.\n";
         return;
     }
 
+    std::unique_ptr<Poco::Crypto::DigestEngine> Engine;
+    if (Method == "SHA1") {
+        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA1");
+    } else if (Method == "SHA256") {
+        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA256");
+    } else {
+        Engine = std::make_unique<Poco::Crypto::DigestEngine>("MD5");
+    }
+
+    Poco::DigestOutputStream ds(*Engine.get());
     Poco::FileInputStream fiS { iFile.path() };
 
     std::string read;
-    while (fiS.good())
+    while (fiS.good()) // read whole file
         fiS >> read;
-    Engine->update(read);
+
+    Engine->update(read); // plug it in
     if (used_algorithm)
         std::cout << "Method " << Engine->algorithm() << " -> ";
 
-    std::cout << iFile.path() << ": " << Poco::DigestEngine::digestToHex(Engine->digest()) << "\n";
+    std::cout << iFile.path() << ": " << Poco::DigestEngine::digestToHex(Engine->digest()) /* print 'em out */ << "\n";
     return;
 }
 
+// dont clutter global namespace
 namespace {
 using Poco::Util::AbstractConfiguration;
 using Poco::Util::Application;
@@ -57,6 +61,8 @@ using Poco::Util::HelpFormatter;
 using Poco::Util::Option;
 using Poco::Util::OptionSet;
 }
+
+// main app!
 class DigestEncryptApp : public Poco::Util::Application {
 public:
     DigestEncryptApp()
@@ -153,32 +159,33 @@ protected:
 
         if (auto* detectedMD5 = std::get_if<_md5>(&RequestedDigest); detectedMD5 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintFileHash(path, "md5", _printAlgoUsed);
+                PrintFileHash(path, detectedMD5->method, _printAlgoUsed);
             }
         } else if (auto* detectedSHA1 = std::get_if<_sha1>(&RequestedDigest); detectedSHA1 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintFileHash(path, "sha1", _printAlgoUsed);
+                PrintFileHash(path, detectedSHA1->method, _printAlgoUsed);
             }
         } else if (auto* detectedSHA256 = std::get_if<_sha256>(&RequestedDigest); detectedSHA256 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintFileHash(path, "sha256", _printAlgoUsed);
+                PrintFileHash(path, detectedSHA256->method, _printAlgoUsed);
             }
         }
         return 0;
     };
 
 private:
+    // used for SFINAE-Handling of options
     struct _sha1 {
+        std::string method { "SHA1" };
     };
-
     struct _sha256 {
+        std::string method { "SHA256" };
     };
-
     struct _md5 {
+        std::string method { "MD5" };
     };
 
     std::variant<_sha1, _sha256, _md5> RequestedDigest { _md5 {} };
-
     std::vector<std::string> _fileVec {};
     bool _needsHelp { false };
 
