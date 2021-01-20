@@ -34,8 +34,10 @@ public:
     }
 };*/
 
-void PrintMD5(const std::string& in, const std::string& Method)
+void PrintFileHash(const std::string& in, const std::string& Method, bool used_algorithm = false)
 {
+    if (in.empty())
+        std::cout << "empty arg?!" << std::endl;
     Poco::File iFile { in };
     std::unique_ptr<Poco::Crypto::DigestEngine> Engine;
     if (Method == "sha1") {
@@ -48,6 +50,7 @@ void PrintMD5(const std::string& in, const std::string& Method)
     Poco::DigestOutputStream ds(*Engine.get());
     if (!iFile.exists() || !iFile.canRead()) {
         std::cout << "File: " << in << " could not be found or read.\n";
+        return;
     }
 
     Poco::FileInputStream fiS { iFile.path() };
@@ -56,8 +59,10 @@ void PrintMD5(const std::string& in, const std::string& Method)
     while (fiS.good())
         fiS >> read;
     Engine->update(read);
-    std::cout << iFile.path() << ": " << Poco::DigestEngine::digestToHex(Engine->digest()) << "\n";
+    if (used_algorithm)
+        std::cout << "Method " << Engine->algorithm() << " -> ";
 
+    std::cout << iFile.path() << ": " << Poco::DigestEngine::digestToHex(Engine->digest()) << "\n";
     return;
 }
 
@@ -99,10 +104,11 @@ protected:
                 .repeatable(false)
                 .required(false));
 
-        opts.addOption(Option("sha1", "s", "use SHA1 instead of MD5").repeatable(false).required(false).argument("sha1"));
-        opts.addOption(Option("sha256", "6", "use SHA256 instead of MD5").repeatable(false).required(false).argument("sha256"));
-        opts.addOption(Option("md5", "5", "use md5(default)").repeatable(false).required(false).argument("md5"));
-        opts.addOption(Option("file", "f", "Path to file(s) to be encrypted. Repeatable.").repeatable(true).required(false).argument("file"));
+        opts.addOption(Option("sha1", "s", "use SHA1 instead of MD5").repeatable(false).required(false));
+        opts.addOption(Option("sha256", "6", "use SHA256 instead of MD5").repeatable(false).required(false));
+        opts.addOption(Option("md5", "5", "use md5(default)").repeatable(false).required(false));
+        opts.addOption(Option("file", "f", "Path to file(s) to be encrypted. Repeatable.").repeatable(true).required(false));
+        opts.addOption(Option("print", "p").required(false).repeatable(false).noArgument());
     }
 
     void displayHelp() const
@@ -127,30 +133,24 @@ protected:
             RequestedDigest = _md5 {};
         } else if (name == "file") {
             _fileVec.push_back(value);
+        } else if (name == "print") {
+            _printAlgoUsed = true;
+        } else {
+            std::cout << "Option: " << name << ", Value: " << value << std::endl;
         }
-    }
-
-    void defineProperty(const std::string& def)
-    {
-
-        std::string name;
-        std::string value;
-
-        std::string::size_type pos = def.find('=');
-        if (pos != std::string::npos) {
-            name.assign(def, 0, pos);
-            value.assign(def, pos + 1, def.length() - pos);
-        } else
-            name = def;
-
-        if (options().hasOption(name))
-            std::cout << ("Unexpected option argument:");
-        else
-            config().setString(name, value);
     }
 
     int main(const ArgVec& args) override
     {
+        auto cleanup_vec = [](std::vector<std::string>& in) {
+            in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
+                if (in.empty())
+                    return true;
+                if (in == " ")
+                    return true;
+            }),
+                in.end());
+        };
         if (_needsHelp) {
             displayHelp();
             return 1;
@@ -160,22 +160,24 @@ protected:
             _fileVec.push_back(anonymous_args);
         }
 
-        if (_fileVec.empty()) {
+        cleanup_vec(_fileVec);
+
+        if (_fileVec.empty() && args.empty()) {
             displayHelp();
         }
 
         if (auto* detectedMD5 = std::get_if<_md5>(&RequestedDigest); detectedMD5 != nullptr) {
             for (auto& path : _fileVec) {
                 std::cout << path;
-                PrintMD5(path, "md5");
+                PrintFileHash(path, "md5", _printAlgoUsed);
             }
         } else if (auto* detectedSHA1 = std::get_if<_sha1>(&RequestedDigest); detectedSHA1 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintMD5(path, "sha1");
+                PrintFileHash(path, "sha1", _printAlgoUsed);
             }
         } else if (auto* detectedSHA256 = std::get_if<_sha256>(&RequestedDigest); detectedSHA256 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintMD5(path, "sha256");
+                PrintFileHash(path, "sha256", _printAlgoUsed);
             }
         }
         return 0;
@@ -195,6 +197,8 @@ private:
 
     std::vector<std::string> _fileVec {};
     bool _needsHelp { false };
+
+    bool _printAlgoUsed { false };
 };
 
 int main(int argc, char** argv)
