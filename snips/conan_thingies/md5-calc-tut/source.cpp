@@ -165,9 +165,12 @@ protected:
             displayHelp();
         }
 
+        // write either to specified file or std::cout
         if (!_file.path().empty() && _file.exists()) {
             of.open(_file.path());
             buf = of.rdbuf();
+        } else {
+            buf = std::cout.rdbuf();
         }
 
         std::ostream output(buf);
@@ -203,12 +206,11 @@ private:
     std::variant<_sha1, _sha256, _md5> RequestedDigest { _md5 {} };
     std::vector<std::string> _fileVec {};
     bool _needsHelp { false };
+    bool _printAlgoUsed { false };
 
     Poco::File _file {};
-
     std::streambuf* buf;
     std::ofstream of;
-    bool _printAlgoUsed { false };
 };
 
 int main(int argc, char** argv)
