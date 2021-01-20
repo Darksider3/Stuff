@@ -3,14 +3,11 @@
 #include "Poco/DigestStream.h"
 #include "Poco/File.h"
 #include "Poco/FileStream.h"
-#include "Poco/MD5Engine.h"
-#include "Poco/SHA1Engine.h"
 
 // Application interface
 #include "Poco/Util/Application.h"
 
 // Options
-#include "Poco/Util/AbstractConfiguration.h"
 #include "Poco/Util/Option.h"
 #include "Poco/Util/OptionSet.h"
 
@@ -20,19 +17,6 @@
 #include <iostream>
 #include <variant>
 #include <vector>
-
-/*class SHA256Engine : public Poco::Crypto::DigestEngine {
-public:
-    enum {
-        BLOCK_SIZE = 64,
-        DIGEST_SIZE = 32
-    };
-
-    SHA256Engine()
-        : Poco::Crypto::DigestEngine("SHA256")
-    {
-    }
-};*/
 
 void PrintFileHash(const std::string& in, const std::string& Method, bool used_algorithm = false)
 {
@@ -66,12 +50,13 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
     return;
 }
 
+namespace {
 using Poco::Util::AbstractConfiguration;
 using Poco::Util::Application;
 using Poco::Util::HelpFormatter;
 using Poco::Util::Option;
 using Poco::Util::OptionSet;
-
+}
 class DigestEncryptApp : public Poco::Util::Application {
 public:
     DigestEncryptApp()
@@ -168,7 +153,6 @@ protected:
 
         if (auto* detectedMD5 = std::get_if<_md5>(&RequestedDigest); detectedMD5 != nullptr) {
             for (auto& path : _fileVec) {
-                std::cout << path;
                 PrintFileHash(path, "md5", _printAlgoUsed);
             }
         } else if (auto* detectedSHA1 = std::get_if<_sha1>(&RequestedDigest); detectedSHA1 != nullptr) {
