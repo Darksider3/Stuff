@@ -40,17 +40,27 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
     }
 
     Poco::DigestOutputStream ds(*Engine.get());
-    Poco::FileInputStream fiS { iFile.path() };
+    Poco::FileInputStream FileReadStream { iFile.path() };
 
     std::string read;
-    while (fiS.good()) // read whole file
-        fiS >> read;
 
+    FileReadStream.seekg(0, std::ios::end);
+    size_t Size = FileReadStream.tellg();
+    FileReadStream.seekg(0, std::ios::beg);
+    read = std::string(Size, '\0');
+
+    FileReadStream.read(&read[0], Size);
+
+#ifdef DEBUG_DIFFER_OUTPUT
+    std::ofstream debugFile;
+    debugFile.write(&read[0], read.length());
+    debugFile.close();
+#endif
     Engine->update(read); // plug it in
+
+    output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */ << "\n";
     if (used_algorithm)
         output << "Method " << Engine->algorithm() << " -> ";
-
-    output << iFile.path() << ": " << Poco::DigestEngine::digestToHex(Engine->digest()) /* print 'em out */ << "\n";
     output.flush();
     return;
 }
@@ -167,7 +177,8 @@ protected:
 
         // write either to specified file or std::cout
         if (!_file.path().empty() && _file.exists()) {
-            of.open(_file.path());
+            of.rdbuf()->close();
+            of.open(_file.path(), std::ios::in);
             buf = of.rdbuf();
         } else {
             buf = std::cout.rdbuf();
