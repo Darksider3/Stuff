@@ -16,28 +16,31 @@
 #include "Poco/Util/HelpFormatter.h"
 
 // Output and helpers
+#include "Poco/LineEndingConverter.h"
 #include <iostream>
 #include <variant>
 #include <vector>
+
+#define LN Poco::LineEnding::NEWLINE_DEFAULT; // NOLINT(cppcoreguidelines-macro-usage)
 
 // Listing functionality
 #ifndef NO_HASH_LISTINGS
 #    include <openssl/evp.h>
 #    include <openssl/objects.h>
 
-void ssl_callback_print(const OBJ_NAME* obj, void* unused)
+void ssl_callback_print(const OBJ_NAME* obj, void* /*unused*/)
 {
-    std::cout << obj->name << ", ";
+    std::cout << obj->name << " ";
 }
 
 void list_avail()
 {
     void* arg = nullptr;
-    std::cout << "Available digests: ";
+    std::cout << "(Space separated)Available digests: ";
     OpenSSL_add_all_digests();
     OBJ_NAME_do_all(OBJ_NAME_TYPE_MD_METH, ssl_callback_print, arg);
-    std::cout << ";\n"
-              << std::endl;
+    std::cout << ";"
+              << LN;
     return;
 }
 
@@ -52,7 +55,7 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
 
     Poco::File iFile { in };
     if (!iFile.exists() || !iFile.canRead()) {
-        std::cerr << "File: " << in << " could not be found or read.\n";
+        std::cerr << "File: " << in << " could not be found or read." << LN;
         return;
     }
 
@@ -78,7 +81,7 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
     output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */;
     if (used_algorithm)
         output << "; Method " << Engine->algorithm() << "";
-    output << std::endl;
+    output << LN;
     output.flush();
     return;
 }
@@ -101,18 +104,18 @@ public:
     }
 
 protected:
-    void initialize(Application& self) override
+    [[maybe_unused]] void initialize(Application& self) override
     {
         loadConfiguration(); // load config files if present
         Application::initialize(self);
     }
 
-    void uninitialize() override
+    [[maybe_unused]] void uninitialize() override
     {
         Application::uninitialize();
     }
 
-    void reinitialize(Application& self) override
+    [[maybe_unused]] void reinitialize(Application& self) override
     {
         Application::reinitialize(self);
     }
@@ -271,7 +274,7 @@ private:
     /// file we gonna write to
     Poco::File _file {};
     /// buffer to redirect the writes to
-    std::streambuf* buf;
+    std::streambuf* buf {};
 
     /// in case we gonna redirect std::cout, this is our opened file
     std::ofstream of;
