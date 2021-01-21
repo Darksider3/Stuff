@@ -15,9 +15,33 @@
 // Output Help Formatting
 #include "Poco/Util/HelpFormatter.h"
 
+// Output and helpers
 #include <iostream>
 #include <variant>
 #include <vector>
+
+// Listing functionality
+#ifndef NO_HASH_LISTINGS
+#    include <openssl/evp.h>
+#    include <openssl/objects.h>
+
+void ssl_callback_print(const OBJ_NAME* obj, void* unused)
+{
+    std::cout << obj->name << ", ";
+}
+
+void list_avail()
+{
+    void* arg = nullptr;
+    std::cout << "Available digests: ";
+    OpenSSL_add_all_digests();
+    OBJ_NAME_do_all(OBJ_NAME_TYPE_MD_METH, ssl_callback_print, arg);
+    std::cout << ";\n"
+              << std::endl;
+    return;
+}
+
+#endif
 
 constexpr char version_str[] = "Licensed under MIT. (c) 2021, fileHasher Version 0.2.7 by darksider3. ";
 
@@ -107,6 +131,9 @@ protected:
         opts.addOption(Option("file", "f", "Write to file instead of stdout").repeatable(false).required(false).argument("name", true));
         opts.addOption(Option("print", "p").required(false).repeatable(false).noArgument());
         opts.addOption(Option("own", "o", "Select your own hashing method your system supports through OpenSSL.").required(false).repeatable(false).argument("own"));
+#ifndef NO_HASH_LISTINGS
+        opts.addOption(Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL").repeatable(false).required(false).noArgument());
+#endif
     }
 
     void displayHelp() const
@@ -141,13 +168,20 @@ protected:
                 _file.createFile();
         } else if (name == "print") {
             _printAlgoUsed = true;
-        } else {
+        }
+#ifndef NO_HASH_LISTINGS
+        else if (name == "list-digests") {
+            _listAvailable = true;
+        }
+#endif
+        else {
             std::cout << "Option: " << name << ", Value: " << value << std::endl;
         }
     }
 
     int main(const ArgVec& args) override
     {
+
         auto cleanup_vec = [](std::vector<std::string>& in) {
             in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
                 if (in.empty())
@@ -159,6 +193,12 @@ protected:
             }),
                 in.end());
         };
+#ifndef NO_HASH_LISTINGS
+        if (_listAvailable) {
+            list_avail();
+            return 0;
+        }
+#endif
         if (_needsHelp) {
             displayHelp();
             return 1;
@@ -226,6 +266,7 @@ private:
     std::vector<std::string> _fileVec {};
     bool _needsHelp { false };
     bool _printAlgoUsed { false };
+    bool _listAvailable { false };
 
     /// file we gonna write to
     Poco::File _file {};
