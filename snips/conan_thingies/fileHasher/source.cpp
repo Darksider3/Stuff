@@ -32,24 +32,15 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
         return;
     }
 
-    std::unique_ptr<Poco::Crypto::DigestEngine> Engine;
-    if (Method == "SHA1") {
-        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA1");
-    } else if (Method == "SHA256") {
-        Engine = std::make_unique<Poco::Crypto::DigestEngine>("SHA256");
-    } else {
-        Engine = std::make_unique<Poco::Crypto::DigestEngine>("MD5");
-    }
+    std::unique_ptr<Poco::Crypto::DigestEngine> Engine = std::make_unique<Poco::Crypto::DigestEngine>(Method);
 
     Poco::DigestOutputStream ds(*Engine.get());
     Poco::FileInputStream FileReadStream { iFile.path() };
 
-    std::string read;
-
     FileReadStream.seekg(0, std::ios::end);
     size_t Size = FileReadStream.tellg();
     FileReadStream.seekg(0, std::ios::beg);
-    read = std::string(Size, '\0');
+    std::string read = std::string(Size, '\0');
 
     FileReadStream.read(&read[0], Size);
 
@@ -60,9 +51,10 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
 #endif
     Engine->update(read); // plug it in
 
-    output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */ << "\n";
+    output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */;
     if (used_algorithm)
-        output << "Method " << Engine->algorithm() << " -> ";
+        output << "; Method " << Engine->algorithm() << "";
+    output << std::endl;
     output.flush();
     return;
 }
@@ -109,11 +101,12 @@ protected:
                 .repeatable(false)
                 .required(false));
 
-        opts.addOption(Option("sha1", "s", "use SHA1 instead of MD5").repeatable(false).required(false));
-        opts.addOption(Option("sha256", "6", "use SHA256 instead of MD5").repeatable(false).required(false));
-        opts.addOption(Option("md5", "5", "use md5(default)").repeatable(false).required(false));
+        opts.addOption(Option("sha1", "s", "use SHA1 instead of MD5").repeatable(false).required(false).noArgument());
+        opts.addOption(Option("sha256", "6", "use SHA256 instead of MD5").repeatable(false).required(false).noArgument());
+        opts.addOption(Option("md5", "5", "use md5(default)").repeatable(false).required(false).noArgument());
         opts.addOption(Option("file", "f", "Write to file instead of stdout").repeatable(false).required(false).argument("name", true));
         opts.addOption(Option("print", "p").required(false).repeatable(false).noArgument());
+        opts.addOption(Option("own", "o", "Select your own hashing method your system supports through OpenSSL.").required(false).repeatable(false).argument("own"));
     }
 
     void displayHelp() const
@@ -138,6 +131,8 @@ protected:
             RequestedDigest = _sha256 {};
         } else if (name == "md5") {
             RequestedDigest = _md5 {};
+        } else if (name == "own") {
+            RequestedDigest = _ownName { .method = value };
         } else if (name == "file") {
             if (value.empty())
                 return;
@@ -203,6 +198,10 @@ protected:
             for (auto& path : _fileVec) {
                 PrintFileHash(path, detectedSHA256->method, _printAlgoUsed, output);
             }
+        } else if (auto* detectOwnMethod = std::get_if<_ownName>(&RequestedDigest); detectOwnMethod != nullptr) {
+            for (auto& path : _fileVec) {
+                PrintFileHash(path, detectOwnMethod->method, _printAlgoUsed, output);
+            }
         }
         return 0;
     };
@@ -219,7 +218,11 @@ private:
         std::string method { "MD5" };
     };
 
-    std::variant<_sha1, _sha256, _md5> RequestedDigest { _md5 {} };
+    struct _ownName {
+        std::string method { "" };
+    };
+
+    std::variant<_sha1, _sha256, _md5, _ownName> RequestedDigest { _md5 {} };
     std::vector<std::string> _fileVec {};
     bool _needsHelp { false };
     bool _printAlgoUsed { false };
