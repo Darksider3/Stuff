@@ -46,16 +46,13 @@ void list_avail()
 
 #endif
 
+constexpr size_t Read_Segmentation = 16777216; // 16 mbyte
 constexpr char version_str[] = "Licensed under MIT. (c) 2021, fileHasher Version 0.2.7 by darksider3. ";
 
 void PrintFileHash(const std::string& in, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
 {
-    if (in.empty())
-        std::cerr << "empty arg?!" << std::endl;
-
     Poco::File iFile { in };
-    if (!iFile.exists() || !iFile.canRead()) {
-        std::cerr << "File: " << in << " could not be found or read." << LN;
+    if (!iFile.canRead()) {
         return;
     }
 
@@ -64,19 +61,13 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
     Poco::DigestOutputStream ds(*Engine.get());
     Poco::FileInputStream FileReadStream { iFile.path() };
 
-    FileReadStream.seekg(0, std::ios::end);
-    size_t Size = FileReadStream.tellg();
-    FileReadStream.seekg(0, std::ios::beg);
-    std::string read = std::string(Size, '\0');
+    std::string read = std::string();
+    read.reserve(Read_Segmentation);
 
-    FileReadStream.read(&read[0], Size);
-
-#ifdef DEBUG_DIFFER_OUTPUT
-    std::ofstream debugFile;
-    debugFile.write(&read[0], read.length());
-    debugFile.close();
-#endif
-    Engine->update(read); // plug it in
+    for (; !FileReadStream.eof();) {
+        FileReadStream.read(&read[0], Read_Segmentation);
+        Engine->update(read.c_str(), FileReadStream.gcount());
+    }
 
     output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */;
     if (used_algorithm)
