@@ -3,6 +3,7 @@
 #include "Poco/DigestStream.h"
 #include "Poco/File.h"
 #include "Poco/FileStream.h"
+#include <fstream>
 
 // Application interface
 #include "Poco/Util/Application.h"
@@ -14,10 +15,11 @@
 // Output Help Formatting
 #include "Poco/Util/HelpFormatter.h"
 
-#include <fstream>
 #include <iostream>
 #include <variant>
 #include <vector>
+
+constexpr char version_str[] = "Licensed under MIT. (c) 2021, fileHasher Version 0.2.7 by darksider3. ";
 
 void PrintFileHash(const std::string& in, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
 {
@@ -120,6 +122,8 @@ protected:
         HF.setCommand(commandName());
         HF.setHeader("A simple file hashing application");
         HF.setUsage("[OPTIONS] file1 file2 file3...");
+        HF.setFooter(version_str);
+        HF.setUnixStyle(true);
         HF.format(std::cout);
     }
 
@@ -173,6 +177,7 @@ protected:
 
         if (_fileVec.empty() && args.empty()) {
             displayHelp();
+            return 1;
         }
 
         // write either to specified file or std::cout
@@ -219,8 +224,12 @@ private:
     bool _needsHelp { false };
     bool _printAlgoUsed { false };
 
+    /// file we gonna write to
     Poco::File _file {};
+    /// buffer to redirect the writes to
     std::streambuf* buf;
+
+    /// in case we gonna redirect std::cout, this is our opened file
     std::ofstream of;
 };
 
