@@ -2,8 +2,6 @@
 // Created by darksider3 on 06.01.21.
 //
 #include "lipsum.hpp"
-#include <algorithm>
-#include <fstream>
 #include <iostream>
 
 constexpr char banner[] = "\n"
