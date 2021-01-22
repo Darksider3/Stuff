@@ -1,8 +1,6 @@
 // main logic
 #include "Poco/Crypto/DigestEngine.h"
-#include "Poco/DigestStream.h"
 #include "Poco/File.h"
-#include "Poco/FileStream.h"
 #include <fstream>
 
 // Application interface
@@ -16,12 +14,12 @@
 #include "Poco/Util/HelpFormatter.h"
 
 // Output and helpers
-#include "Poco/LineEndingConverter.h"
 #include <iostream>
 #include <variant>
 #include <vector>
 
-#define LN Poco::LineEnding::NEWLINE_DEFAULT; // NOLINT(cppcoreguidelines-macro-usage)
+#include "common.hpp"
+#include "FileHashPrinter.hpp"
 
 // Listing functionality
 #ifndef NO_HASH_LISTINGS
@@ -45,37 +43,6 @@ void list_avail()
 }
 
 #endif
-
-constexpr size_t Read_Segmentation = 16777216; // 16 mbyte
-constexpr char version_str[] = "Licensed under MIT. (c) 2021, fileHasher Version 0.2.7 by darksider3. ";
-
-void PrintFileHash(const std::string& in, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
-{
-    Poco::File iFile { in };
-    if (!iFile.canRead()) {
-        return;
-    }
-
-    std::unique_ptr<Poco::Crypto::DigestEngine> Engine = std::make_unique<Poco::Crypto::DigestEngine>(Method);
-
-    Poco::DigestOutputStream ds(*Engine.get());
-    Poco::FileInputStream FileReadStream { iFile.path() };
-
-    std::string read = std::string();
-    read.reserve(Read_Segmentation);
-
-    for (; !FileReadStream.eof();) {
-        FileReadStream.read(&read[0], Read_Segmentation);
-        Engine->update(read.c_str(), FileReadStream.gcount());
-    }
-
-    output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */;
-    if (used_algorithm)
-        output << "; Method " << Engine->algorithm() << "";
-    output << LN;
-    output.flush();
-    return;
-}
 
 // dont clutter global namespace
 namespace {
