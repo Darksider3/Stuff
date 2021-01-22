@@ -2,11 +2,12 @@
 // Created by darksider3 on 22.01.21.
 //
 
-#ifndef POCO_MD5_ENCRYPT_FILEHASHPRINTER_HPP
-#define POCO_MD5_ENCRYPT_FILEHASHPRINTER_HPP
+#ifndef POCO_FILE_HASHER_FILEHASHPRINTER_HPP
+#define POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 
 #include "Poco/DigestStream.h"
 #include "Poco/FileStream.h"
+#include "StringFormat.hpp"
 #include "common.hpp"
 
 constexpr size_t Read_Segmentation = 16777216; // 16 mbyte
@@ -41,10 +42,8 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
         Engine->update(read.c_str(), FileReadStream.gcount());
     }
 
-    output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */;
-    if (used_algorithm)
-        output << "; Method " << Engine->algorithm() << "";
-    output << LN;
+    //output << Poco::DigestEngine::digestToHex(Engine->digest()) << "  " << iFile.path() /* print 'em out */;
+    output << Formatting::FormatHashPrint(Engine->digest(), iFile, used_algorithm, Method);
     output.flush();
 
 #ifdef ENABLE_PAIRS
@@ -53,4 +52,4 @@ void PrintFileHash(const std::string& in, const std::string& Method, bool used_a
     return;
 #endif
 }
-#endif //POCO_MD5_ENCRYPT_FILEHASHPRINTER_HPP
+#endif // POCO_MD5_ENCRYPT_FILEHASHPRINTER_HPP

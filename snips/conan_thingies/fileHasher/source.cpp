@@ -18,8 +18,8 @@
 #include <variant>
 #include <vector>
 
-#include "common.hpp"
 #include "FileHashPrinter.hpp"
+#include "common.hpp"
 
 // Listing functionality
 #ifndef NO_HASH_LISTINGS
@@ -135,9 +135,9 @@ protected:
             _listAvailable = true;
         }
 #endif
-        else {
+        /*        else {
             std::cout << "Option: " << name << ", Value: " << value << std::endl;
-        }
+        }*/
     }
 
     int main(const ArgVec& args) override
