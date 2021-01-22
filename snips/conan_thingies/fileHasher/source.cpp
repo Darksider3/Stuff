@@ -62,22 +62,41 @@ public:
     }
 
 protected:
+    /**
+     * @brief Get's called by `this->run()` by POCO itself
+     *
+     * @param self This exact application object.
+     */
     [[maybe_unused]] void initialize(Application& self) override
     {
         loadConfiguration(); // load config files if present
         Application::initialize(self);
     }
 
+    /**
+     * @brief uninitialized this object. Called by `this->run()` on exit
+     *
+     */
     [[maybe_unused]] void uninitialize() override
     {
         Application::uninitialize();
     }
 
+    /**
+     * @brief Reinitialises the current application object. Called by `this->run()`.
+     *
+     * @param self This exact Application object.
+     */
     [[maybe_unused]] void reinitialize(Application& self) override
     {
         Application::reinitialize(self);
     }
 
+    /**
+     * @brief Defines Options this Application object takes/needs.
+     *
+     * @param opts OptionSet provided by the parent class(`Poco::Util::Application`)
+     */
     void defineOptions(OptionSet& opts) override
     {
         Application::defineOptions(opts);
@@ -97,7 +116,12 @@ protected:
 #endif
     }
 
-    void displayHelp() const
+    /**
+     * @brief View Help and exit with given return code(by default EXIT_OK)
+     *
+     * @param int8_t return_code=EXIT_OK Return code the application should give on exit through std::exit.
+     */
+    void displayHelp(int8_t return_code = EXIT_OK) const
     {
         HelpFormatter HF(options());
         HF.setCommand(commandName());
@@ -106,8 +130,16 @@ protected:
         HF.setFooter(version_str);
         HF.setUnixStyle(true);
         HF.format(std::cout);
+
+        std::exit(return_code);
     }
 
+    /**
+     * @brief Handles all possible input options/Arguments defined in `defineOptions`.
+     *
+     * @param std::string& name Name of the given argument
+     * @param std::string& value Value of arguemnt
+     */
     void handleOption(const std::string& name, const std::string& value) override
     {
         Application::handleOption(name, value);
@@ -140,6 +172,13 @@ protected:
         }*/
     }
 
+    /**
+     * @brief Main application entrypoint. Get's called by `this->run()`
+     *
+     * @param const ArgVec& args Arguments.
+     *
+     * @return int8_t return value
+     */
     int main(const ArgVec& args) override
     {
 
@@ -161,7 +200,7 @@ protected:
         }
 #endif
         if (_needsHelp) {
-            displayHelp();
+            displayHelp(0);
             return 1;
         }
 
@@ -208,36 +247,60 @@ protected:
     };
 
 private:
-    // used for SFINAE-Handling of options
-    struct _sha1 {
-        std::string method { "SHA1" };
+    struct m_HashMethod {
+        [[maybe_unused]] std::string Method;
     };
-    struct _sha256 {
-        std::string method { "SHA256" };
+    /// used for SFINAE-Handling of options
+    struct _sha1 : m_HashMethod {
+        std::string method { "SHA1" }; /// Method Name
     };
-    struct _md5 {
-        std::string method { "MD5" };
+    /// used for SFINAE-Handling of options
+    struct _sha256 : m_HashMethod {
+        std::string method { "SHA256" }; /// See parent
+    };
+    /// used for SFINAE-Handling of options
+    struct _md5 : m_HashMethod {
+        std::string method { "MD5" }; /// See parent
     };
 
-    struct _ownName {
-        std::string method { "" };
+    /// used for SFINAE-Handling of options
+    struct _ownName : public m_HashMethod {
+        std::string method { "" }; /// See parent
     };
 
+    /// SFINAE variant to select correct algorithm
     std::variant<_sha1, _sha256, _md5, _ownName> RequestedDigest { _md5 {} };
+
+    /// Files given by Argument/Options(-f)
     std::vector<std::string> _fileVec {};
+
+    /// -h, --help Flag
     bool _needsHelp { false };
+
+    /// -p, --print Flag
     bool _printAlgoUsed { false };
+
+    /// -l, --list-digests Flag
     bool _listAvailable { false };
 
-    /// file we gonna write to
+    /// Output File
     Poco::File _file {};
-    /// buffer to redirect the writes to
+
+    /// Streambuffer to redirect files to(e.g. `std::cout` or some file on the disk)
     std::streambuf* buf {};
 
-    /// in case we gonna redirect std::cout, this is our opened file
+    /// Open File(or Output Device(e.g. `std::cout`))
     std::ofstream of;
 };
 
+/**
+ * @brief Entry Point
+ *
+ * @param argc Number of Arguments given by the OS
+ * @param argv Arguments given by the OS
+ *
+ * @return Return Code
+ */
 int main(int argc, char** argv)
 {
     std::shared_ptr<DigestEncryptApp> pApp = std::make_shared<DigestEncryptApp>();
