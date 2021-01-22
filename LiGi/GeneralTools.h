@@ -13,7 +13,7 @@
 
 namespace Li::common {
 
-[[nodiscard("This gives you the Map you desired!")]] std::vector<std::pair<int, long>> ErrnoConsolidation(std::vector<int> errs)
+[[nodiscard("This gives you the vector you desired!")]] std::vector<std::pair<int, long>> ErrnoConsolidation(std::vector<int> errs)
 {
     std::sort(errs.begin(), errs.end());
     std::vector<std::pair<int, long>> Vec {};
@@ -21,7 +21,7 @@ namespace Li::common {
 
         long dups = std::count(it, std::cend(errs), *it);
         Vec.emplace_back(std::pair<int, long> { *it, dups });
-        for (auto last = *it; *++it == last;)
+        for (auto last = *it; *++it == last && *it;)
             ;
     }
 
