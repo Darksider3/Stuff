@@ -6,6 +6,6 @@ add_definitions("-std=c++20")
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
 
-add_executable(fileHash source.cpp FileHashPrinter.hpp common.hpp StringFormat.hpp)
+add_executable(fileHash main.cpp FileHashPrinter.hpp common.hpp StringFormat.hpp)
 #target_link_libraries(fileHash ${CONAN_LIBS})
 conan_target_link_libraries(fileHash)
