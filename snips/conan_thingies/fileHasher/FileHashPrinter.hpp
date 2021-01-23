@@ -21,7 +21,7 @@ __attribute__((flatten)) void ReadFileIntoEngine(Poco::DigestEngine& Engine, Poc
     Poco::FileInputStream FileReadStream { F.path() };
     char read[Read_Segmentation + 1];
 
-    for (; !FileReadStream.eof();) {                  // read whole file
+    for (; FileReadStream.eof() == false;) {          // read whole file
         FileReadStream.read(read, Read_Segmentation); // but not everything at once
         Engine.update(read, FileReadStream.gcount()); // update the engine to consider it's content
     }

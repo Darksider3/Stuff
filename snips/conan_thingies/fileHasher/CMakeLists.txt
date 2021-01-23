@@ -5,6 +5,9 @@ add_definitions("-std=c++20")
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS)
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Ofast")
 
 add_executable(fileHash main.cpp FileHashPrinter.hpp common.hpp StringFormat.hpp)
 #target_link_libraries(fileHash ${CONAN_LIBS})

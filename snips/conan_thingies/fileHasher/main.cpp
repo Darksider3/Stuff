@@ -243,6 +243,8 @@ protected:
                 PrintFileHash(path, detectOwnMethod->method, _printAlgoUsed, output);
             }
         }
+
+        std::flush(std::cout);
         return 0;
     };
 
@@ -303,6 +305,7 @@ private:
  */
 int main(int argc, char** argv)
 {
+    std::ios_base::sync_with_stdio(false);
     std::shared_ptr<DigestEncryptApp> pApp = std::make_shared<DigestEncryptApp>();
     try {
         pApp->init(argc, argv);
