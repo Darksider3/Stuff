@@ -40,6 +40,7 @@ __attribute__((flatten)) void ReadFileIntoEngine(Poco::DigestEngine& Engine, Poc
 
 std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
 {
+    assert(!Path.empty() && !Method.empty() && "This both shouldnt be empty, ever.");
     Poco::File iFile { Path };
     if (!iFile.canRead()) { // cant generate a hash if i cant read what i've got to hash
         return output;
@@ -54,6 +55,7 @@ std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, 
     output << Formatting::FormatHashPrint(Engine->digest(), iFile, used_algorithm, Method); // print 'em out!
     output.flush();                                                                         // make sure it's in there!
 
+    assert(output.good() && "We somehow f*cked up the stream state!");
     return output;
 }
 

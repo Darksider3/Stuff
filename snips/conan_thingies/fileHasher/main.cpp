@@ -109,7 +109,7 @@ protected:
         opts.addOption(Option("sha256", "6", "use SHA256 instead of MD5").repeatable(false).required(false).noArgument());
         opts.addOption(Option("md5", "5", "use md5(default)").repeatable(false).required(false).noArgument());
         opts.addOption(Option("file", "f", "Write to file instead of stdout").repeatable(false).required(false).argument("name", true));
-        opts.addOption(Option("print", "p").required(false).repeatable(false).noArgument());
+        opts.addOption(Option("print", "p", "Print used hash alongside the files name.").required(false).repeatable(false).noArgument());
         opts.addOption(Option("own", "o", "Select your own hashing method your system supports through OpenSSL.").required(false).repeatable(false).argument("own"));
 #ifndef NO_HASH_LISTINGS
         opts.addOption(Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL").repeatable(false).required(false).noArgument());
@@ -143,6 +143,8 @@ protected:
     void handleOption(const std::string& name, const std::string& value) override
     {
         Application::handleOption(name, value);
+        assert(!name.empty() && "Never give this an empty arguments name!");
+
         if (name == "help")
             _needsHelp = true;
         else if (name == "sha1") {
@@ -152,13 +154,15 @@ protected:
         } else if (name == "md5") {
             RequestedDigest = _md5 {};
         } else if (name == "own") {
-            RequestedDigest = _ownName { .method = value };
+            RequestedDigest.emplace<_ownName>(_ownName { .method = value });
         } else if (name == "file") {
             if (value.empty())
                 return;
             _file = Poco::File { value };
             if (!_file.exists())
                 _file.createFile();
+
+            assert(_file.exists() && "Somehow we fucked up to create the file and got here!");
         } else if (name == "print") {
             _printAlgoUsed = true;
         }
@@ -181,7 +185,6 @@ protected:
      */
     int main(const ArgVec& args) override
     {
-
         auto cleanup_vec = [](std::vector<std::string>& in) {
             in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
                 if (in.empty())
@@ -193,16 +196,13 @@ protected:
             }),
                 in.end());
         };
+
 #ifndef NO_HASH_LISTINGS
         if (_listAvailable) {
             list_avail();
             return 0;
         }
 #endif
-        if (_needsHelp) {
-            displayHelp(0);
-            return 1;
-        }
 
         for (auto& anonymous_args : args) {
             _fileVec.push_back(anonymous_args);
@@ -210,7 +210,7 @@ protected:
 
         cleanup_vec(_fileVec);
 
-        if (_fileVec.empty() && args.empty()) {
+        if (_fileVec.empty() || args.empty() || _needsHelp) {
             displayHelp();
             return 1;
         }
@@ -224,7 +224,10 @@ protected:
             buf = std::cout.rdbuf();
         }
 
+        assert(of.good() && "File isn't good!");
+
         std::ostream output(buf);
+        assert(output.good() && "This stream has to stay valid.");
 
         if (auto* detectedMD5 = std::get_if<_md5>(&RequestedDigest); detectedMD5 != nullptr) {
             for (auto& path : _fileVec) {
@@ -244,29 +247,31 @@ protected:
             }
         }
 
-        std::flush(std::cout);
         return 0;
     };
 
 private:
     struct m_HashMethod {
-        [[maybe_unused]] std::string Method;
+        [[maybe_unused]] std::string method;
     };
+
     /// used for SFINAE-Handling of options
     struct _sha1 : m_HashMethod {
         std::string method { "SHA1" }; /// Method Name
     };
+
     /// used for SFINAE-Handling of options
     struct _sha256 : m_HashMethod {
         std::string method { "SHA256" }; /// See parent
     };
+
     /// used for SFINAE-Handling of options
     struct _md5 : m_HashMethod {
         std::string method { "MD5" }; /// See parent
     };
 
     /// used for SFINAE-Handling of options
-    struct _ownName : public m_HashMethod {
+    struct _ownName {
         std::string method { "" }; /// See parent
     };
 
@@ -314,5 +319,8 @@ int main(int argc, char** argv)
         return Application::EXIT_CONFIG;
     }
 
-    return pApp->run();
+    int ret = pApp->run();
+    std::flush(std::cout);
+
+    return ret;
 }

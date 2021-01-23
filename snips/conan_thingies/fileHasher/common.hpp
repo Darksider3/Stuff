@@ -6,8 +6,7 @@
 #define POCO_FILE_HASHER_COMMON_HPP
 
 #include "Poco/LineEndingConverter.h"
-#include "unistd.h"
-
+#include <cassert>
 /// Line Ending Macro
 #define LN Poco::LineEnding::NEWLINE_DEFAULT; // NOLINT(cppcoreguidelines-macro-usage)
 
