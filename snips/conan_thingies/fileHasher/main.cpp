@@ -190,6 +190,7 @@ protected:
             name = def;
         config().setString(name, value);
     }
+
     /**
      * @brief View Help and exit with given return code(by default EXIT_OK)
      *

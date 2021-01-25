@@ -21,13 +21,19 @@
  */
 __attribute__((flatten)) void ReadFileIntoEngine(Poco::DigestEngine& Engine, Poco::File& F)
 {
+    assert(!Engine.digest().empty() && "The Digest Engine *must* be initialized before usage here!");
+    assert(F.exists() && "Actually POCO takes care for existence here, but hell it __should__ exist!");
     Poco::FileInputStream FileReadStream { F.path() };
+
+    assert(FileReadStream.good() && "Stream must work in order to work on it.");
     char read[Read_Segmentation + 1];
 
     for (; FileReadStream.eof() == false;) {          // read whole file
         FileReadStream.read(read, Read_Segmentation); // but not everything at once
         Engine.update(read, FileReadStream.gcount()); // update the engine to consider it's content
     }
+
+    assert(FileReadStream.eof() && "We. need. the. whole. file!");
 }
 
 /**
@@ -43,7 +49,9 @@ __attribute__((flatten)) void ReadFileIntoEngine(Poco::DigestEngine& Engine, Poc
 
 std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
 {
-    assert(!Path.empty() && !Method.empty() && "This both shouldnt be empty, ever.");
+    assert(!Path.empty() && "Path shall be never empty.");
+    assert(!Method.empty() && "Method cant be empty.");
+    assert(output.good() && "Stream state must be good to actually work!");
     Poco::File iFile { Path };
     if (!iFile.canRead()) { // cant generate a hash if i cant read what i've got to hash
         return output;

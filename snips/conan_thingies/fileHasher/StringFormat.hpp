@@ -11,6 +11,8 @@
 #include <Poco/Format.h>
 #include <string>
 
+#include <iostream>
+
 namespace Formatting {
 
 /**
