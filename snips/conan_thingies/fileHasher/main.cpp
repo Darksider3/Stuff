@@ -25,11 +25,19 @@
 #    include <openssl/evp.h>
 #    include <openssl/objects.h>
 
+/**
+ * @brief Print out given OBJ_NAME.
+ *
+ * @param const OBJ_NAME* obj
+ */
 void ssl_callback_print(const OBJ_NAME* obj, void* /*unused*/)
 {
     std::cout << obj->name << " ";
 }
 
+/**
+ * @brief Registers a callback to OpenSSL for listing current installed & enabled hashing/digest algorithms supported.
+ */
 void list_avail()
 {
     void* arg = nullptr;
