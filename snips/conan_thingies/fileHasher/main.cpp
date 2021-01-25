@@ -386,7 +386,7 @@ private:
          * @brief get CRTPs-var `method` contents
          * @return std::string `method` variable
          */
-        std::string getMethod() { return static_cast<T*>(this)->method; }
+        [[nodiscard]] std::string getMethod() const { return static_cast<const T*>(this)->method; }
 
     private:
         /**
