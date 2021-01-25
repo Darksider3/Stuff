@@ -10,7 +10,6 @@
 #include <Poco/File.h>
 #include <Poco/Format.h>
 #include <string>
-#include <string_view>
 
 namespace Formatting {
 

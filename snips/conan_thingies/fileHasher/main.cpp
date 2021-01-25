@@ -1,24 +1,23 @@
 // main logic
+#include "FileHashPrinter.hpp"
 #include "Poco/Crypto/DigestEngine.h"
 #include "Poco/File.h"
-#include <fstream>
+#include "common.hpp"
 
 // Application interface
 #include "Poco/Util/Application.h"
-
 // Options
 #include "Poco/Util/Option.h"
 #include "Poco/Util/OptionSet.h"
+
 // Output Help Formatting
 #include "Poco/Util/HelpFormatter.h"
 
 // Output and helpers
+#include <fstream>
 #include <iostream>
 #include <variant>
 #include <vector>
-
-#include "FileHashPrinter.hpp"
-#include "common.hpp"
 
 // Listing functionality
 #ifndef NO_HASH_LISTINGS

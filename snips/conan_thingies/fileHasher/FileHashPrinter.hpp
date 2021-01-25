@@ -5,10 +5,13 @@
 #ifndef POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 #define POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 
+#include "Poco/Crypto/DigestEngine.h"
 #include "Poco/DigestStream.h"
 #include "Poco/FileStream.h"
 #include "StringFormat.hpp"
 #include "common.hpp"
+#include <iostream>
+#include <memory>
 
 /**
  * @brief Updates a given DigestEngine with the contents of a file
