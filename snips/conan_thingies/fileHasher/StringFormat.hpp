@@ -24,7 +24,7 @@ namespace Formatting {
  *
  * @return std::string Formatted Hash that mimics the  behaivour of sha1sum, sha256sum, md5sum etc. (HexDigest, followed by 2 spaces, followed by Path and newline)
  */
-std::string FormatHashPrint(const std::vector<unsigned char>& digest, const Poco::File& F, const bool AddMethod = false, const std::string_view Method_Name = "null")
+std::string FormatHashPrint(const std::vector<unsigned char>& digest, const Poco::File& F, const bool AddMethod = false, const std::string& Method_Name = "null")
 {
     std::string return_str(digest.size(), '\0');
     return_str.append(Poco::format("%s  %s", Poco::DigestEngine::digestToHex(digest), F.path()));

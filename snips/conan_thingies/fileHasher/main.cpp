@@ -135,7 +135,8 @@ protected:
             Option("own", "o", "Select your own hashing method your system supports through OpenSSL.")
                 .required(false)
                 .repeatable(false)
-                .argument("own"));
+                .argument("digestname")
+                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleDefine)));
 #ifndef NO_HASH_LISTINGS
         opts.addOption(
             Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL")
@@ -158,6 +159,29 @@ protected:
         stopOptionsProcessing(); // stop's processing because we won't need any - printing is anything we can do here
         displayHelp(Application::EXIT_OK);
         ASSERT_NOT_REACHED();
+    }
+
+    void handleDefine(const std::string& /* unused name */, const std::string& value)
+    {
+        defineProperty(value);
+    }
+
+    /**
+     * @brief Handle name=value commands!
+     *
+     * @param const std::string& def String formatted like name=value
+     */
+    void defineProperty(const std::string& def)
+    {
+        std::string name;
+        std::string value;
+        std::string::size_type pos = def.find('=');
+        if (pos != std::string::npos) {
+            name.assign(def, 0, pos);
+            value.assign(def, pos + 1, def.length() - pos);
+        } else
+            name = def;
+        config().setString(name, value);
     }
     /**
      * @brief View Help and exit with given return code(by default EXIT_OK)
