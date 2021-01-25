@@ -7,6 +7,9 @@
 
 #include "Poco/LineEndingConverter.h"
 #include <cassert>
+
+#define ASSERT_NOT_REACHED() assert(false && "This section shouldn't be reached, ever!") // NOLINT(cppcoreguidelines-macro-usage)
+
 /// Line Ending Macro
 #define LN Poco::LineEnding::NEWLINE_DEFAULT; // NOLINT(cppcoreguidelines-macro-usage)
 

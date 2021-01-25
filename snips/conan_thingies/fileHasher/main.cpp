@@ -9,7 +9,6 @@
 // Options
 #include "Poco/Util/Option.h"
 #include "Poco/Util/OptionSet.h"
-
 // Output Help Formatting
 #include "Poco/Util/HelpFormatter.h"
 
@@ -50,11 +49,12 @@ using Poco::Util::AbstractConfiguration;
 using Poco::Util::Application;
 using Poco::Util::HelpFormatter;
 using Poco::Util::Option;
+using Poco::Util::OptionCallback;
 using Poco::Util::OptionSet;
 }
 
 // main app!
-class DigestEncryptApp : public Poco::Util::Application {
+class DigestEncryptApp : public Application {
 public:
     DigestEncryptApp()
     {
@@ -102,20 +102,63 @@ protected:
         Application::defineOptions(opts);
         opts.addOption(
             Option("help", "h", "display this help")
+                .required(false)
                 .repeatable(false)
-                .required(false));
+                .callback(Poco::Util::OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleHelp)));
 
-        opts.addOption(Option("sha1", "s", "use SHA1 instead of MD5").repeatable(false).required(false).noArgument());
-        opts.addOption(Option("sha256", "6", "use SHA256 instead of MD5").repeatable(false).required(false).noArgument());
-        opts.addOption(Option("md5", "5", "use md5(default)").repeatable(false).required(false).noArgument());
-        opts.addOption(Option("file", "f", "Write to file instead of stdout").repeatable(false).required(false).argument("name", true));
-        opts.addOption(Option("print", "p", "Print used hash alongside the files name.").required(false).repeatable(false).noArgument());
-        opts.addOption(Option("own", "o", "Select your own hashing method your system supports through OpenSSL.").required(false).repeatable(false).argument("own"));
+        opts.addOption(
+            Option("sha1", "s", "use SHA1 instead of MD5")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
+        opts.addOption(
+            Option("sha256", "6", "use SHA256 instead of MD5")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
+        opts.addOption(
+            Option("md5", "5", "use md5(default)")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
+        opts.addOption(
+            Option("file", "f", "Write to file instead of stdout")
+                .repeatable(false)
+                .required(false)
+                .argument("name", true));
+        opts.addOption(
+            Option("print", "p", "Print used hash alongside the files name.")
+                .required(false)
+                .repeatable(false)
+                .noArgument());
+        opts.addOption(
+            Option("own", "o", "Select your own hashing method your system supports through OpenSSL.")
+                .required(false)
+                .repeatable(false)
+                .argument("own"));
 #ifndef NO_HASH_LISTINGS
-        opts.addOption(Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL").repeatable(false).required(false).noArgument());
+        opts.addOption(
+            Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
 #endif
     }
 
+    /**
+     * @brief Handle given -h/--help flag.
+     *
+     * It specificially needs it, because we don't have to process any of the given Options anymore, if we got some. We just
+     * print the help text and exit the program while cleaning up after ourselfs.
+     *
+     */
+    void handleHelp(const std::string& /* unused */, const std::string& /* unused */)
+    {
+        _needsHelp = true;
+        stopOptionsProcessing(); // stop's processing because we won't need any - printing is anything we can do here
+        displayHelp(Application::EXIT_OK);
+        ASSERT_NOT_REACHED();
+    }
     /**
      * @brief View Help and exit with given return code(by default EXIT_OK)
      *
@@ -140,14 +183,14 @@ protected:
      * @param std::string& name Name of the given argument
      * @param std::string& value Value of arguemnt
      */
-    void handleOption(const std::string& name, const std::string& value) override
+    __attribute__((flatten)) void handleOption(const std::string& name, const std::string& value) override
     {
         Application::handleOption(name, value);
         assert(!name.empty() && "Never give this an empty arguments name!");
 
-        if (name == "help")
+        if (name == "help") {
             _needsHelp = true;
-        else if (name == "sha1") {
+        } else if (name == "sha1") {
             RequestedDigest = _sha1 {};
         } else if (name == "sha256") {
             RequestedDigest = _sha256 {};
@@ -210,9 +253,16 @@ protected:
 
         cleanup_vec(_fileVec);
 
-        if (_fileVec.empty() || args.empty() || _needsHelp) {
-            displayHelp();
-            return 1;
+        if (_needsHelp) {
+            // It's not an error when user requests help
+            displayHelp(Application::EXIT_OK);
+            ASSERT_NOT_REACHED();
+        }
+
+        if (_fileVec.empty() || args.empty()) {
+            // it is indeed an usage error when user doesn't supply anything at all
+            displayHelp(Application::EXIT_USAGE);
+            ASSERT_NOT_REACHED();
         }
 
         // write either to specified file or std::cout
@@ -223,7 +273,6 @@ protected:
         } else {
             buf = std::cout.rdbuf();
         }
-
         assert(of.good() && "File isn't good!");
 
         std::ostream output(buf);
@@ -247,12 +296,12 @@ protected:
             }
         }
 
-        return 0;
+        return Application::EXIT_OK;
     };
 
 private:
     struct m_HashMethod {
-        [[maybe_unused]] std::string method;
+        std::string method;
     };
 
     /// used for SFINAE-Handling of options
