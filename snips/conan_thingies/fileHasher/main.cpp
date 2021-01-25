@@ -263,7 +263,7 @@ protected:
         } else if (name == "md5") {
             RequestedDigest = _md5 {};
         } else if (name == "own") {
-            RequestedDigest.emplace<_ownName>(_ownName { .method = value });
+            RequestedDigest.emplace<_ownName>(_ownName { value });
         } else if (name == "file") {
             if (value.empty())
                 return;
@@ -349,19 +349,19 @@ protected:
 
         if (auto* detectedMD5 = std::get_if<_md5>(&RequestedDigest); detectedMD5 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintFileHash(path, detectedMD5->method, _printAlgoUsed, output);
+                PrintFileHash(path, detectedMD5->getMethod(), _printAlgoUsed, output);
             }
         } else if (auto* detectedSHA1 = std::get_if<_sha1>(&RequestedDigest); detectedSHA1 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintFileHash(path, detectedSHA1->method, _printAlgoUsed, output);
+                PrintFileHash(path, detectedSHA1->getMethod(), _printAlgoUsed, output);
             }
         } else if (auto* detectedSHA256 = std::get_if<_sha256>(&RequestedDigest); detectedSHA256 != nullptr) {
             for (auto& path : _fileVec) {
-                PrintFileHash(path, detectedSHA256->method, _printAlgoUsed, output);
+                PrintFileHash(path, detectedSHA256->getMethod(), _printAlgoUsed, output);
             }
         } else if (auto* detectOwnMethod = std::get_if<_ownName>(&RequestedDigest); detectOwnMethod != nullptr) {
             for (auto& path : _fileVec) {
-                PrintFileHash(path, detectOwnMethod->method, _printAlgoUsed, output);
+                PrintFileHash(path, detectOwnMethod->getMethod(), _printAlgoUsed, output);
             }
         }
 
@@ -369,28 +369,50 @@ protected:
     };
 
 private:
+    /**
+     * @brief CRTP-Class for the hash methods
+     *
+     * @tparam T Class to attach to
+     */
+    template<typename T>
     struct m_HashMethod {
-        std::string method;
+        /**
+         * @brief Set CRTP-var `method`.
+         * @param const std::string& n String to set
+         */
+        void setMethod(const std::string& n) { static_cast<T*>(this)->method = n; }
+
+        /**
+         * @brief get CRTPs-var `method` contents
+         * @return std::string `method` variable
+         */
+        std::string getMethod() { return static_cast<T*>(this)->method; }
+
+    private:
+        /**
+         * @brief Datavariable
+         */
+        std::string method {};
     };
 
     /// used for SFINAE-Handling of options
-    struct _sha1 : m_HashMethod {
-        std::string method { "SHA1" }; /// Method Name
+    struct _sha1 : public m_HashMethod<_sha1> {
+        _sha1() { this->setMethod("SHA1"); }
     };
 
     /// used for SFINAE-Handling of options
-    struct _sha256 : m_HashMethod {
-        std::string method { "SHA256" }; /// See parent
+    struct _sha256 : public m_HashMethod<_sha256> {
+        _sha256() { this->setMethod("SHA256"); }
     };
 
     /// used for SFINAE-Handling of options
-    struct _md5 : m_HashMethod {
-        std::string method { "MD5" }; /// See parent
+    struct _md5 : public m_HashMethod<_md5> {
+        _md5() { this->setMethod("MD5"); }
     };
 
     /// used for SFINAE-Handling of options
-    struct _ownName {
-        std::string method { "" }; /// See parent
+    struct _ownName : public m_HashMethod<_ownName> {
+        _ownName(const std::string& name) { this->setMethod(name); }
     };
 
     /// SFINAE variant to select correct algorithm

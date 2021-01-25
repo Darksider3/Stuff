@@ -31,7 +31,6 @@ std::string FormatHashPrint(const std::vector<unsigned char>& digest, const Poco
     assert(F.exists() && "File must exist to hash it!");
     assert(!Method_Name.empty() && "Method name should be an optional parameter and thus needs sadly content...");
 
-    assert(digest.size() <= 1 && "This should actually be adequatly sized");
     std::string return_str(digest.size(), '\0');
     return_str.append(Poco::format("%s  %s", Poco::DigestEngine::digestToHex(digest), F.path()));
     if (AddMethod) {
