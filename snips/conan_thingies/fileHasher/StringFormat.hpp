@@ -27,15 +27,47 @@ namespace Formatting {
  */
 std::string FormatHashPrint(const std::vector<unsigned char>& digest, const Poco::File& F, const bool AddMethod = false, const std::string& Method_Name = "null")
 {
+    assert(!digest.empty() && "We cant format something that's empty!");
+    assert(F.exists() && "File must exist to hash it!");
+    assert(!Method_Name.empty() && "Method name should be an optional parameter and thus needs sadly content...");
+
+    assert(digest.size() <= 1 && "This should actually be adequatly sized");
     std::string return_str(digest.size(), '\0');
     return_str.append(Poco::format("%s  %s", Poco::DigestEngine::digestToHex(digest), F.path()));
     if (AddMethod) {
         return_str.append(Poco::format("; %s.", Method_Name));
     }
 
-    return_str += LN;
+    assert(!return_str.empty() && "This should actually hold a string! Cant be empty!");
 
+    return_str += LN;
     return return_str;
+}
+
+/**
+ * @brief Compares Hash1 with Hash1, currently without considerating the filename
+ *
+ * @param const std::string& HashStr1 First Hash
+ * @param const std::string& HashStr2 Second hash to compare against
+ *
+ * @return bool If equal, `true`. Otherwhise `false`.
+ */
+bool CompareHash(const std::string& HashStr1, const std::string& HashStr2)
+{
+    // bc458c17dc8eefd118d81133c2be26a2  ./CMakeCache.txt
+    // bc458c17dc8eefd118d81133c2be26a2  ./CMakeCache.txt; MD5.
+
+    assert(!HashStr1.empty() && "Should not be empty!");
+    assert(!HashStr2.empty() && "Should not be empty!");
+
+    std::string delimiter = "  ";
+    std::string hash1 = HashStr1.substr(0, HashStr1.find(delimiter));
+    std::string hash2 = HashStr2.substr(0, HashStr2.find(delimiter));
+
+    assert(!hash1.empty() && "If correctly formatted, this shouldnt ever be empty!");
+    assert(!hash2.empty() && "If correctly formatted, this shouldnt ever be empty!");
+
+    return hash1 == hash2;
 }
 
 }

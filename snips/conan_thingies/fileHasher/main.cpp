@@ -144,6 +144,13 @@ protected:
                 .repeatable(false)
                 .argument("digestname")
                 .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleDefine)));
+
+        opts.addOption(
+            Option("cmpr", "c", "Compare two hashes. Note: Specify twice. e.g. -c $hash1 -c $hash2!")
+                .required(false)
+                .repeatable(true)
+                .argument("hash")
+                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleCmpr)));
 #ifndef NO_HASH_LISTINGS
         opts.addOption(
             Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL")
@@ -157,7 +164,7 @@ protected:
      * @brief Handle given -h/--help flag.
      *
      * It specificially needs it, because we don't have to process any of the given Options anymore, if we got some. We just
-     * print the help text and exit the program while cleaning up after ourselfs.
+     * print the help text and exit the program while cleaning up after ourselfs. Does take two unused values due to POCO
      *
      */
     void handleHelp(const std::string& /* unused */, const std::string& /* unused */)
@@ -168,9 +175,36 @@ protected:
         ASSERT_NOT_REACHED();
     }
 
+    /**
+     * @brief Handles property in name=value style arguments, delegates to `definePropery()`.
+     *
+     * @param const std::string& Value to treat as a property(in name=value style).
+     */
     void handleDefine(const std::string& /* unused name */, const std::string& value)
     {
         defineProperty(value);
+    }
+
+    /**
+     * @brief Handle --cmpr/-c Flag. Compares two hashes against each other. **Must** be called twice, when used.
+     *
+     * @param const std::string& Inputhash.
+     */
+    void handleCmpr(const std::string& /*name*/, const std::string& value)
+    {
+        if (value.empty())
+            displayHelp();
+        if (CmprHashes.First.empty()) {
+            CmprHashes.First = value;
+        } else if (CmprHashes.Second.empty()) {
+            CmprHashes.Second = value;
+            CmprHashes.CmprResult = Formatting::CompareHash(CmprHashes.First, CmprHashes.Second);
+            std::cout << "File hashes match!" << std::endl;
+        } else {
+            displayHelp(Application::EXIT_USAGE);
+        }
+
+        return;
     }
 
     /**
@@ -260,6 +294,9 @@ protected:
      */
     int main(const ArgVec& args) override
     {
+        if (!CmprHashes.First.empty() || !CmprHashes.Second.empty()) {
+            return CmprHashes.CmprResult;
+        }
         auto cleanup_vec = [](std::vector<std::string>& in) {
             in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
                 if (in.empty())
@@ -379,6 +416,12 @@ private:
 
     /// Open File(or Output Device(e.g. `std::cout`))
     std::ofstream of;
+
+    struct CmprStruct {
+        std::string First {};
+        std::string Second {};
+        bool CmprResult = false;
+    } CmprHashes;
 };
 
 /**
