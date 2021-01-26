@@ -19,7 +19,7 @@
  * @param Poco::DigestEngine& Engine     Engine to feed
  * @param Poco::File&         F          File to feed it with.
  */
-__attribute__((flatten)) void ReadFileIntoEngine(Poco::DigestEngine& Engine, Poco::File& F)
+__attribute__((flatten)) Poco::File ReadFileIntoEngine(Poco::DigestEngine& Engine, Poco::File&& F)
 {
     assert(!Engine.digest().empty() && "The Digest Engine *must* be initialized before usage here!");
     assert(F.exists() && "Actually POCO takes care for existence here, but hell it __should__ exist!");
@@ -34,6 +34,9 @@ __attribute__((flatten)) void ReadFileIntoEngine(Poco::DigestEngine& Engine, Poc
     }
 
     assert(FileReadStream.eof() && "We. need. the. whole. file!");
+    FileReadStream.close();
+
+    return F;
 }
 
 /**
@@ -47,7 +50,7 @@ __attribute__((flatten)) void ReadFileIntoEngine(Poco::DigestEngine& Engine, Poc
  * @return
  */
 
-std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
+__attribute__((flatten)) std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
 {
     assert(!Path.empty() && "Path shall be never empty.");
     assert(!Method.empty() && "Method cant be empty.");
@@ -58,10 +61,13 @@ std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, 
     }
 
     std::unique_ptr<Poco::Crypto::DigestEngine> Engine = std::make_unique<Poco::Crypto::DigestEngine>(Method);
+    assert(!Engine->algorithm().empty() && "Should be initialised. Errors are handled by POCO apparently.");
 
     Poco::DigestOutputStream ds(*Engine.get());
 
-    ReadFileIntoEngine(*Engine, iFile);
+    iFile = ReadFileIntoEngine(*Engine, std::move(iFile));
+
+    assert((iFile.exists() && iFile.canRead() && iFile.isFile()) && "Move operation dependency... Poco::File has no move constructor but with a little bit of luck...");
 
     output << Formatting::FormatHashPrint(Engine->digest(), iFile, used_algorithm, Method); // print 'em out!
     output.flush();                                                                         // make sure it's in there!

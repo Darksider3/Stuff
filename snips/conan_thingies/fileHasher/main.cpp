@@ -169,7 +169,7 @@ protected:
      */
     void handleHelp(const std::string& /* unused */, const std::string& /* unused */)
     {
-        _needsHelp = true;
+        m_Flags._needsHelp = true;
         stopOptionsProcessing(); // stop's processing because we won't need any - printing is anything we can do here
         displayHelp(Application::EXIT_OK);
         ASSERT_NOT_REACHED();
@@ -194,11 +194,11 @@ protected:
     {
         if (value.empty())
             displayHelp();
-        if (CmprHashes.First.empty()) {
-            CmprHashes.First = value;
-        } else if (CmprHashes.Second.empty()) {
-            CmprHashes.Second = value;
-            CmprHashes.CmprResult = Formatting::CompareHash(CmprHashes.First, CmprHashes.Second);
+        if (m_CmprHashes.First.empty()) {
+            m_CmprHashes.First = value;
+        } else if (m_CmprHashes.Second.empty()) {
+            m_CmprHashes.Second = value;
+            m_CmprHashes.CmprResult = Formatting::CompareHash(m_CmprHashes.First, m_CmprHashes.Second);
             std::cout << "File hashes match!" << std::endl;
         } else {
             displayHelp(Application::EXIT_USAGE);
@@ -255,29 +255,29 @@ protected:
         assert(!name.empty() && "Never give this an empty arguments name!");
 
         if (name == "help") {
-            _needsHelp = true;
+            m_Flags._needsHelp = true;
         } else if (name == "sha1") {
-            RequestedDigest = _sha1 {};
+            m_RequestedDigest = _sha1 {};
         } else if (name == "sha256") {
-            RequestedDigest = _sha256 {};
+            m_RequestedDigest = _sha256 {};
         } else if (name == "md5") {
-            RequestedDigest = _md5 {};
+            m_RequestedDigest = _md5 {};
         } else if (name == "own") {
-            RequestedDigest.emplace<_ownName>(_ownName { value });
+            m_RequestedDigest.emplace<_ownName>(_ownName { value });
         } else if (name == "file") {
             if (value.empty())
                 return;
-            _file = Poco::File { value };
-            if (!_file.exists())
-                _file.createFile();
+            m_file = Poco::File { value };
+            if (!m_file.exists())
+                m_file.createFile();
 
-            assert(_file.exists() && "Somehow we fucked up to create the file and got here!");
+            assert(m_file.exists() && "Somehow we fucked up to create the file and got here!");
         } else if (name == "print") {
-            _printAlgoUsed = true;
+            m_Flags._printAlgoUsed = true;
         }
 #ifndef NO_HASH_LISTINGS
         else if (name == "list-digests") {
-            _listAvailable = true;
+            m_Flags._listAvailable = true;
         }
 #endif
         /*        else {
@@ -294,8 +294,8 @@ protected:
      */
     int main(const ArgVec& args) override
     {
-        if (!CmprHashes.First.empty() || !CmprHashes.Second.empty()) {
-            return CmprHashes.CmprResult;
+        if (!m_CmprHashes.First.empty() || !m_CmprHashes.Second.empty()) {
+            return m_CmprHashes.CmprResult;
         }
         auto cleanup_vec = [](std::vector<std::string>& in) {
             in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
@@ -310,60 +310,64 @@ protected:
         };
 
 #ifndef NO_HASH_LISTINGS
-        if (_listAvailable) {
+        if (m_Flags._listAvailable) {
             list_avail();
             return 0;
         }
 #endif
 
         for (auto& anonymous_args : args) {
-            _fileVec.push_back(anonymous_args);
+            m_fileVec.push_back(anonymous_args);
         }
 
-        cleanup_vec(_fileVec);
+        cleanup_vec(m_fileVec);
 
-        if (_needsHelp) {
+        if (m_Flags._needsHelp) {
             // It's not an error when user requests help
             displayHelp(Application::EXIT_OK);
             ASSERT_NOT_REACHED();
         }
 
-        if (_fileVec.empty() || args.empty()) {
+        if (m_fileVec.empty() || args.empty()) {
             // it is indeed an usage error when user doesn't supply anything at all
             displayHelp(Application::EXIT_USAGE);
             ASSERT_NOT_REACHED();
         }
 
         // write either to specified file or std::cout
-        if (!_file.path().empty() && _file.exists()) {
-            of.rdbuf()->close();
-            of.open(_file.path(), std::ios::in);
-            buf = of.rdbuf();
+        if (!m_file.path().empty() && m_file.exists()) {
+            m_of.rdbuf()->close();
+            m_of.open(m_file.path(), std::ios::in);
+            m_sbuf = m_of.rdbuf();
         } else {
-            buf = std::cout.rdbuf();
+            m_sbuf = std::cout.rdbuf();
         }
-        assert(of.good() && "File isn't good!");
+        assert(m_of.good() && "File isn't good!");
 
-        std::ostream output(buf);
+        std::ostream output(m_sbuf);
         assert(output.good() && "This stream has to stay valid.");
 
-        if (auto* detectedMD5 = std::get_if<_md5>(&RequestedDigest); detectedMD5 != nullptr) {
-            for (auto& path : _fileVec) {
-                PrintFileHash(path, detectedMD5->getMethod(), _printAlgoUsed, output);
+        if (auto* detectedMD5 = std::get_if<_md5>(&m_RequestedDigest); detectedMD5 != nullptr) {
+            for (auto& path : m_fileVec) {
+                PrintFileHash(path, detectedMD5->getMethod(), m_Flags._printAlgoUsed, output);
             }
-        } else if (auto* detectedSHA1 = std::get_if<_sha1>(&RequestedDigest); detectedSHA1 != nullptr) {
-            for (auto& path : _fileVec) {
-                PrintFileHash(path, detectedSHA1->getMethod(), _printAlgoUsed, output);
+        } else if (auto* detectedSHA1 = std::get_if<_sha1>(&m_RequestedDigest); detectedSHA1 != nullptr) {
+            for (auto& path : m_fileVec) {
+                PrintFileHash(path, detectedSHA1->getMethod(), m_Flags._printAlgoUsed, output);
             }
-        } else if (auto* detectedSHA256 = std::get_if<_sha256>(&RequestedDigest); detectedSHA256 != nullptr) {
-            for (auto& path : _fileVec) {
-                PrintFileHash(path, detectedSHA256->getMethod(), _printAlgoUsed, output);
+        } else if (auto* detectedSHA256 = std::get_if<_sha256>(&m_RequestedDigest); detectedSHA256 != nullptr) {
+            for (auto& path : m_fileVec) {
+                PrintFileHash(path, detectedSHA256->getMethod(), m_Flags._printAlgoUsed, output);
             }
-        } else if (auto* detectOwnMethod = std::get_if<_ownName>(&RequestedDigest); detectOwnMethod != nullptr) {
-            for (auto& path : _fileVec) {
-                PrintFileHash(path, detectOwnMethod->getMethod(), _printAlgoUsed, output);
+        } else if (auto* detectOwnMethod = std::get_if<_ownName>(&m_RequestedDigest); detectOwnMethod != nullptr) {
+            for (auto& path : m_fileVec) {
+                PrintFileHash(path, detectOwnMethod->getMethod(), m_Flags._printAlgoUsed, output);
             }
         }
+
+        if (m_of.is_open())
+            m_of.close();
+        m_sbuf = std::cout.rdbuf();
 
         return Application::EXIT_OK;
     };
@@ -376,14 +380,17 @@ private:
      */
     template<typename T>
     struct m_HashMethod {
+
         /**
          * @brief Set CRTP-var `method`.
+         *
          * @param const std::string& n String to set
          */
         void setMethod(const std::string& n) { static_cast<T*>(this)->method = n; }
 
         /**
          * @brief get CRTPs-var `method` contents
+         *
          * @return std::string `method` variable
          */
         [[nodiscard]] std::string getMethod() const { return static_cast<const T*>(this)->method; }
@@ -416,34 +423,36 @@ private:
     };
 
     /// SFINAE variant to select correct algorithm
-    std::variant<_sha1, _sha256, _md5, _ownName> RequestedDigest { _md5 {} };
+    std::variant<_sha1, _sha256, _md5, _ownName> m_RequestedDigest { _md5 {} };
 
     /// Files given by Argument/Options(-f)
-    std::vector<std::string> _fileVec {};
+    std::vector<std::string> m_fileVec {};
 
-    /// -h, --help Flag
-    bool _needsHelp { false };
+    struct BoolFlags {
+        /// -h, --help Flag
+        bool _needsHelp { false };
 
-    /// -p, --print Flag
-    bool _printAlgoUsed { false };
+        /// -p, --print Flag
+        bool _printAlgoUsed { false };
 
-    /// -l, --list-digests Flag
-    bool _listAvailable { false };
+        /// -l, --list-digests Flag
+        bool _listAvailable { false };
+    } m_Flags {};
 
     /// Output File
-    Poco::File _file {};
+    Poco::File m_file {};
 
     /// Streambuffer to redirect files to(e.g. `std::cout` or some file on the disk)
-    std::streambuf* buf {};
+    std::streambuf* m_sbuf {};
 
     /// Open File(or Output Device(e.g. `std::cout`))
-    std::ofstream of;
+    std::ofstream m_of;
 
     struct CmprStruct {
         std::string First {};
         std::string Second {};
         bool CmprResult = false;
-    } CmprHashes;
+    } m_CmprHashes;
 };
 
 /**
@@ -468,5 +477,6 @@ int main(int argc, char** argv)
     int ret = pApp->run();
     std::flush(std::cout);
 
+    pApp.reset();
     return ret;
 }
