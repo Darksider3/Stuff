@@ -31,33 +31,33 @@ protected:
         return u()->m_digest;
     }
 
-    [[maybe_unused]] std::vector<unsigned char>& getFile()
+    [[maybe_unused]] Poco::File& getFile()
     {
-        return u()->m_digest;
+        return u()->m_File;
     }
 
-    [[maybe_unused]] std::vector<unsigned char>& getMethod()
+    [[maybe_unused]] std::string& getMethod()
     {
-        return u()->m_digest;
+        return u()->m_Methodt;
     }
 
-    [[maybe_unused]] std::vector<unsigned char>& getFormatStr()
+    [[maybe_unused]] std::string& getFormatStr()
     {
-        return u()->m_digest;
+        return u()->m_FormatStr;
     }
 
-    void setDigest(const std::vector<unsigned char>& digest) { u()->m_digest = digest; }
-    void setFile(const Poco::File& file) { u()->m_File = file; }
-    void setMethod(const std::string& str) { u()->m_Method = str; }
-    void setFormatStr(const std::string& str) { u()->m_FormatStr = str; }
+    [[maybe_unused]] void setDigest(const std::vector<unsigned char>& digest) { u()->m_digest = digest; }
+    [[maybe_unused]] void setFile(const Poco::File& file) { u()->m_File = file; }
+    [[maybe_unused]] void setMethod(const std::string& str) { u()->m_Method = str; }
+    [[maybe_unused]] void setFormatStr(const std::string& str) { u()->m_FormatStr = str; }
 
 public:
     explicit AbstractOutputFormatter(const std::vector<unsigned char>& digest, const Poco::File& F, const std::string& Method_Name, std::string& Format_Str)
+        : m_digest(digest)
+        , m_File(F)
+        , m_Method(Method_Name)
+        , m_FormatStr(Format_Str)
     {
-        setDigest(digest);
-        setFile(F);
-        setMethod(Method_Name);
-        setFormatStr(Format_Str);
     }
 
     virtual std::string Do() = 0;
@@ -73,6 +73,19 @@ public:
     AbstractOutputFormatter(AbstractOutputFormatter&) = delete;
     AbstractOutputFormatter& operator=(const AbstractOutputFormatter&) = delete;
     AbstractOutputFormatter& operator=(const AbstractOutputFormatter&&) = delete;
+};
+
+class CSVFormat : public AbstractOutputFormatter<CSVFormat> {
+public:
+    CSVFormat(const std::vector<unsigned char>& digest, const Poco::File& F, const std::string& Method_Name, std::string& Format_Str)
+        : AbstractOutputFormatter<CSVFormat>(digest, F, Method_Name, Format_Str)
+    {
+    }
+
+    virtual std::string Do()
+    {
+        return getFormatStr();
+    }
 };
 
 /*
@@ -135,6 +148,7 @@ std::string FormatHashToPrint(const std::vector<unsigned char>& digest, const Po
     assert(!return_str.empty() && "This should actually hold a string! Cant be empty!");
 
     return_str += LN;
+
     return return_str;
 }
 
