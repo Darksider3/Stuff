@@ -24,6 +24,7 @@ private:
     [[maybe_unused]] std::string& m_FormatStr;
 
     AbstractOutputFormatter<CRTP>* u() { return static_cast<CRTP*>(this); }
+    [[nodiscard]] const AbstractOutputFormatter<CRTP>* u_c() const { return static_cast<const CRTP*>(this); }
 
 protected:
     [[maybe_unused]] std::vector<unsigned char>& getDigest()
@@ -46,6 +47,26 @@ protected:
         return u()->m_FormatStr;
     }
 
+    [[maybe_unused]] [[nodiscard]] std::vector<unsigned char>& getDigest() const
+    {
+        return u()->m_digest;
+    }
+
+    [[maybe_unused]] [[nodiscard]] Poco::File& getFile() const
+    {
+        return u()->m_File;
+    }
+
+    [[maybe_unused]] [[nodiscard]] std::string& getMethod() const
+    {
+        return u()->m_Methodt;
+    }
+
+    [[maybe_unused]] [[nodiscard]] std::string& getFormatStr() const
+    {
+        return u_c()->m_FormatStr;
+    }
+
     [[maybe_unused]] void setDigest(const std::vector<unsigned char>& digest) { u()->m_digest = digest; }
     [[maybe_unused]] void setFile(const Poco::File& file) { u()->m_File = file; }
     [[maybe_unused]] void setMethod(const std::string& str) { u()->m_Method = str; }
@@ -60,9 +81,9 @@ public:
     {
     }
 
-    virtual std::string Do() = 0;
+    virtual std::string FormatHash() = 0;
 
-    virtual std::string Work() { return Do(); }
+    virtual std::string Work() { return FormatHash(); }
 
     virtual ~AbstractOutputFormatter() = default;
 
@@ -82,9 +103,20 @@ public:
     {
     }
 
-    virtual std::string Do()
+    std::string FormatHash() override
     {
         return getFormatStr();
+    }
+
+    [[nodiscard]] bool HasCSVHeader() const
+    {
+        auto pos = getFormatStr().find(CSVHeader + LN);
+        return pos != getFormatStr().npos;
+    }
+
+    void InsertCSVHeader()
+    {
+        getFormatStr().insert(0, CSVHeader + LN);
     }
 };
 
