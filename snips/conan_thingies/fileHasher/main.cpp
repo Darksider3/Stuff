@@ -171,32 +171,33 @@ protected:
                 .callback(Poco::Util::OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleHelp)));
 
         opts.addOption(
-            Option("sha1", "s", "use SHA1 instead of MD5")
+            Option()
+                .fullName("sha1")
+                .description("SHA1 instead of MD5")
                 .repeatable(false)
                 .required(false)
                 .noArgument());
+
         opts.addOption(
-            Option("sha256", "6", "use SHA256 instead of MD5")
+            Option()
+                .fullName("sha256")
+                .description("use SHA256 instead of MD5")
                 .repeatable(false)
                 .required(false)
                 .noArgument());
+
         opts.addOption(
-            Option("md5", "5", "use md5(default)")
+            Option()
+                .fullName("md5")
+                .description("use md5(default)")
                 .repeatable(false)
                 .required(false)
                 .noArgument());
+
         opts.addOption(
-            Option("file", "f", "Write to file instead of stdout")
-                .repeatable(false)
-                .required(false)
-                .argument("name", true));
-        opts.addOption(
-            Option("print", "p", "Print used hash alongside the files name.")
-                .required(false)
-                .repeatable(false)
-                .noArgument());
-        opts.addOption(
-            Option("own", "o", "Select your own hashing method your system supports through OpenSSL.")
+            Option()
+                .fullName("own")
+                .description("Select your own hashing method your system supports through OpenSSL.")
                 .required(false)
                 .repeatable(true)
                 .argument("digestname")
@@ -210,6 +211,18 @@ protected:
                 .repeatable(true)
                 .argument("hash1 --cmpr=hash2")
                 .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleCmpr)));
+
+        opts.addOption(
+            Option("file", "f", "Write to file instead of stdout")
+                .repeatable(false)
+                .required(false)
+                .argument("name", true));
+
+        opts.addOption(
+            Option("print", "p", "Print used hash alongside the files name.")
+                .required(false)
+                .repeatable(false)
+                .noArgument());
 
         opts.addOption(
             Option("combined-output", "c", "Print multiple, given, Digests combined for each given file.")

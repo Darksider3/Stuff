@@ -15,6 +15,13 @@
 
 namespace Formatting {
 
+/**
+ * @brief CRTP Base-Class for formatting
+ *
+ * Deletes **all** other constructors, leaving just it's one usable, which is mandatory to use.
+ *
+ * @tparam CRTP Obviously the class you want to augment
+ */
 template<typename CRTP>
 class AbstractOutputFormatter {
 private:
