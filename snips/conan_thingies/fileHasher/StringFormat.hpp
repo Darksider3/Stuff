@@ -14,6 +14,67 @@
 #include <iostream>
 
 namespace Formatting {
+
+template<typename CRTP>
+class AbstractOutputFormatter {
+private:
+    [[maybe_unused]] const std::vector<unsigned char>& m_digest;
+    [[maybe_unused]] const Poco::File& m_File;
+    [[maybe_unused]] const std::string& m_Method;
+    [[maybe_unused]] std::string& m_FormatStr;
+
+    AbstractOutputFormatter<CRTP>* u() { return static_cast<CRTP*>(this); }
+
+protected:
+    [[maybe_unused]] std::vector<unsigned char>& getDigest()
+    {
+        return u()->m_digest;
+    }
+
+    [[maybe_unused]] std::vector<unsigned char>& getFile()
+    {
+        return u()->m_digest;
+    }
+
+    [[maybe_unused]] std::vector<unsigned char>& getMethod()
+    {
+        return u()->m_digest;
+    }
+
+    [[maybe_unused]] std::vector<unsigned char>& getFormatStr()
+    {
+        return u()->m_digest;
+    }
+
+    void setDigest(const std::vector<unsigned char>& digest) { u()->m_digest = digest; }
+    void setFile(const Poco::File& file) { u()->m_File = file; }
+    void setMethod(const std::string& str) { u()->m_Method = str; }
+    void setFormatStr(const std::string& str) { u()->m_FormatStr = str; }
+
+public:
+    explicit AbstractOutputFormatter(const std::vector<unsigned char>& digest, const Poco::File& F, const std::string& Method_Name, std::string& Format_Str)
+    {
+        setDigest(digest);
+        setFile(F);
+        setMethod(Method_Name);
+        setFormatStr(Format_Str);
+    }
+
+    virtual std::string Do() = 0;
+
+    virtual std::string Work() { return Do(); }
+
+    virtual ~AbstractOutputFormatter() = default;
+
+    // This class shall never be: Moved, Copied or somehow differently be assigned aside from initialising it on an class.
+    AbstractOutputFormatter() = delete;
+    AbstractOutputFormatter(AbstractOutputFormatter&&) = delete;
+    AbstractOutputFormatter(const AbstractOutputFormatter&) = delete;
+    AbstractOutputFormatter(AbstractOutputFormatter&) = delete;
+    AbstractOutputFormatter& operator=(const AbstractOutputFormatter&) = delete;
+    AbstractOutputFormatter& operator=(const AbstractOutputFormatter&&) = delete;
+};
+
 /*
  * @TODO: This whole idea. Print As CSV!
  */
