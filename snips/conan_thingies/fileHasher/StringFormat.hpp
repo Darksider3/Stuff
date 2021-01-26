@@ -25,7 +25,7 @@ namespace Formatting {
  *
  * @return std::string Formatted Hash that mimics the  behaivour of sha1sum, sha256sum, md5sum etc. (HexDigest, followed by 2 spaces, followed by Path and newline)
  */
-std::string FormatHashPrint(const std::vector<unsigned char>& digest, const Poco::File& F, const bool AddMethod = false, const std::string& Method_Name = "null")
+std::string FormatHashToPrint(const std::vector<unsigned char>& digest, const Poco::File& F, const bool AddMethod = false, const std::string& Method_Name = "null")
 {
     assert(!digest.empty() && "We cant format something that's empty!");
     assert(F.exists() && "File must exist to hash it!");
@@ -41,6 +41,35 @@ std::string FormatHashPrint(const std::vector<unsigned char>& digest, const Poco
 
     return_str += LN;
     return return_str;
+}
+
+/*
+ * @TODO: This whole idea. Print As CSV!
+ */
+bool HasCSVHeader(std::string& str)
+{
+    auto pos = str.find(CSVHeader);
+    return pos != str.npos;
+}
+
+std::string InsertCSVHeader(std::string& str)
+{
+    str.insert(0, CSVHeader);
+}
+
+std::string FormatHashAsCSV(const std::vector<unsigned char>& digest, const Poco::File& F, const std::string& Method_Name, std::string& Format_Str)
+{
+    assert(!digest.empty());
+    assert(F.exists());
+    assert(!Method_Name.empty());
+
+    // Step 1: Either insert Header or accept it's existence.
+    if (!HasCSVHeader(Format_Str))
+        InsertCSVHeader(Format_Str);
+
+    // Step 2: WRITE IT ALL IN YOU LITTLE PIECE OF RAINBOW-Y AWESOMENESS
+
+    Format_Str.append(Poco::format("%s,%s,%s%s", F.path(), Method_Name, Poco::DigestEngine::digestToHex(digest), LN));
 }
 
 /**

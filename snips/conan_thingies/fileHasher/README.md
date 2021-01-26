@@ -1,7 +1,7 @@
 # fileHasher
 
-This is a project aimed to mimic the various *sum commands(e.g. `sha256sum`) and combine them.
-Currently it's build through CMake and Conan.
+This is a project aimed to mimic the various *sum commands(e.g. `sha256sum`) and combine them. Currently it's build
+through CMake and Conan.
 
 ## build
 
@@ -9,7 +9,8 @@ To build:
 
 ```sh
 mkdir build && cd build
-conan install .. && conan install .. --build=missing
+conan install ..  
+conan install .. --build=missing
 cmake -DCMAKE_BUILD_TYPE=Release .. && cmake --build .
 ```
 

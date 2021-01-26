@@ -1,11 +1,11 @@
 // main logic
 #include "FileHashPrinter.hpp"
-#include "Poco/Crypto/DigestEngine.h"
 #include "Poco/File.h"
 #include "common.hpp"
 
 // Application interface
 #include "Poco/Util/Application.h"
+
 // Options
 #include "Poco/Util/Option.h"
 #include "Poco/Util/OptionSet.h"
@@ -70,310 +70,6 @@ public:
 
 protected:
     /**
-     * @brief Get's called by `this->run()` by POCO itself
-     *
-     * @param self This exact application object.
-     */
-    [[maybe_unused]] void initialize(Application& self) override
-    {
-        loadConfiguration(); // load config files if present
-        Application::initialize(self);
-    }
-
-    /**
-     * @brief uninitialized this object. Called by `this->run()` on exit
-     *
-     */
-    [[maybe_unused]] void uninitialize() override
-    {
-        Application::uninitialize();
-    }
-
-    /**
-     * @brief Reinitialises the current application object. Called by `this->run()`.
-     *
-     * @param self This exact Application object.
-     */
-    [[maybe_unused]] void reinitialize(Application& self) override
-    {
-        Application::reinitialize(self);
-    }
-
-    /**
-     * @brief Defines Options this Application object takes/needs.
-     *
-     * @param opts OptionSet provided by the parent class(`Poco::Util::Application`)
-     */
-    void defineOptions(OptionSet& opts) override
-    {
-        Application::defineOptions(opts);
-        opts.addOption(
-            Option("help", "h", "display this help")
-                .required(false)
-                .repeatable(false)
-                .callback(Poco::Util::OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleHelp)));
-
-        opts.addOption(
-            Option("sha1", "s", "use SHA1 instead of MD5")
-                .repeatable(false)
-                .required(false)
-                .noArgument());
-        opts.addOption(
-            Option("sha256", "6", "use SHA256 instead of MD5")
-                .repeatable(false)
-                .required(false)
-                .noArgument());
-        opts.addOption(
-            Option("md5", "5", "use md5(default)")
-                .repeatable(false)
-                .required(false)
-                .noArgument());
-        opts.addOption(
-            Option("file", "f", "Write to file instead of stdout")
-                .repeatable(false)
-                .required(false)
-                .argument("name", true));
-        opts.addOption(
-            Option("print", "p", "Print used hash alongside the files name.")
-                .required(false)
-                .repeatable(false)
-                .noArgument());
-        opts.addOption(
-            Option("own", "o", "Select your own hashing method your system supports through OpenSSL.")
-                .required(false)
-                .repeatable(false)
-                .argument("digestname")
-                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleDefine)));
-
-        opts.addOption(
-            Option("cmpr", "c", "Compare two hashes. Note: Specify twice. e.g. -c $hash1 -c $hash2!")
-                .required(false)
-                .repeatable(true)
-                .argument("hash")
-                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleCmpr)));
-#ifndef NO_HASH_LISTINGS
-        opts.addOption(
-            Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL")
-                .repeatable(false)
-                .required(false)
-                .noArgument());
-#endif
-    }
-
-    /**
-     * @brief Handle given -h/--help flag.
-     *
-     * It specificially needs it, because we don't have to process any of the given Options anymore, if we got some. We just
-     * print the help text and exit the program while cleaning up after ourselfs. Does take two unused values due to POCO
-     *
-     */
-    void handleHelp(const std::string& /* unused */, const std::string& /* unused */)
-    {
-        m_Flags._needsHelp = true;
-        stopOptionsProcessing(); // stop's processing because we won't need any - printing is anything we can do here
-        displayHelp(Application::EXIT_OK);
-        ASSERT_NOT_REACHED();
-    }
-
-    /**
-     * @brief Handles property in name=value style arguments, delegates to `definePropery()`.
-     *
-     * @param const std::string& Value to treat as a property(in name=value style).
-     */
-    void handleDefine(const std::string& /* unused name */, const std::string& value)
-    {
-        defineProperty(value);
-    }
-
-    /**
-     * @brief Handle --cmpr/-c Flag. Compares two hashes against each other. **Must** be called twice, when used.
-     *
-     * @param const std::string& Inputhash.
-     */
-    void handleCmpr(const std::string& /*name*/, const std::string& value)
-    {
-        if (value.empty())
-            displayHelp();
-        if (m_CmprHashes.First.empty()) {
-            m_CmprHashes.First = value;
-        } else if (m_CmprHashes.Second.empty()) {
-            m_CmprHashes.Second = value;
-            m_CmprHashes.CmprResult = Formatting::CompareHash(m_CmprHashes.First, m_CmprHashes.Second);
-            std::cout << "File hashes match!" << std::endl;
-        } else {
-            displayHelp(Application::EXIT_USAGE);
-        }
-
-        return;
-    }
-
-    /**
-     * @brief Handle name=value commands!
-     *
-     * @param const std::string& def String formatted like name=value
-     */
-    void defineProperty(const std::string& def)
-    {
-        std::string name;
-        std::string value;
-        std::string::size_type pos = def.find('=');
-        if (pos != std::string::npos) {
-            name.assign(def, 0, pos);
-            value.assign(def, pos + 1, def.length() - pos);
-        } else
-            name = def;
-        config().setString(name, value);
-    }
-
-    /**
-     * @brief View Help and exit with given return code(by default EXIT_OK)
-     *
-     * @param int8_t return_code=EXIT_OK Return code the application should give on exit through std::exit.
-     */
-    void displayHelp(int8_t return_code = EXIT_OK) const
-    {
-        HelpFormatter HF(options());
-        HF.setCommand(commandName());
-        HF.setHeader("A simple file hashing application");
-        HF.setUsage("[OPTIONS] file1 file2 file3...");
-        HF.setFooter(version_str);
-        HF.setUnixStyle(true);
-        HF.format(std::cout);
-
-        std::exit(return_code);
-    }
-
-    /**
-     * @brief Handles all possible input options/Arguments defined in `defineOptions`.
-     *
-     * @param std::string& name Name of the given argument
-     * @param std::string& value Value of arguemnt
-     */
-    __attribute__((flatten)) void handleOption(const std::string& name, const std::string& value) override
-    {
-        Application::handleOption(name, value);
-        assert(!name.empty() && "Never give this an empty arguments name!");
-
-        if (name == "help") {
-            m_Flags._needsHelp = true;
-        } else if (name == "sha1") {
-            m_RequestedDigest = _sha1 {};
-        } else if (name == "sha256") {
-            m_RequestedDigest = _sha256 {};
-        } else if (name == "md5") {
-            m_RequestedDigest = _md5 {};
-        } else if (name == "own") {
-            m_RequestedDigest.emplace<_ownName>(_ownName { value });
-        } else if (name == "file") {
-            if (value.empty())
-                return;
-            m_file = Poco::File { value };
-            if (!m_file.exists())
-                m_file.createFile();
-
-            assert(m_file.exists() && "Somehow we fucked up to create the file and got here!");
-        } else if (name == "print") {
-            m_Flags._printAlgoUsed = true;
-        }
-#ifndef NO_HASH_LISTINGS
-        else if (name == "list-digests") {
-            m_Flags._listAvailable = true;
-        }
-#endif
-        /*        else {
-            std::cout << "Option: " << name << ", Value: " << value << std::endl;
-        }*/
-    }
-
-    /**
-     * @brief Main application entrypoint. Get's called by `this->run()`
-     *
-     * @param const ArgVec& args Arguments.
-     *
-     * @return int8_t return value
-     */
-    int main(const ArgVec& args) override
-    {
-        if (!m_CmprHashes.First.empty() || !m_CmprHashes.Second.empty()) {
-            return m_CmprHashes.CmprResult;
-        }
-        auto cleanup_vec = [](std::vector<std::string>& in) {
-            in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
-                if (in.empty())
-                    return true;
-                if (in == " ")
-                    return true;
-
-                return false;
-            }),
-                in.end());
-        };
-
-#ifndef NO_HASH_LISTINGS
-        if (m_Flags._listAvailable) {
-            list_avail();
-            return 0;
-        }
-#endif
-
-        for (auto& anonymous_args : args) {
-            m_fileVec.push_back(anonymous_args);
-        }
-
-        cleanup_vec(m_fileVec);
-
-        if (m_Flags._needsHelp) {
-            // It's not an error when user requests help
-            displayHelp(Application::EXIT_OK);
-            ASSERT_NOT_REACHED();
-        }
-
-        if (m_fileVec.empty() || args.empty()) {
-            // it is indeed an usage error when user doesn't supply anything at all
-            displayHelp(Application::EXIT_USAGE);
-            ASSERT_NOT_REACHED();
-        }
-
-        // write either to specified file or std::cout
-        if (!m_file.path().empty() && m_file.exists()) {
-            m_of.rdbuf()->close();
-            m_of.open(m_file.path(), std::ios::in);
-            m_sbuf = m_of.rdbuf();
-        } else {
-            m_sbuf = std::cout.rdbuf();
-        }
-        assert(m_of.good() && "File isn't good!");
-
-        std::ostream output(m_sbuf);
-        assert(output.good() && "This stream has to stay valid.");
-
-        if (auto* detectedMD5 = std::get_if<_md5>(&m_RequestedDigest); detectedMD5 != nullptr) {
-            for (auto& path : m_fileVec) {
-                PrintFileHash(path, detectedMD5->getMethod(), m_Flags._printAlgoUsed, output);
-            }
-        } else if (auto* detectedSHA1 = std::get_if<_sha1>(&m_RequestedDigest); detectedSHA1 != nullptr) {
-            for (auto& path : m_fileVec) {
-                PrintFileHash(path, detectedSHA1->getMethod(), m_Flags._printAlgoUsed, output);
-            }
-        } else if (auto* detectedSHA256 = std::get_if<_sha256>(&m_RequestedDigest); detectedSHA256 != nullptr) {
-            for (auto& path : m_fileVec) {
-                PrintFileHash(path, detectedSHA256->getMethod(), m_Flags._printAlgoUsed, output);
-            }
-        } else if (auto* detectOwnMethod = std::get_if<_ownName>(&m_RequestedDigest); detectOwnMethod != nullptr) {
-            for (auto& path : m_fileVec) {
-                PrintFileHash(path, detectOwnMethod->getMethod(), m_Flags._printAlgoUsed, output);
-            }
-        }
-
-        if (m_of.is_open())
-            m_of.close();
-        m_sbuf = std::cout.rdbuf();
-
-        return Application::EXIT_OK;
-    };
-
-private:
-    /**
      * @brief CRTP-Class for the hash methods
      *
      * @tparam T Class to attach to
@@ -422,8 +118,365 @@ private:
         _ownName(const std::string& name) { this->setMethod(name); }
     };
 
+    using DigestVariant = std::variant<_sha1, _sha256, _md5, _ownName>;
+
+    /**
+     * @brief Get's called by `this->run()` by POCO itself
+     *
+     * @param self This exact application object.
+     */
+    [[maybe_unused]] void initialize(Application& self) override
+    {
+        loadConfiguration(); // load config files if present
+        Application::initialize(self);
+
+        return;
+    }
+
+    /**
+     * @brief uninitialized this object. Called by `this->run()` on exit
+     *
+     */
+    [[maybe_unused]] void uninitialize() override
+    {
+        Application::uninitialize();
+
+        return;
+    }
+
+    /**
+     * @brief Reinitialises the current application object. Called by `this->run()`.
+     *
+     * @param self This exact Application object.
+     */
+    [[maybe_unused]] void reinitialize(Application& self) override
+    {
+        Application::reinitialize(self);
+
+        return;
+    }
+
+    /**
+     * @brief Defines Options this Application object takes/needs.
+     *
+     * @param opts OptionSet provided by the parent class(`Poco::Util::Application`)
+     */
+    void defineOptions(OptionSet& opts) override
+    {
+        Application::defineOptions(opts);
+        opts.addOption(
+            Option("help", "h", "display this help")
+                .required(false)
+                .repeatable(false)
+                .callback(Poco::Util::OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleHelp)));
+
+        opts.addOption(
+            Option("sha1", "s", "use SHA1 instead of MD5")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
+        opts.addOption(
+            Option("sha256", "6", "use SHA256 instead of MD5")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
+        opts.addOption(
+            Option("md5", "5", "use md5(default)")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
+        opts.addOption(
+            Option("file", "f", "Write to file instead of stdout")
+                .repeatable(false)
+                .required(false)
+                .argument("name", true));
+        opts.addOption(
+            Option("print", "p", "Print used hash alongside the files name.")
+                .required(false)
+                .repeatable(false)
+                .noArgument());
+        opts.addOption(
+            Option("own", "o", "Select your own hashing method your system supports through OpenSSL.")
+                .required(false)
+                .repeatable(true)
+                .argument("digestname")
+                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleDefine)));
+
+        opts.addOption(
+            Option()
+                .fullName("cmpr")
+                .description("Compare two hashes. Note: Specify twice. e.g. -c $hash1 -c $hash2!")
+                .required(false)
+                .repeatable(true)
+                .argument("hash1 --cmpr=hash2")
+                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleCmpr)));
+
+        opts.addOption(
+            Option("combined-output", "c", "Print multiple, given, Digests combined for each given file.")
+                .required(false)
+                .repeatable(false)
+                .noArgument()
+                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleCombined)));
+
+#ifndef NO_HASH_LISTINGS
+        opts.addOption(
+            Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL")
+                .repeatable(false)
+                .required(false)
+                .noArgument());
+#endif
+
+        return;
+    }
+
+    /**
+     * @brief Input-Digest-Handling
+     *
+     * @param DigestVariant&& dig  Moving Object into vector
+     *
+     */
+    void inputDigest(DigestVariant&& dig)
+    {
+        m_RequestedDigests.push_back(std::move(dig));
+        return;
+    }
+
+    /**
+     * @brief -c, --combined-output Handler. Set the Flag!
+     *
+     */
+    void handleCombined(const std::string&, const std::string&)
+    {
+        m_Flags._combinedOutput = true;
+        return;
+    }
+
+    /**
+     * @brief Handle given -h/--help flag.
+     *
+     * It specificially needs it, because we don't have to process any of the given Options anymore, if we got some. We just
+     * print the help text and exit the program while cleaning up after ourselfs. Does take two unused values due to POCO
+     *
+     */
+    void handleHelp(const std::string& /* unused */, const std::string& /* unused */)
+    {
+        m_Flags._needsHelp = true;
+        stopOptionsProcessing(); // stop's processing because we won't need any - printing is anything we can do here
+        displayHelp(Application::EXIT_OK);
+
+        ASSERT_NOT_REACHED();
+    }
+
+    /**
+     * @brief Handles property in name=value style arguments, delegates to `definePropery()`.
+     *
+     * @param const std::string& Value to treat as a property(in name=value style).
+     */
+    void handleDefine(const std::string& /* unused name */, const std::string& value)
+    {
+        defineProperty(value);
+
+        return;
+    }
+
+    /**
+     * @brief Handle --cmpr/-c Flag. Compares two hashes against each other. **Must** be called twice, when used.
+     *
+     * @param const std::string& Inputhash.
+     */
+    void handleCmpr(const std::string& /*name*/, const std::string& value)
+    {
+        if (value.empty())
+            displayHelp();
+        if (m_CmprHashes.First.empty()) {
+            m_CmprHashes.First = value;
+        } else if (m_CmprHashes.Second.empty()) {
+            m_CmprHashes.Second = value;
+            m_CmprHashes.CmprResult = Formatting::CompareHash(m_CmprHashes.First, m_CmprHashes.Second);
+            std::cout << "File hashes match!" << std::endl;
+        } else {
+            displayHelp(Application::EXIT_USAGE);
+        }
+
+        return;
+    }
+
+    /**
+     * @brief Handle name=value commands!
+     *
+     * @param const std::string& def String formatted like name=value
+     */
+    void defineProperty(const std::string& def)
+    {
+        std::string name;
+        std::string value;
+        std::string::size_type pos = def.find('=');
+        if (pos != std::string::npos) {
+            name.assign(def, 0, pos);
+            value.assign(def, pos + 1, def.length() - pos);
+        } else {
+            name = def;
+        }
+        config().setString(name, value);
+
+        return;
+    }
+
+    /**
+     * @brief View Help and exit with given return code(by default EXIT_OK)
+     *
+     * @param int8_t return_code=EXIT_OK Return code the application should give on exit through std::exit.
+     */
+    void displayHelp(int8_t return_code = EXIT_OK) const
+    {
+        HelpFormatter HF(options());
+        HF.setCommand(commandName());
+        HF.setHeader("A simple file hashing application");
+        HF.setUsage("[OPTIONS] file1 file2 file3...");
+        HF.setFooter(version_str);
+        HF.setUnixStyle(true);
+        HF.format(std::cout);
+
+        std::exit(return_code);
+    }
+
+    /**
+     * @brief Handles all possible input options/Arguments defined in `defineOptions`.
+     *
+     * @param std::string& name Name of the given argument
+     * @param std::string& value Value of arguemnt
+     */
+    __attribute__((flatten)) void handleOption(const std::string& name, const std::string& value) override
+    {
+        Application::handleOption(name, value);
+        assert(!name.empty() && "Never give this an empty arguments name!");
+
+        if (name == "help") {
+            m_Flags._needsHelp = true;
+        } else if (name == "sha1") {
+            inputDigest(_sha1 {});
+        } else if (name == "sha256") {
+            inputDigest(_sha256 {});
+        } else if (name == "md5") {
+            inputDigest(_md5 {});
+        } else if (name == "own") {
+            inputDigest(_ownName { value });
+        } else if (name == "file") {
+            if (value.empty())
+                return;
+            m_file = Poco::File { value };
+            if (!m_file.exists())
+                m_file.createFile();
+
+            assert(m_file.exists() && "Somehow we fucked up to create the file and got here!");
+        } else if (name == "print") {
+            m_Flags._printAlgoUsed = true;
+        }
+#ifndef NO_HASH_LISTINGS
+        else if (name == "list-digests") {
+            m_Flags._listAvailable = true;
+        }
+#endif
+    }
+
+    /**
+     * @brief Main application entrypoint. Get's called by `this->run()`
+     *
+     * @param const ArgVec& args Arguments.
+     *
+     * @return int8_t return value
+     */
+    int main(const ArgVec& args) override
+    {
+        if (!m_CmprHashes.First.empty() || !m_CmprHashes.Second.empty()) {
+            return m_CmprHashes.CmprResult;
+        }
+        auto cleanup_vec = [](std::vector<std::string>& in) {
+            in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
+                if (in.empty())
+                    return true;
+                if (in == " ")
+                    return true;
+
+                return false;
+            }),
+                in.end());
+        };
+
+#ifndef NO_HASH_LISTINGS
+        if (m_Flags._listAvailable) {
+            list_avail();
+            return 0;
+        }
+#endif
+
+        for (auto& anonymous_args : args) {
+            m_fileVec.push_back(anonymous_args);
+        }
+
+        cleanup_vec(m_fileVec);
+        if (m_RequestedDigests.empty())
+            inputDigest(_md5 {});
+
+        if (m_Flags._needsHelp) {
+            // It's not an error when user requests help
+            displayHelp(Application::EXIT_OK);
+            ASSERT_NOT_REACHED();
+        }
+
+        if (m_fileVec.empty() || args.empty()) {
+            // it is indeed an usage error when user doesn't supply anything at all
+            displayHelp(Application::EXIT_USAGE);
+            ASSERT_NOT_REACHED();
+        }
+
+        // write either to specified file or std::cout
+        if (!m_file.path().empty() && m_file.exists()) {
+            m_of.rdbuf()->close();
+            m_of.open(m_file.path(), std::ios::in);
+            m_sbuf = m_of.rdbuf();
+        } else {
+            m_sbuf = std::cout.rdbuf();
+        }
+        assert(m_of.good() && "File isn't good!");
+
+        std::ostream output(m_sbuf);
+        assert(output.good() && "This stream has to stay valid.");
+
+        auto digestSelect = [&](DigestVariant& dig, const std::string& path) {
+            if (auto* detectedMD5 = std::get_if<_md5>(&dig); detectedMD5 != nullptr) {
+                PrintFileHash(path, detectedMD5->getMethod(), m_Flags._printAlgoUsed, output);
+            } else if (auto* detectedSHA1 = std::get_if<_sha1>(&dig); detectedSHA1 != nullptr) {
+                PrintFileHash(path, detectedSHA1->getMethod(), m_Flags._printAlgoUsed, output);
+            } else if (auto* detectedSHA256 = std::get_if<_sha256>(&dig); detectedSHA256 != nullptr) {
+                PrintFileHash(path, detectedSHA256->getMethod(), m_Flags._printAlgoUsed, output);
+            } else if (auto* detectOwnMethod = std::get_if<_ownName>(&dig); detectOwnMethod != nullptr) {
+                PrintFileHash(path, detectOwnMethod->getMethod(), m_Flags._printAlgoUsed, output);
+            }
+        };
+
+        if (!m_Flags._combinedOutput) {
+            for (auto& path : m_fileVec) {
+                digestSelect(m_RequestedDigests.back(), path);
+            }
+        } else {
+            for (auto& path : m_fileVec) {
+                for (auto& buck : m_RequestedDigests) {
+                    digestSelect(buck, path);
+                }
+            }
+        }
+
+        if (m_of.is_open())
+            m_of.close();
+        m_sbuf = std::cout.rdbuf();
+
+        return Application::EXIT_OK;
+    };
+
+private:
     /// SFINAE variant to select correct algorithm
-    std::variant<_sha1, _sha256, _md5, _ownName> m_RequestedDigest { _md5 {} };
+    std::vector<DigestVariant> m_RequestedDigests {};
 
     /// Files given by Argument/Options(-f)
     std::vector<std::string> m_fileVec {};
@@ -437,6 +490,9 @@ private:
 
         /// -l, --list-digests Flag
         bool _listAvailable { false };
+
+        /// -c, --combined-output
+        bool _combinedOutput { false };
     } m_Flags {};
 
     /// Output File

@@ -5,39 +5,14 @@
 #ifndef POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 #define POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 
+#include "ReadIntoEngine.hpp"
+
 #include "Poco/Crypto/DigestEngine.h"
 #include "Poco/DigestStream.h"
-#include "Poco/FileStream.h"
 #include "StringFormat.hpp"
 #include "common.hpp"
 #include <iostream>
 #include <memory>
-
-/**
- * @brief Updates a given DigestEngine with the contents of a file
- *
- * @param Poco::DigestEngine& Engine     Engine to feed
- * @param Poco::File&         F          File to feed it with.
- */
-__attribute__((flatten)) Poco::File ReadFileIntoEngine(Poco::DigestEngine& Engine, Poco::File&& F)
-{
-    assert(!Engine.digest().empty() && "The Digest Engine *must* be initialized before usage here!");
-    assert(F.exists() && "Actually POCO takes care for existence here, but hell it __should__ exist!");
-    Poco::FileInputStream FileReadStream { F.path() };
-
-    assert(FileReadStream.good() && "Stream must work in order to work on it.");
-    char read[Read_Segmentation + 1];
-
-    for (; FileReadStream.eof() == false;) {          // read whole file
-        FileReadStream.read(read, Read_Segmentation); // but not everything at once
-        Engine.update(read, FileReadStream.gcount()); // update the engine to consider it's content
-    }
-
-    assert(FileReadStream.eof() && "We. need. the. whole. file!");
-    FileReadStream.close();
-
-    return F;
-}
 
 /**
  * @brief Hashes a file and prints its Hex-representation to the specified output stream
@@ -69,8 +44,8 @@ __attribute__((flatten)) std::ostream& PrintFileHash(const std::string& Path, co
 
     assert((iFile.exists() && iFile.canRead() && iFile.isFile()) && "Move operation dependency... Poco::File has no move constructor but with a little bit of luck...");
 
-    output << Formatting::FormatHashPrint(Engine->digest(), iFile, used_algorithm, Method); // print 'em out!
-    output.flush();                                                                         // make sure it's in there!
+    output << Formatting::FormatHashToPrint(Engine->digest(), iFile, used_algorithm, Method); // print 'em out!
+    output.flush();                                                                           // make sure it's in there!
 
     assert(output.good() && "We somehow f*cked up the stream state!");
     return output;
