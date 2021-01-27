@@ -134,6 +134,14 @@ public:
         return u()->getOptionsMap().at(name);
     }
 
+    virtual bool good()
+    {
+        return (u()->m_digest != nullptr)
+            && (u()->m_File != nullptr)
+            && (u()->m_Method != nullptr)
+            && (u()->m_FormatStr != nullptr);
+    }
+
     virtual std::string FormatHash() = 0;
 
     [[maybe_unused]] virtual string Work() { return FormatHash(); }
@@ -198,8 +206,9 @@ public:
         assert(!digest.empty() && "We cant format something that's empty!");
         assert(F.exists() && "File must exist to hash it!");
         assert(!Method_Name.empty() && "Method name should be an optional parameter and thus needs sadly content...");
+        assert(str.empty() && "This class expects it to be empty.");
 
-        string return_str(digest.size(), '\0');
+        string return_str(digest.size() + digest.size(), '\0');
         return_str.append(Poco::format("%s  %s", Poco::DigestEngine::digestToHex(digest), F.path()));
 
         if (getOption("AddHashToFormat")) {
@@ -264,7 +273,11 @@ std::string FormatHashToPrint(std::vector<unsigned char>& digest, Poco::File& F,
 
     std::string return_str;
     std::string method = Method_Name;
+    assert(fmt);
+    assert(F.exists() && "File must exist to hash it!");
+    assert(!method.empty() && "Method name should be an optional parameter and thus needs sadly content...");
     fmt->reinit(digest, F, method, return_str);
+    assert(fmt->good() && "All pointers should be set on usage to a value that's actually usable."); // asserts all stored pointers...
     fmt->setOption(AddMethod, "AddHashToFormat");
 
     return fmt->FormatHash();
