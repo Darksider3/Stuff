@@ -25,7 +25,8 @@
  * @return
  */
 
-__attribute__((flatten)) std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, bool used_algorithm = false, std::ostream& output = std::cout)
+template<typename T = Formatting::PrintFormat>
+__attribute__((flatten)) std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, Formatting::AbstractOutputFormatter<T>& fmt, bool used_algorithm = false, std::ostream& output = std::cout)
 {
     assert(!Path.empty() && "Path shall be never empty.");
     assert(!Method.empty() && "Method cant be empty.");
@@ -44,8 +45,8 @@ __attribute__((flatten)) std::ostream& PrintFileHash(const std::string& Path, co
 
     assert((iFile.exists() && iFile.canRead() && iFile.isFile()) && "Move operation dependency... Poco::File has no move constructor but with a little bit of luck...");
 
-    output << Formatting::FormatHashToPrint(const_cast<std::vector<unsigned char>&>(Engine->digest()), iFile, used_algorithm, Method); // print 'em out!
-    output.flush();                                                                                                                    // make sure it's in there!
+    output << Formatting::FormatHashToPrint(const_cast<std::vector<unsigned char>&>(Engine->digest()), iFile, &fmt, used_algorithm, Method); // print 'em out!
+    output.flush();                                                                                                                          // make sure it's in there!
 
     assert(output.good() && "We somehow f*cked up the stream state!");
     return output;

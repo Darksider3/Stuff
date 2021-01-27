@@ -25,70 +25,82 @@ namespace Formatting {
 template<typename CRTP>
 class AbstractOutputFormatter {
 private:
-    [[maybe_unused]] std::vector<unsigned char>& m_digest;
-    [[maybe_unused]] Poco::File& m_File;
-    [[maybe_unused]] std::string& m_Method;
-    [[maybe_unused]] std::string& m_FormatStr;
+    [[maybe_unused]] std::vector<unsigned char>* m_digest {};
+    [[maybe_unused]] Poco::File* m_File {};
+    [[maybe_unused]] std::string* m_Method {};
+    [[maybe_unused]] std::string* m_FormatStr {};
 
     AbstractOutputFormatter<CRTP>* u() { return &static_cast<CRTP&>(*this); }
     [[nodiscard]] const AbstractOutputFormatter<CRTP>* u_c() const { return static_cast<const CRTP*>(this); }
 
+    std::unordered_map<std::string, bool> BoolFlags {};
+
 protected:
+    using OptionsMap = std::unordered_map<std::string, bool>;
     using digestVec = std::vector<unsigned char>;
     using File = Poco::File;
     using string = std::string;
 
     [[maybe_unused]] digestVec& getDigest()
     {
-        return u()->m_digest;
+        return *u()->m_digest;
     }
 
     [[maybe_unused]] const File& getFile()
     {
-        return u()->m_File;
+        return *u()->m_File;
     }
 
     [[maybe_unused]] const string& getMethod()
     {
-        return u()->m_Method;
+        return *u()->m_Method;
     }
 
     [[maybe_unused]] string& getFormatStr()
     {
-        return u()->m_FormatStr;
+        return *u()->m_FormatStr;
+    }
+    [[maybe_unused]] OptionsMap& getOptionsMap()
+    {
+        return u()->BoolFlags;
     }
 
     [[maybe_unused]] [[nodiscard]] digestVec& getDigest() const
     {
-        return u()->m_digest;
+        return *u()->m_digest;
     }
 
     [[maybe_unused]] [[nodiscard]] File& getFile() const
     {
-        return u()->m_File;
+        return *u()->m_File;
     }
 
     [[maybe_unused]] [[nodiscard]] string& getMethod() const
     {
-        return u()->m_Methodt;
+        return *u()->m_Methodt;
     }
 
     [[maybe_unused]] [[nodiscard]] string& getFormatStr() const
     {
-        return u_c()->m_FormatStr;
+        return *u_c()->m_FormatStr;
     }
 
-    [[maybe_unused]] void setDigest(digestVec& digest) { u()->m_digest = digest; }
-    [[maybe_unused]] void setFile(File& file) { u()->m_File = file; }
-    [[maybe_unused]] void setMethod(string& str) { u()->m_Method = str; }
-    [[maybe_unused]] void setFormatStr(string& str) { u()->m_FormatStr = str; }
+    [[maybe_unused]] [[nodiscard]] OptionsMap& getOptionsMap() const
+    {
+        return *u_c()->BoolFlags;
+    }
+
+    [[maybe_unused]] void setDigest(digestVec& digest) { u()->m_digest = &digest; }
+    [[maybe_unused]] void setFile(File& file) { u()->m_File = &file; }
+    [[maybe_unused]] void setMethod(string& str) { u()->m_Method = &str; }
+    [[maybe_unused]] void setFormatStr(string& str) { u()->m_FormatStr = &str; }
 
 public:
     explicit AbstractOutputFormatter(digestVec& digest, File& F, string& Method_Name, string& Format_Str)
-        : m_digest(digest)
-        , m_File(F)
-        , m_Method(Method_Name)
-        , m_FormatStr(Format_Str)
+        : m_digest(&digest)
+        , m_File(&F)
+        , m_Method(&Method_Name)
+        , m_FormatStr(&Format_Str)
     {
     }
 
@@ -100,6 +112,28 @@ public:
         u()->setFormatStr(str);
     }
 
+    virtual void reinit(digestVec* digest, File* F, string* M, string* S)
+    {
+        u()->setDigest(*digest);
+        u()->setFile(*F);
+        u()->setMethod(*M);
+        u()->setFormatStr(*S);
+    }
+
+    virtual void setOption(const bool Opt, const std::string& Name)
+    {
+        u()->getOptionsMap()[Name] = Opt;
+    }
+
+    virtual bool getOption(const std::string& name)
+    {
+
+        if (u()->getOptionsMap().find(name) == u()->getOptionsMap().end()) {
+            return false;
+        }
+        return u()->getOptionsMap().at(name);
+    }
+
     virtual std::string FormatHash() = 0;
 
     [[maybe_unused]] virtual string Work() { return FormatHash(); }
@@ -107,7 +141,13 @@ public:
     virtual ~AbstractOutputFormatter() = default;
 
     // This class shall never be: Moved, Copied or somehow differently be assigned aside from initialising it on an class.
-    AbstractOutputFormatter() = delete;
+    AbstractOutputFormatter()
+    {
+        digestVec mua;
+        Poco::File F {};
+        string none { "none" };
+        reinit(nullptr, nullptr, nullptr, nullptr);
+    };
     AbstractOutputFormatter(AbstractOutputFormatter&&) = delete;
     AbstractOutputFormatter(const AbstractOutputFormatter&) = delete;
     AbstractOutputFormatter(AbstractOutputFormatter&) = delete;
@@ -141,13 +181,13 @@ public:
 
 class PrintFormat : public AbstractOutputFormatter<PrintFormat> {
 private:
-    bool m_AddHashToPrint { false };
-
 public:
     PrintFormat(digestVec& digest, File& F, string& Method_Name, string& Format_Str)
         : AbstractOutputFormatter<PrintFormat>(digest, F, Method_Name, Format_Str)
     {
     }
+
+    explicit PrintFormat() = default;
 
     [[nodiscard]] string FormatHash() override
     {
@@ -162,7 +202,7 @@ public:
         string return_str(digest.size(), '\0');
         return_str.append(Poco::format("%s  %s", Poco::DigestEngine::digestToHex(digest), F.path()));
 
-        if (m_AddHashToPrint) {
+        if (getOption("AddHashToFormat")) {
             return_str.append(Poco::format("; %s.", Method_Name));
         }
 
@@ -172,8 +212,6 @@ public:
 
         return return_str;
     }
-
-    void setAddHashToPrint(bool op) { m_AddHashToPrint = op; }
 };
 
 /*
@@ -220,15 +258,16 @@ std::string InsertCSVHeader(std::string& str)
  *
  * @return std::string Formatted Hash that mimics the  behaivour of sha1sum, sha256sum, md5sum etc. (HexDigest, followed by 2 spaces, followed by Path and newline)
  */
-std::string FormatHashToPrint(std::vector<unsigned char>& digest, Poco::File& F, const bool AddMethod = false, const std::string& Method_Name = "null")
+template<typename T = PrintFormat>
+std::string FormatHashToPrint(std::vector<unsigned char>& digest, Poco::File& F, AbstractOutputFormatter<T>* fmt, const bool AddMethod = false, const std::string& Method_Name = "null")
 {
 
     std::string return_str;
     std::string method = Method_Name;
-    PrintFormat Formatter(digest, F, method, return_str);
-    Formatter.setAddHashToPrint(AddMethod);
+    fmt->reinit(digest, F, method, return_str);
+    fmt->setOption(AddMethod, "AddHashToFormat");
 
-    return Formatter.FormatHash();
+    return fmt->FormatHash();
 }
 
 /**

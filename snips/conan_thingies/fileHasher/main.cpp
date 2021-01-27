@@ -456,15 +456,17 @@ protected:
         std::ostream output(m_sbuf);
         assert(output.good() && "This stream has to stay valid.");
 
+        Formatting::PrintFormat Formatter {};
+
         auto digestSelect = [&](DigestVariant& dig, const std::string& path) {
             if (auto* detectedMD5 = std::get_if<_md5>(&dig); detectedMD5 != nullptr) {
-                PrintFileHash(path, detectedMD5->getMethod(), m_Flags._printAlgoUsed, output);
+                PrintFileHash(path, detectedMD5->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             } else if (auto* detectedSHA1 = std::get_if<_sha1>(&dig); detectedSHA1 != nullptr) {
-                PrintFileHash(path, detectedSHA1->getMethod(), m_Flags._printAlgoUsed, output);
+                PrintFileHash(path, detectedSHA1->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             } else if (auto* detectedSHA256 = std::get_if<_sha256>(&dig); detectedSHA256 != nullptr) {
-                PrintFileHash(path, detectedSHA256->getMethod(), m_Flags._printAlgoUsed, output);
+                PrintFileHash(path, detectedSHA256->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             } else if (auto* detectOwnMethod = std::get_if<_ownName>(&dig); detectOwnMethod != nullptr) {
-                PrintFileHash(path, detectOwnMethod->getMethod(), m_Flags._printAlgoUsed, output);
+                PrintFileHash(path, detectOwnMethod->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             }
         };
 
