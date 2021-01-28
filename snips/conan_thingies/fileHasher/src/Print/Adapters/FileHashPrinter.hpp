@@ -25,7 +25,7 @@
  */
 
 template<typename T = Formatting::PrintFormat>
-__attribute__((flatten)) std::ostream& PrintFileHash(const std::string& Path, const std::string& Method, Formatting::AbstractOutputFormatter<T>& fmt, bool used_algorithm = false, std::ostream& output = std::cout)
+__attribute__((flatten)) std::ostream& printFileHashAdapter(const std::string& Path, const std::string& Method, Formatting::AbstractOutputFormatter<T>& fmt, bool used_algorithm = false, std::ostream& output = std::cout)
 {
     assert(!Path.empty() && "Path shall be never empty.");
     assert(!Method.empty() && "Method cant be empty.");
