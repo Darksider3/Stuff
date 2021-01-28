@@ -1,4 +1,5 @@
-#include "src/DigestEncryptApp.hpp"
+#include "DigestEncryptApp.hpp"
+#include "common.hpp"
 
 /**
  * @brief Entry Point

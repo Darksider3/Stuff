@@ -4,10 +4,10 @@
 
 #ifndef POCO_FILE_HASHER_READINTOENGINE_HPP
 #define POCO_FILE_HASHER_READINTOENGINE_HPP
-#include "../../../common.hpp"
 #include "Poco/DigestEngine.h"
 #include "Poco/File.h"
 #include "Poco/FileStream.h"
+#include "common.hpp"
 
 namespace FileIO {
 /**

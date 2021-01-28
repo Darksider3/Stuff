@@ -5,12 +5,11 @@
 #ifndef POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 #define POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 
-#include "../FileIO/ReadIntoEngine.hpp"
-
-#include "../../../common.hpp"
-#include "../Format/StringFormat.hpp"
 #include "Poco/Crypto/DigestEngine.h"
 #include "Poco/DigestStream.h"
+#include "Print/FileIO/ReadIntoEngine.hpp"
+#include "Print/Format/StringFormat.hpp"
+#include "common.hpp"
 #include <iostream>
 #include <memory>
 

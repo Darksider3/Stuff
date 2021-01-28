@@ -5,7 +5,7 @@
 #ifndef POCO_FILE_HASHER_STRINGFORMAT_HPP
 #define POCO_FILE_HASHER_STRINGFORMAT_HPP
 
-#include "../../../common.hpp"
+#include "common.hpp"
 #include <Poco/DigestEngine.h>
 #include <Poco/File.h>
 #include <Poco/Format.h>
@@ -42,9 +42,9 @@ protected:
     using OptionsMap = std::unordered_map<std::string, bool>;
 
     /**
-     * @brief Contains digest produced by Poco::Crypto::DigestEngine.digest()
+     * @brief Contains digest produced by Poco::Crypto::DigestEngine.digest() - const-correctness included!
      */
-    using digestVec = std::vector<unsigned char>;
+    using digestVec = const std::vector<unsigned char>;
 
     /**
      * @brief File currently to operate on
@@ -99,7 +99,7 @@ protected:
     /**
      * @brief see getDigest()
      */
-    [[maybe_unused]] [[nodiscard]] const digestVec& getDigest() const
+    [[maybe_unused]] [[nodiscard]] digestVec& getDigest() const
     {
         return *u()->m_digest;
     }
@@ -140,7 +140,7 @@ protected:
      * @brief Set Digest-Member
      * @param digestVec& digest  Digest produced by Poco::Crypto::DigestEngine->digest();
      */
-    [[maybe_unused]] void setDigest(const digestVec& digest) { u()->m_digest = &digest; }
+    [[maybe_unused]] void setDigest(digestVec& digest) { u()->m_digest = &digest; }
 
     /**
      * @brief Set File currently operating on
@@ -177,7 +177,7 @@ public:
      * @param string& Method_Name Hashmethods name to produce digest
      * @param string& str String to modify with formatting
      */
-    virtual void reinit(const digestVec& digest, File& F, string& Method_Name, string& str)
+    virtual void reinit(digestVec& digest, File& F, string& Method_Name, string& str)
     {
         u()->setDigest(digest);
         u()->setFile(F);

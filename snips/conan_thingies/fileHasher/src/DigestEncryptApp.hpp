@@ -6,9 +6,9 @@
 #define POCO_FILE_HASHER_DIGESTENCRYPTAPP_HPP
 
 // main logic
-#include "../common.hpp"
 #include "Poco/File.h"
 #include "Print/Adapters/FileHashPrinter.hpp"
+#include "common.hpp"
 
 // Application interface
 #include "Poco/Util/Application.h"
@@ -204,7 +204,7 @@ protected:
         opts.addOption(
             Option()
                 .fullName("own")
-                .description("Select your own hashing method your system supports through OpenSSL.")
+                .description("Select your own hashing method your system supports through OpenSSL. Note: combine with -c in case you need multiple hashes for the same file.")
                 .required(false)
                 .repeatable(true)
                 .argument("digestname")
@@ -213,26 +213,26 @@ protected:
         opts.addOption(
             Option()
                 .fullName("cmpr")
-                .description("Compare two hashes. Note: Specify twice. e.g. -c $hash1 -c $hash2!")
+                .description("Compare two hashes. Note: Specify twice. e.g. -c $hash1 -c $hash2! Currently legal only when supplying your own hashes!")
                 .required(false)
                 .repeatable(true)
                 .argument("hash1 --cmpr=hash2")
                 .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleCmpr)));
 
         opts.addOption(
-            Option("file", "f", "Write to file instead of stdout")
+            Option("file", "f", "Write hashes to file instead of standard out.")
                 .repeatable(false)
                 .required(false)
                 .argument("name", true));
 
         opts.addOption(
-            Option("print", "p", "Print used hash alongside the files name.")
+            Option("print", "p", "Print used hash alongside the files name. Format: '$hash  $filename; $HashMethod.")
                 .required(false)
                 .repeatable(false)
                 .noArgument());
 
         opts.addOption(
-            Option("combined-output", "c", "Print multiple, given, Digests combined for each given file.")
+            Option("combined-output", "c", "Print multiple, given, Digests combined for each given file. If not specified, the last given(or md5, as default, when nothing supplied) hash name will be used.")
                 .required(false)
                 .repeatable(false)
                 .noArgument()
@@ -478,15 +478,16 @@ protected:
             }
         };
 
-        if (m_Flags._combinedOutput) {
+        if (!m_Flags._combinedOutput) {
+            auto Element = m_RequestedDigests.back();
+            for (auto& path : m_fileVec) {
+                digestSelect(Element, path);
+            }
+        } else {
             for (auto& path : m_fileVec) {
                 for (auto& buck : m_RequestedDigests) {
                     digestSelect(buck, path);
                 }
-            }
-        } else {
-            for (auto& path : m_fileVec) {
-                digestSelect(m_RequestedDigests.back(), path);
             }
         }
 
