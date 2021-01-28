@@ -7,6 +7,8 @@
 
 #include "Poco/Format.h"
 #include "Poco/LineEndingConverter.h"
+#include <Poco/DigestEngine.h>
+#include <Poco/File.h>
 #include <cassert>
 
 #define ASSERT_NOT_REACHED() assert(false && "This section shouldn't be reached, ever!") // NOLINT(cppcoreguidelines-macro-usage)
