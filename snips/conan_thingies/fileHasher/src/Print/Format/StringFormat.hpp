@@ -5,7 +5,7 @@
 #ifndef POCO_FILE_HASHER_STRINGFORMAT_HPP
 #define POCO_FILE_HASHER_STRINGFORMAT_HPP
 
-#include "common.hpp"
+#include "../../../common.hpp"
 #include <Poco/DigestEngine.h>
 #include <Poco/File.h>
 #include <Poco/Format.h>
@@ -25,7 +25,7 @@ namespace Formatting {
 template<typename CRTP>
 class AbstractOutputFormatter {
 private:
-    [[maybe_unused]] std::vector<unsigned char>* m_digest {};
+    [[maybe_unused]] const std::vector<unsigned char>* m_digest {};
     [[maybe_unused]] Poco::File* m_File {};
     [[maybe_unused]] std::string* m_Method {};
     [[maybe_unused]] std::string* m_FormatStr {};
@@ -59,7 +59,7 @@ protected:
     /**
      * @return digestVec& Digest-Engines produced Digest
      */
-    [[maybe_unused]] digestVec& getDigest()
+    [[maybe_unused]] const digestVec& getDigest()
     {
         return *u()->m_digest;
     }
@@ -99,7 +99,7 @@ protected:
     /**
      * @brief see getDigest()
      */
-    [[maybe_unused]] [[nodiscard]] digestVec& getDigest() const
+    [[maybe_unused]] [[nodiscard]] const digestVec& getDigest() const
     {
         return *u()->m_digest;
     }
@@ -140,7 +140,7 @@ protected:
      * @brief Set Digest-Member
      * @param digestVec& digest  Digest produced by Poco::Crypto::DigestEngine->digest();
      */
-    [[maybe_unused]] void setDigest(digestVec& digest) { u()->m_digest = &digest; }
+    [[maybe_unused]] void setDigest(const digestVec& digest) { u()->m_digest = &digest; }
 
     /**
      * @brief Set File currently operating on
@@ -177,7 +177,7 @@ public:
      * @param string& Method_Name Hashmethods name to produce digest
      * @param string& str String to modify with formatting
      */
-    virtual void reinit(digestVec& digest, File& F, string& Method_Name, string& str)
+    virtual void reinit(const digestVec& digest, File& F, string& Method_Name, string& str)
     {
         u()->setDigest(digest);
         u()->setFile(F);
@@ -406,7 +406,7 @@ std::string InsertCSVHeader(std::string& str)
  * @return std::string Formatted Hash that mimics the  behaivour of sha1sum, sha256sum, md5sum etc. (HexDigest, followed by 2 spaces, followed by Path and newline)
  */
 template<typename T = PrintFormat>
-std::string FormatHashToPrint(std::vector<unsigned char>& digest, Poco::File& F, AbstractOutputFormatter<T>* fmt, const bool AddMethod = false, const std::string& Method_Name = "null")
+std::string FormatHashToPrint(const std::vector<unsigned char>& digest, Poco::File& F, AbstractOutputFormatter<T>* fmt, const bool AddMethod = false, const std::string& Method_Name = "null")
 {
 
     std::string return_str;

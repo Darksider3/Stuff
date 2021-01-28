@@ -4,11 +4,12 @@
 
 #ifndef POCO_FILE_HASHER_READINTOENGINE_HPP
 #define POCO_FILE_HASHER_READINTOENGINE_HPP
+#include "../../../common.hpp"
 #include "Poco/DigestEngine.h"
 #include "Poco/File.h"
 #include "Poco/FileStream.h"
-#include "common.hpp"
 
+namespace FileIO {
 /**
  * @brief Updates a given DigestEngine with the contents of a file
  *
@@ -33,5 +34,6 @@ __attribute__((flatten)) Poco::File ReadFileIntoEngine(Poco::DigestEngine& Engin
     FileReadStream.close();
 
     return F;
+}
 }
 #endif //POCO_FILE_HASHER_READINTOENGINE_HPP

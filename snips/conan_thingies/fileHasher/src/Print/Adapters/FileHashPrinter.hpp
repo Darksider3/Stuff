@@ -5,12 +5,12 @@
 #ifndef POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 #define POCO_FILE_HASHER_FILEHASHPRINTER_HPP
 
-#include "ReadIntoEngine.hpp"
+#include "../FileIO/ReadIntoEngine.hpp"
 
+#include "../../../common.hpp"
+#include "../Format/StringFormat.hpp"
 #include "Poco/Crypto/DigestEngine.h"
 #include "Poco/DigestStream.h"
-#include "StringFormat.hpp"
-#include "common.hpp"
 #include <iostream>
 #include <memory>
 
@@ -41,12 +41,12 @@ __attribute__((flatten)) std::ostream& PrintFileHash(const std::string& Path, co
 
     Poco::DigestOutputStream ds(*Engine.get());
 
-    iFile = ReadFileIntoEngine(*Engine, std::move(iFile));
+    iFile = FileIO::ReadFileIntoEngine(*Engine, std::move(iFile));
 
     assert((iFile.exists() && iFile.canRead() && iFile.isFile()) && "Move operation dependency... Poco::File has no move constructor but with a little bit of luck...");
 
-    output << Formatting::FormatHashToPrint(const_cast<std::vector<unsigned char>&>(Engine->digest()), iFile, &fmt, used_algorithm, Method); // print 'em out!
-    output.flush();                                                                                                                          // make sure it's in there!
+    output << Formatting::FormatHashToPrint(Engine->digest(), iFile, &fmt, used_algorithm, Method); // print 'em out!
+    output.flush();                                                                                 // make sure it's in there!
 
     assert(output.good() && "We somehow f*cked up the stream state!");
     return output;
