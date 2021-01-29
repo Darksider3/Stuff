@@ -44,6 +44,10 @@ public:
 
 /*
  * @TODO: This whole idea. Print As CSV!
+ * 1) overwrite reinit to a no-op, so we won't clear the string every time we invoke
+ * 2) The constructors should create the heading
+ * 3) Append-Only on FormatStr, cuz' we wont and cant
+ * 4) Option to set Formatting delimiter(Poco's configuration layers may help us out here?)
  */
 bool HasCSVHeader(std::string& str)
 {
