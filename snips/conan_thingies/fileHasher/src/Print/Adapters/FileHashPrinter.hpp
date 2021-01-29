@@ -45,8 +45,8 @@ __attribute__((flatten)) std::ostream& printFileHashAdapter(const std::string& P
 
     assert((iFile.exists() && iFile.canRead() && iFile.isFile()) && "Move operation dependency... Poco::File has no move constructor but with a little bit of luck...");
 
-    output << Formatting::FormatHashToPrint(Engine->digest(), iFile, &fmt, used_algorithm, Method); // print 'em out!
-    output.flush();                                                                                 // make sure it's in there!
+    output << Formatting::FormatHash(Engine->digest(), iFile, &fmt, used_algorithm, Method); // print 'em out!
+    output.flush();                                                                          // make sure it's in there!
 
     assert(output.good() && "We somehow f*cked up the stream state!");
     return output;

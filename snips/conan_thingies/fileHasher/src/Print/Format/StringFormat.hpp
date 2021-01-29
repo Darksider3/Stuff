@@ -90,13 +90,11 @@ std::string InsertCSVHeader(std::string& str)
  *
  * @return std::string Formatted Hash that mimics the  behaivour of sha1sum, sha256sum, md5sum etc. (HexDigest, followed by 2 spaces, followed by Path and newline)
  */
-template<typename T = PrintFormat>
-std::string FormatHashToPrint(const std::vector<unsigned char>& digest, Poco::File& F, AbstractOutputFormatter<T>* fmt, const bool AddMethod = false, std::string_view Method_Name = "null")
+std::string FormatHash(const std::vector<unsigned char>& digest, Poco::File& F, Formatting::AbstractOutputFormatter<PrintFormat>* fmt, const bool AddMethod = false, std::string_view Method_Name = "null")
 {
 
     std::string return_str;
     std::string method { Method_Name };
-    assert(fmt);
     assert(F.exists() && "File must exist to hash it!");
     assert(!method.empty() && "Method name should be an optional parameter and thus needs sadly content...");
     fmt->reinit(digest, F, method, return_str);
@@ -105,6 +103,14 @@ std::string FormatHashToPrint(const std::vector<unsigned char>& digest, Poco::Fi
 
     return fmt->FormatHash();
 }
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+[[unused]] std::string FormatHash(const std::vector<unsigned char>& digest, Poco::File& F, Formatting::AbstractOutputFormatter<CSVFormat>* fmt, const bool AddMethod = false, std::string_view Method_Name = "null")
+{
+    assert(false); // currently no-op
+}
+#pragma clang diagnostic pop
 
 /**
  * @brief Compares Hash1 with Hash1, currently without considerating the filename
