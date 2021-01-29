@@ -8,6 +8,7 @@
 #include "Poco/Crypto/DigestEngine.h"
 #include "Poco/DigestStream.h"
 #include "Print/FileIO/ReadIntoEngine.hpp"
+#include "Print/Format/PrintFormat.hpp"
 #include "Print/Format/StringFormat.hpp"
 #include "common.hpp"
 #include <iostream>

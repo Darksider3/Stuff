@@ -9,8 +9,9 @@
 #include <Poco/File.h>
 #include <Poco/Format.h>
 #include <string>
+#include <unordered_map>
+#include <string_view>
 
-#include <iostream>
 namespace Formatting {
 
 /**
@@ -23,17 +24,20 @@ namespace Formatting {
 template<typename CRTP>
 class AbstractOutputFormatter {
 private:
-    [[maybe_unused]] const std::vector<unsigned char>* m_digest {};
-    [[maybe_unused]] Poco::File* m_File {};
-    [[maybe_unused]] std::string* m_Method {};
-    [[maybe_unused]] std::string* m_FormatStr {};
+    /**
+     * @brief Digest by Poco::Util
+     */
+    [[maybe_unused]] std::vector<unsigned char> m_digest {};
+    [[maybe_unused]] Poco::File m_File {};
+    [[maybe_unused]] std::string m_Method {};
+    [[maybe_unused]] std::string m_FormatStr {};
 
     AbstractOutputFormatter<CRTP>* u() { return &static_cast<CRTP&>(*this); }
-    [[nodiscard]] const AbstractOutputFormatter<CRTP>* u_c() const { return static_cast<const CRTP*>(this); }
+    [[nodiscard]] const AbstractOutputFormatter<CRTP>* u_c() { return static_cast<const CRTP*>(this); }
 
     std::unordered_map<std::string, bool> BoolFlags {};
 
-protected:
+public:
     /**
      * @brief Map of settings
      */
@@ -55,11 +59,18 @@ protected:
     using string = std::string;
 
     /**
+     * @brief Pass strings through a view, not the string-class!
+     */
+    using view = std::string_view;
+
+protected:
+    /**
      * @return digestVec& Digest-Engines produced Digest
      */
-    [[maybe_unused]] const digestVec& getDigest()
+    [[maybe_unused]] const digestVec&
+    getDigest()
     {
-        return *u()->m_digest;
+        return u()->m_digest;
     }
 
     /**
@@ -67,23 +78,23 @@ protected:
      */
     [[maybe_unused]] const File& getFile()
     {
-        return *u()->m_File;
+        return u()->m_File;
     }
 
     /**
-     * @return const string& Hashing method used on File.
+     * @return string Hashing method used on File.
      */
-    [[maybe_unused]] const string& getMethod()
+    [[maybe_unused]] string getMethod()
     {
-        return *u()->m_Method;
+        return u()->m_Method;
     }
 
     /**
-     * @return string& Formatted string
+     * @return string Formatted string
      */
-    [[maybe_unused]] string& getFormatStr()
+    [[maybe_unused]] string getFormatStr()
     {
-        return *u()->m_FormatStr;
+        return u()->m_FormatStr;
     }
 
     /**
@@ -97,73 +108,73 @@ protected:
     /**
      * @brief see getDigest()
      */
-    [[maybe_unused]] [[nodiscard]] digestVec& getDigest() const
+    [[maybe_unused]] [[nodiscard]] const digestVec& getDigest() const
     {
-        return *u()->m_digest;
+        return u()->m_digest;
     }
 
     /**
      * @brief See getFile()
      */
-    [[maybe_unused]] [[nodiscard]] File& getFile() const
+    [[maybe_unused]] [[nodiscard]] const File& getFile() const
     {
-        return *u()->m_File;
+        return u_c()->m_File;
     }
 
     /**
      * @brief See getMethod()
      */
-    [[maybe_unused]] [[nodiscard]] string& getMethod() const
+    [[maybe_unused]] [[nodiscard]] string getMethod() const
     {
-        return *u()->m_Methodt;
+        return u()->m_Methodt;
     }
 
     /**
      * @brief See getFormatStr
      */
-    [[maybe_unused]] [[nodiscard]] string& getFormatStr() const
+    [[maybe_unused]] [[nodiscard]] string getFormatStr() const
     {
-        return *u_c()->m_FormatStr;
+        return u()->m_FormatStr;
     }
 
     /**
      * @brief See getOptionsMap()
      */
-    [[maybe_unused]] [[nodiscard]] OptionsMap& getOptionsMap() const
+    [[maybe_unused]] [[nodiscard]] OptionsMap getOptionsMap() const
     {
-        return *u_c()->BoolFlags;
+        return u()->BoolFlags;
     }
 
     /**
      * @brief Set Digest-Member
      * @param digestVec& digest  Digest produced by Poco::Crypto::DigestEngine->digest();
      */
-    [[maybe_unused]] void setDigest(digestVec& digest) { u()->m_digest = &digest; }
+    [[maybe_unused]] void setDigest(digestVec& digest) { u()->m_digest = digest; }
 
     /**
      * @brief Set File currently operating on
      * @param File& file  Current Targetfile
      */
-    [[maybe_unused]] void setFile(File& file) { u()->m_File = &file; }
+    [[maybe_unused]] void setFile(File& file) { u()->m_File = file; }
 
     /**
      * @brief Set Hash method used to produce the digest
-     * @param string& str Hash methods name
+     * @param std::string_view str Hash methods name
      */
-    [[maybe_unused]] void setMethod(string& str) { u()->m_Method = &str; }
+    [[maybe_unused]] void setMethod(view str) { u()->m_Method = str; }
 
     /**
      * @brief Set Formatting string to write into
-     * @param string& str  String to operate on
+     * @param std::string_view str  String to operate on
      */
-    [[maybe_unused]] void setFormatStr(string& str) { u()->m_FormatStr = &str; }
+    [[maybe_unused]] void setFormatStr(view str) { u()->m_FormatStr = str; }
 
 public:
-    explicit AbstractOutputFormatter(digestVec& digest, File& F, string& Method_Name, string& Format_Str)
-        : m_digest(&digest)
-        , m_File(&F)
-        , m_Method(&Method_Name)
-        , m_FormatStr(&Format_Str)
+    explicit AbstractOutputFormatter(digestVec& digest, File& F, view Method_Name, view Format_Str)
+        : m_digest(digest)
+        , m_File(F)
+        , m_Method(Method_Name)
+        , m_FormatStr(Format_Str)
     {
     }
 
@@ -172,31 +183,15 @@ public:
      *
      * @param digestVec& digest Digest reinitialise
      * @param Files& F File to operate on
-     * @param string& Method_Name Hashmethods name to produce digest
-     * @param string& str String to modify with formatting
+     * @param std::string_view Method_Name Hashmethods name to produce digest
+     * @param std::string_view str String to modify with formatting
      */
-    virtual void reinit(digestVec& digest, File& F, string& Method_Name, string& str)
+    virtual void reinit(digestVec& digest, File& F, view Method_Name, view str)
     {
         u()->setDigest(digest);
         u()->setFile(F);
         u()->setMethod(Method_Name);
         u()->setFormatStr(str);
-    }
-
-    /**
-     * @brief Reinitialise all relevant class members
-     *
-     * @param digestVec& digest Digest reinitialise
-     * @param Files& F File to operate on
-     * @param string& Method_Name Hashmethods name to produce digest
-     * @param string& str String to modify with formatting
-     */
-    virtual void reinit(digestVec* digest, File* F, string* Method_Name, string* str)
-    {
-        u()->setDigest(*digest);
-        u()->setFile(*F);
-        u()->setMethod(*Method_Name);
-        u()->setFormatStr(*str);
     }
 
     /**
@@ -226,24 +221,11 @@ public:
     }
 
     /**
-     * @brief Tests all given parameters on sanenes. *CAUTION* Will try to validate **every pointer** given!
-     *
-     * @return `true`, in case every check passed, otherwise `false`.
-     */
-    virtual bool good()
-    {
-        return (u()->m_digest != nullptr)
-            && (u()->m_File != nullptr)
-            && (u()->m_Method != nullptr)
-            && (u()->m_FormatStr != nullptr);
-    }
-
-    /**
      * @brief FormatHash is the main method any subclass should implement to use the behaivour of this class. It's the logic-function. If you've got anything to format, do it here
      *
      * @return string Formatted string
      */
-    virtual std::string FormatHash() = 0;
+    virtual string FormatHash() = 0;
 
     /**
      * @brief Standard interface to call FormatHash() for other classes because it's declared at any time.
@@ -252,20 +234,27 @@ public:
      */
     [[maybe_unused]] virtual string Work() { return FormatHash(); }
 
+    [[maybe_unused]] [[nodiscard]] bool good()
+    {
+        /*if (u()->getMethod().empty())
+            std::cerr << "Method empty!\n";
+        if (u()->getDigest().empty())
+            std::cerr << "Digest empty!\n";
+        if (!u()->getFile().exists())
+            std::cerr << "File doesnt exist.!\n";
+        std::flush(std::cerr);*/
+        return (
+            !u()->getMethod().empty()
+            && !u()->getDigest().empty()
+            && u()->getFile().exists());
+    }
+
     /**
      * @brief Deleted.
      */
     virtual ~AbstractOutputFormatter() = default;
 
-    /**
-     * @brief Set everything to nullptr.
-     */
-    AbstractOutputFormatter()
-    {
-        reinit(nullptr, nullptr, nullptr, nullptr);
-    };
-
-    // This class shall never be: Moved, Copied or somehow differently be assigned aside from initialising it on an class.
+    AbstractOutputFormatter() = default;
 
     /**
      * @brief Deleted.

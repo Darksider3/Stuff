@@ -12,8 +12,6 @@
 #include <Poco/File.h>
 #include <string>
 
-#include <iostream>
-
 namespace Formatting {
 
 /**
@@ -21,64 +19,26 @@ namespace Formatting {
  */
 class [[maybe_unused]] CSVFormat : public AbstractOutputFormatter<CSVFormat> {
 public:
-    CSVFormat(digestVec& digest, File& F, string& Method_Name, string& Format_Str)
+    CSVFormat(digestVec& digest, File& F, view Method_Name, view Format_Str)
         : AbstractOutputFormatter<CSVFormat>(digest, F, Method_Name, Format_Str)
     {
     }
 
-    string FormatHash() override
+    std::string FormatHash() override
     {
         return getFormatStr();
     }
 
-    [[maybe_unused]] [[nodiscard]] bool HasCSVHeader() const
+    [[maybe_unused]] [[nodiscard]] bool HasCSVHeader()
     {
-        auto pos = getFormatStr().find(CSVHeader + LN);
-        return pos != getFormatStr().npos;
+        string Formatstr = getFormatStr();
+        auto pos = Formatstr.find(CSVHeader + LN);
+        return pos != Formatstr.npos;
     }
 
     [[maybe_unused]] void InsertCSVHeader()
     {
         getFormatStr().insert(0, CSVHeader + LN);
-    }
-};
-
-/**
- * @brief PrintFormat class. Used as the default print-formatting-facility
- */
-class PrintFormat : public AbstractOutputFormatter<PrintFormat> {
-private:
-public:
-    PrintFormat(digestVec& digest, File& F, string& Method_Name, string& Format_Str)
-        : AbstractOutputFormatter<PrintFormat>(digest, F, Method_Name, Format_Str)
-    {
-    }
-
-    explicit PrintFormat() = default;
-
-    [[nodiscard]] string FormatHash() override
-    {
-        string& str = getFormatStr();
-        digestVec digest = getDigest();
-        File F = getFile();
-        const string& Method_Name = getMethod();
-        assert(!digest.empty() && "We cant format something that's empty!");
-        assert(F.exists() && "File must exist to hash it!");
-        assert(!Method_Name.empty() && "Method name should be an optional parameter and thus needs sadly content...");
-        assert(str.empty() && "This class expects it to be empty.");
-
-        string return_str(digest.size() + digest.size(), '\0');
-        return_str.append(Poco::format("%s  %s", Poco::DigestEngine::digestToHex(digest), F.path()));
-
-        if (getOption("AddHashToFormat")) {
-            return_str.append(Poco::format("; %s.", Method_Name));
-        }
-
-        assert(!return_str.empty() && "This should actually hold a string! Cant be empty!");
-
-        return_str += LN;
-
-        return return_str;
     }
 };
 
@@ -99,7 +59,7 @@ std::string InsertCSVHeader(std::string& str)
     return str;
 }
 
-[[maybe_unused]] std::string FormatHashAsCSV(const std::vector<unsigned char>& digest, const Poco::File& F, const std::string& Method_Name, std::string& Format_Str)
+[[maybe_unused]] std::string FormatHashAsCSV(const std::vector<unsigned char>& digest, const Poco::File& F, std::string_view Method_Name, std::string& Format_Str)
 {
     assert(!digest.empty());
     assert(F.exists());
@@ -127,16 +87,16 @@ std::string InsertCSVHeader(std::string& str)
  * @return std::string Formatted Hash that mimics the  behaivour of sha1sum, sha256sum, md5sum etc. (HexDigest, followed by 2 spaces, followed by Path and newline)
  */
 template<typename T = PrintFormat>
-std::string FormatHashToPrint(const std::vector<unsigned char>& digest, Poco::File& F, AbstractOutputFormatter<T>* fmt, const bool AddMethod = false, const std::string& Method_Name = "null")
+std::string FormatHashToPrint(const std::vector<unsigned char>& digest, Poco::File& F, AbstractOutputFormatter<T>* fmt, const bool AddMethod = false, std::string_view Method_Name = "null")
 {
 
     std::string return_str;
-    std::string method = Method_Name;
+    std::string method { Method_Name };
     assert(fmt);
     assert(F.exists() && "File must exist to hash it!");
     assert(!method.empty() && "Method name should be an optional parameter and thus needs sadly content...");
     fmt->reinit(digest, F, method, return_str);
-    assert(fmt->good() && "All pointers should be set on usage to a value that's actually usable."); // asserts all stored pointers...
+    assert(fmt->good() && "Everything should actually be set before we do anything, lol."); // asserts all stored pointers...
     fmt->setOption(AddMethod, "AddHashToFormat");
 
     return fmt->FormatHash();

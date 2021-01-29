@@ -464,7 +464,12 @@ protected:
         std::ostream output(m_sbuf);
         assert(output.good() && "This stream has to stay valid.");
 
-        Formatting::PrintFormat Formatter {};
+        Poco::File tmpF { m_fileVec.back() };
+        std::vector<unsigned char> tmpVec {};
+        std::string tmpStr { "tmp fill str" };
+        std::string tmpFmt { "lol" };
+
+        Formatting::PrintFormat Formatter { tmpVec, tmpF, tmpStr, tmpStr };
 
         auto digestSelect = [&](DigestVariant& dig, const std::string& path) {
             if (auto* detectedMD5 = std::get_if<_md5>(&dig); detectedMD5 != nullptr) {
