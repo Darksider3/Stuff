@@ -9,8 +9,8 @@
 #include <Poco/File.h>
 #include <Poco/Format.h>
 #include <string>
-#include <unordered_map>
 #include <string_view>
+#include <unordered_map>
 
 namespace Formatting {
 
@@ -149,25 +149,32 @@ protected:
      * @brief Set Digest-Member
      * @param digestVec& digest  Digest produced by Poco::Crypto::DigestEngine->digest();
      */
-    [[maybe_unused]] void setDigest(digestVec& digest) { u()->m_digest = digest; }
+    [[maybe_unused]] void replaceDigest(digestVec& digest) { u()->m_digest = digest; }
 
     /**
      * @brief Set File currently operating on
      * @param File& file  Current Targetfile
      */
-    [[maybe_unused]] void setFile(File& file) { u()->m_File = file; }
+    [[maybe_unused]] void replaceFile(File& file) { u()->m_File = file; }
 
     /**
      * @brief Set Hash method used to produce the digest
      * @param std::string_view str Hash methods name
      */
-    [[maybe_unused]] void setMethod(view str) { u()->m_Method = str; }
+    [[maybe_unused]] void replaceMethod(view str) { u()->m_Method = str; }
 
     /**
      * @brief Set Formatting string to write into
      * @param std::string_view str  String to operate on
      */
-    [[maybe_unused]] void setFormatStr(view str) { u()->m_FormatStr = str; }
+    [[maybe_unused]] void replaceFormatStr(view str) { u()->m_FormatStr = str; }
+
+    /**
+     * @brief Append-Only operation for FormatStr
+     * @param std::string_view String to append to FormatStr
+     */
+
+    [[maybe_unused]] void appendToFormatStr(view str) { u()->m_FormatStr.append(str); }
 
 public:
     explicit AbstractOutputFormatter(digestVec& digest, File& F, view Method_Name, view Format_Str)
@@ -188,10 +195,10 @@ public:
      */
     virtual void reinit(digestVec& digest, File& F, view Method_Name, view str)
     {
-        u()->setDigest(digest);
-        u()->setFile(F);
-        u()->setMethod(Method_Name);
-        u()->setFormatStr(str);
+        u()->replaceDigest(digest);
+        u()->replaceFile(F);
+        u()->replaceMethod(Method_Name);
+        u()->replaceFormatStr(str);
     }
 
     /**
