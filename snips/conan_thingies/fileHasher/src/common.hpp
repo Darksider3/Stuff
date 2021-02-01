@@ -21,6 +21,4 @@ constexpr char version_str[] = "Licensed under MIT. (c) 2021, fileHasher Version
 
 constexpr size_t Read_Segmentation = 8192; // default linux kernel page size
 
-constexpr char CSVHeader[] = "Filename,Digestid,Hash";
-constexpr size_t CSVHeaderLength = sizeof(CSVHeader);
 #endif //POCO_FILE_HASHER_COMMON_HPP

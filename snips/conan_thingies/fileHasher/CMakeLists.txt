@@ -10,7 +10,7 @@ SET(SRCS main.cpp
         src/Print/Format/StringFormat.hpp
         src/Print/Format/AbstractOutputFormatter.hpp
         src/Print/FileIO/ReadIntoEngine.hpp src/DigestEncryptApp.hpp
-        src/Print/Format/PrintFormat.hpp)
+        src/Print/Format/PrintFormat.hpp src/Print/Format/CSVFormat.hpp)
 
 
 SET(SanitizerFlags "-fsanitize=undefined  -fsanitize=leak -fsanitize=integer-divide-by-zero -fsanitize=unreachable -fsanitize=return  -fsanitize-address-use-after-scope -fsanitize=signed-integer-overflow -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=pointer-overflow -fsanitize=builtin")

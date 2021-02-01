@@ -466,10 +466,8 @@ protected:
 
         Poco::File tmpF { m_fileVec.back() };
         std::vector<unsigned char> tmpVec {};
-        std::string tmpStr { "tmp fill str" };
-        std::string tmpFmt { "lol" };
 
-        Formatting::PrintFormat Formatter { tmpVec, tmpF, tmpStr, tmpStr };
+        Formatting::CSVFormat Formatter { tmpVec, tmpF, "", "" };
 
         auto digestSelect = [&](DigestVariant& dig, const std::string& path) {
             if (auto* detectedMD5 = std::get_if<_md5>(&dig); detectedMD5 != nullptr) {
