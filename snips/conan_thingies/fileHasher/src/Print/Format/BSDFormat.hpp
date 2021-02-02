@@ -19,9 +19,6 @@ namespace Formatting {
  * @brief BSD Format class.
  */
 class BSDFormat : public AbstractOutputFormatter<BSDFormat> {
-private:
-    bool m_PresentHeader { false };
-
 public:
     /**
      * @brief Constructor
