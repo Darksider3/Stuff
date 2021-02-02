@@ -7,6 +7,7 @@
 
 // main logic
 #include "Poco/File.h"
+#include "Poco/RecursiveDirectoryIterator.h"
 #include "Print/Adapters/FileHashPrinter.hpp"
 #include "common.hpp"
 
@@ -238,6 +239,13 @@ protected:
                 .noArgument()
                 .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleCombined)));
 
+        opts.addOption(
+            Option("recursive", "R", "Recursivly scan through directories instead of manual files")
+                .required(false)
+                .repeatable(false)
+                .noArgument()
+                .callback(OptionCallback<DigestEncryptApp>(this, &DigestEncryptApp::handleRecursive)));
+
 #ifndef NO_HASH_LISTINGS
         opts.addOption(
             Option("list-digests", "l", "Print supported hashes/digest algorithm by OpenSSL")
@@ -269,6 +277,11 @@ protected:
     {
         m_Flags._combinedOutput = true;
         return;
+    }
+
+    void handleRecursive(const std::string&, const std::string&)
+    {
+        m_Flags._recursive = true;
     }
 
     /**
@@ -514,10 +527,36 @@ protected:
             }
         };
 
-        if (!m_Flags._combinedOutput) {
-            singleOut();
+        /**
+         * @brief Recursive print of a combined output
+         */
+        [[flatten]] auto recursiveComined = [&digestSelect](decltype(m_fileVec)& Vector, decltype(m_RequestedDigests)& Digests) {
+            for (auto& path : Vector) {
+                try {
+                    auto end = Poco::RecursiveDirectoryIterator {};
+                    auto it = Poco::RecursiveDirectoryIterator(path);
+                    for (; it != Poco::RecursiveDirectoryIterator {}; ++it) {
+                        if (it->isFile()) {
+                            for (auto& holyDigest : Digests) {
+                                digestSelect(holyDigest, it->path());
+                            }
+                        }
+                    }
+                } catch (std::exception& e) {
+                    std::cerr << e.what() << "\n";
+                    std::exit(0);
+                }
+            }
+        };
+
+        if (!m_Flags._recursive) {
+            if (!m_Flags._combinedOutput) {
+                singleOut();
+            } else {
+                combined_out_by_file();
+            }
         } else {
-            combined_out_by_file();
+            recursiveComined(m_fileVec, m_RequestedDigests);
         }
 
         if (m_of.is_open())
@@ -546,6 +585,9 @@ private:
 
         /// -c, --combined-output
         bool _combinedOutput { false };
+
+        /// -R, --recursive
+        bool _recursive { false };
     } m_Flags {};
 
     /// Output File
