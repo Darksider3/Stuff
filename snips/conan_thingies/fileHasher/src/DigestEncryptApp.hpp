@@ -411,6 +411,7 @@ protected:
         if (!m_CmprHashes.First.empty() || !m_CmprHashes.Second.empty()) {
             return m_CmprHashes.CmprResult;
         }
+
         auto cleanup_vec = [](std::vector<std::string>& in) {
             in.erase(std::remove_if(in.begin(), in.end(), [](std::string& in) {
                 if (in.empty())
@@ -467,7 +468,7 @@ protected:
         Poco::File tmpF { m_fileVec.back() };
         std::vector<unsigned char> tmpVec {};
 
-        Formatting::CSVFormat Formatter { tmpVec, tmpF, "", "" };
+        Formatting::PrintFormat Formatter { tmpVec, tmpF, "", "" };
 
         auto digestSelect = [&](DigestVariant& dig, const std::string& path) {
             if (auto* detectedMD5 = std::get_if<_md5>(&dig); detectedMD5 != nullptr) {
@@ -481,17 +482,42 @@ protected:
             }
         };
 
-        if (!m_Flags._combinedOutput) {
-            auto Element = m_RequestedDigests.back();
-            for (auto& path : m_fileVec) {
-                digestSelect(Element, path);
-            }
-        } else {
+        /**
+         * @brief Combined ouitput by file instead of digest
+         */
+        auto combined_out_by_file = [&]() {
             for (auto& path : m_fileVec) {
                 for (auto& buck : m_RequestedDigests) {
                     digestSelect(buck, path);
                 }
             }
+        };
+
+        /**
+         * @brief Combined output by digest instead of file
+         */
+        [[maybe_unused]] auto combined_out_by_digest = [&]() {
+            for (auto& buck : m_RequestedDigests) {
+                for (auto& path : m_fileVec) {
+                    digestSelect(buck, path);
+                }
+            }
+        };
+
+        /**
+         * @brief Prints just the last given file, nothing else
+         */
+        auto singleOut = [&]() {
+            auto Element = m_RequestedDigests.back(); // just the last file given, always.
+            for (auto& path : m_fileVec) {
+                digestSelect(Element, path);
+            }
+        };
+
+        if (!m_Flags._combinedOutput) {
+            singleOut();
+        } else {
+            combined_out_by_file();
         }
 
         if (m_of.is_open())

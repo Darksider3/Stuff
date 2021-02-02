@@ -8,6 +8,7 @@
 #include <Poco/DigestEngine.h>
 #include <Poco/File.h>
 #include <Poco/Format.h>
+#include <Poco/String.h>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -289,5 +290,18 @@ public:
     AbstractOutputFormatter& operator=(const AbstractOutputFormatter&&) = delete;
 };
 
+namespace Tooling {
+
+/**
+ * @brief Removes ./ from pathes
+ * @param const std::string in Input path
+ * @return cleaned up path
+ */
+[[nodiscard]] std::string cleanPathFromDotSlash(const std::string& in)
+{
+    return Poco::replace(in, "./", "");
+}
+
+}
 }
 #endif //POCO_FILE_HASHER_ABSTRACTOUTPUTFORMATTER_HPP
