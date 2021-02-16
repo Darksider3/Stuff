@@ -1,0 +1,3 @@
+[submodule "snips/thebookofshaders"]
+	path = snips/thebookofshaders
+	url = https://github.com/patriciogonzalezvivo/thebookofshaders.git
