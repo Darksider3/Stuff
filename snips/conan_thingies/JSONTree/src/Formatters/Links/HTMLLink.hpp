@@ -4,9 +4,12 @@
 
 #ifndef JSONTREE_HTMLLINK_HPP
 #define JSONTREE_HTMLLINK_HPP
-#include "common.hpp"
 #include "LinkFormat.hpp"
+#include "common.hpp"
 
+/**
+ * @brief An HTML Link Formatter
+ */
 class HTMLLink : public LinkFormat {
 public:
     struct Options {
@@ -23,7 +26,7 @@ public:
     {
     }
 
-    [[nodiscard]] std::string Format(const std::string& name, const std::string& link)
+    [[nodiscard]] std::string Format(const std::string& name, const std::string& link) override
     {
         std::string Result { fmt::format("<a href=\"{}\" ", link) };
         if (!Opts.alt.empty()) {

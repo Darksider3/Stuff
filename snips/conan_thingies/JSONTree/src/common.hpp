@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <fmt/core.h>
 #include <fmt/ostream.h>
-#include <rapidjson/document.h>
 #include <string_view>
+
 namespace fs = std::filesystem;
 
 bool starts_with(std::string_view View, std::string_view SearchFor)
