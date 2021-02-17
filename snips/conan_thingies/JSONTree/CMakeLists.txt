@@ -3,7 +3,14 @@ project(JSONTree)
 
 # DEBUG: set(CMAKE_VERBOSE_MAKEFILE on)
 
-SET(SRCS main.cpp src/common.hpp)
+SET(SRCS main.cpp
+        src/common.hpp
+        src/Formatters/Links/LinkFormat.hpp
+        src/Formatters/Links/MarkdownLink.hpp
+        src/Formatters/Links/DokuwikiLink.hpp
+        src/Formatters/Links/HTMLLink.hpp
+
+        src/Formatters/List/MarkdownIndexList.hpp)
 
 #SET(SanitizerFlags "  -fsanitize=leak -fsanitize=integer-divide-by-zero -fsanitize=unreachable -fsanitize=return  -fsanitize-address-use-after-scope -fsanitize=signed-integer-overflow -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=pointer-overflow -fsanitize=builtin")
 
