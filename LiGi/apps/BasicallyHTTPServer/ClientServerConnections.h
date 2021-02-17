@@ -48,7 +48,7 @@ public:
      * @param ssize_t maximum read length
      * @return std::string
      */
-    std::string ReadUntilN(size_t len, const ssize_t buf_max = max_buf_len)
+    std::string ReadUntilN(const size_t len, const ssize_t buf_max = max_buf_len)
     {
         std::string ret;
         std::vector<uint8_t> into = std::vector<uint8_t>(buf_max);
@@ -62,7 +62,7 @@ public:
                 ret.append(into.begin(), into.end());
             }
             counter += bytes_received;
-        } while (bytes_received == buf_max - 1 && counter <= upload_tolerance + len); // errored out!
+        } while (bytes_received == buf_max - 1 && counter <= len); // errored out!
 
         return ret;
     }
