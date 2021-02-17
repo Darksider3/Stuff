@@ -43,7 +43,7 @@ public:
      * @brief Constructor
      * @param r the root path to produce relative links to
      */
-    MarkdownIndexList(const fs::path&& r)
+    MarkdownIndexList(fs::path& r)
         : m_fs_root(r)
     {
         if (!starts_with(fs::relative(fs::current_path(), fs::current_path().parent_path()), "./"))

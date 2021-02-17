@@ -1,8 +1,40 @@
-#include "Formatters/Links/MarkdownLink.hpp"
-#include "Formatters/List/MarkdownIndexList.hpp"
 #include "common.hpp"
+#include <Formatters/Links/OptionalMarkdownLink.hpp>
+#include <Formatters/List/MarkdownIndexList.hpp>
 #include <fstream>
 #include <vector>
+
+std::vector<fs::path> GetFilesWithPrefix(std::string_view prefix, fs::path& from)
+{
+    std::vector<fs::path> ResultVec {};
+    auto RecursiveIt = fs::recursive_directory_iterator(from);
+    for (auto& PossibleFile : RecursiveIt) {
+        auto possiblePath = PossibleFile.path().filename().string();
+        if (PossibleFile.is_regular_file() && possiblePath.starts_with(prefix)) {
+            ResultVec.push_back(PossibleFile);
+        }
+    }
+
+    return ResultVec;
+}
+
+MarkdownIndexList<OptionalMarkdownLink> getFilesListForIndex(fs::path& root, fs::path& Indexfile, std::string_view Suffixfilter)
+{
+    fs::path Root = root;
+    MarkdownIndexList<OptionalMarkdownLink> List(Root);
+
+    auto DirectoryIter = fs::directory_iterator(Indexfile.parent_path());
+    for (auto& EntryInIndexDir : DirectoryIter) {
+        auto& Path = EntryInIndexDir.path();
+        if (Path == Indexfile || !EntryInIndexDir.is_regular_file() || !Path.string().ends_with(Suffixfilter)) {
+            continue;
+        }
+
+        List.insert(Path);
+    }
+
+    return List;
+}
 
 int main()
 {
@@ -10,32 +42,12 @@ int main()
     std::string_view FilePrefixFilter { "index_" };
     std::vector<fs::path> Indexes;
     auto CurPath = fs::current_path();
-    auto RcrsvIterator = fs::recursive_directory_iterator(CurPath);
-
     // Step 1 - Push Indexes back
-    for (auto& PossibleIndex : RcrsvIterator) {
-        auto& PossbileIndexPath = PossibleIndex.path();
-        if (PossibleIndex.is_regular_file() && starts_with(PossbileIndexPath.filename(), FilePrefixFilter)) {
-            Indexes.push_back(PossbileIndexPath);
-        }
-    }
+    Indexes = GetFilesWithPrefix(FilePrefixFilter, CurPath);
 
     // Step 2: Build Directory Layout
     for (auto& Index_File : Indexes) {
-        auto DirectoryIter = fs::directory_iterator(Index_File.parent_path());
-        auto List = MarkdownIndexList<MarkdownLink>(fs::current_path());
-        for (auto& EntryInIndexDir : DirectoryIter) {
-            /*
-             * Whenever the following criteria doesnt apply, we ignore the entry:
-             *  - Its the same file(Index == Entry)
-             *  - It isnt a regular file
-             *  - it doesnt end with the specified suffix
-             */
-            if (EntryInIndexDir.path() == Index_File || !EntryInIndexDir.is_regular_file() || !ends_with(EntryInIndexDir.path(), FileSuffixFilter))
-                continue;
-
-            List.insert(EntryInIndexDir.path());
-        }
+        auto List = getFilesListForIndex(CurPath, Index_File, FileSuffixFilter);
 
         std::ofstream writer { Index_File };
         writer << List.getAll();
