@@ -18,10 +18,11 @@ std::vector<fs::path> GetFilesWithPrefix(std::string_view prefix, fs::path& from
     return ResultVec;
 }
 
-MarkdownIndexList<OptionalMarkdownLink> getFilesListForIndex(fs::path& root, fs::path& Indexfile, std::string_view Suffixfilter)
+template<class ListIndex>
+ListIndex getFilesListForIndex(fs::path& root, fs::path& Indexfile, std::string_view Suffixfilter)
 {
     fs::path Root = root;
-    MarkdownIndexList<OptionalMarkdownLink> List(Root);
+    ListIndex List(Root);
 
     auto DirectoryIter = fs::directory_iterator(Indexfile.parent_path());
     for (auto& EntryInIndexDir : DirectoryIter) {
@@ -47,7 +48,7 @@ int main()
 
     // Step 2: Build Directory Layout
     for (auto& Index_File : Indexes) {
-        auto List = getFilesListForIndex(CurPath, Index_File, FileSuffixFilter);
+        auto List = getFilesListForIndex<MarkdownIndexList<OptionalMarkdownLink>>(CurPath, Index_File, FileSuffixFilter);
 
         std::ofstream writer { Index_File };
         writer << List.getAll();
