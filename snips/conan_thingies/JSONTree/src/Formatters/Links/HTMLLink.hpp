@@ -7,6 +7,8 @@
 #include "LinkFormat.hpp"
 #include "common.hpp"
 
+namespace JSONTree::Formatting::Links {
+
 /**
  * @brief An HTML Link Formatter
  */
@@ -42,4 +44,6 @@ public:
         return Result;
     }
 };
+}
+}
 #endif //JSONTREE_HTMLLINK_HPP

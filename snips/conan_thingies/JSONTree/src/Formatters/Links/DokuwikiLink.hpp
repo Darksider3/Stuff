@@ -4,9 +4,10 @@
 
 #ifndef JSONTREE_DOKUWIKILINK_HPP
 #define JSONTREE_DOKUWIKILINK_HPP
-#include "common.hpp"
 #include "LinkFormat.hpp"
+#include "common.hpp"
 
+namespace JSONTree::Formatting::Links {
 class DokuwikiLink : public LinkFormat {
 public:
     [[nodiscard]] std::string Format(const std::string& name, const std::string& link) override
@@ -14,4 +15,5 @@ public:
         return fmt::format("[[{}|{}]]", name, link);
     }
 };
+}
 #endif //JSONTREE_DOKUWIKILINK_HPP

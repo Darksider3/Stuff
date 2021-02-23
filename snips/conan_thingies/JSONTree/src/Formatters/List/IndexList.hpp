@@ -7,10 +7,12 @@
 #include "Formatters/Links/MarkdownLink.hpp"
 #include "common.hpp"
 
+namespace JSONTree::Formatting::List {
+
 class IndexList {
     virtual void insert(const fs::path& p) = 0;
     virtual std::string format(const fs::path& p) = 0;
     virtual std::string getAll() = 0;
 };
-
+}
 #endif //JSONTREE_INDEXLIST_HPP

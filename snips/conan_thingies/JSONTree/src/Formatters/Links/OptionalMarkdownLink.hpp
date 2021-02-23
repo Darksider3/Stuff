@@ -7,7 +7,10 @@
 #include "LinkFormat.hpp"
 #include "common.hpp"
 
+namespace JSONTree::Formatting::Links {
+
 /**
+ *
  * @brief "Optional Markdown Links" are usual Markdown links but with an ! in between: [Name]!(link).
  *
  * I just invented that one for my own knowledge base to have an option to parse instead of setting it in stone. Like
@@ -20,5 +23,5 @@ public:
         return fmt::format("[{}]!({})", name, link);
     }
 };
-
+}
 #endif //JSONTREE_OPTIONALMARKDOWNLINK_HPP

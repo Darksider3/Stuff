@@ -6,16 +6,19 @@
 #define JSONTREE_MARKDOWNINDEXLIST_HPP
 
 #include "Formatters/Links/MarkdownLink.hpp"
+#include "Formatters/Links/OptionalMarkdownLink.hpp"
 #include "Formatters/List/IndexList.hpp"
 #include "common.hpp"
 #include <fstream>
 #include <vector>
 
+namespace JSONTree::Formatting::List {
+
 /**
  * @brief Produces an MarkdownList consisting of just the Link and it's name in the specified Link format(HTML, Markdown, Dokuwiki..)
  * @tparam LinkFormatter The Link formatter to be used to produce the list
  */
-template<typename LinkFormatter = LinkFormat>
+template<typename LinkFormatter = JSONTree::Formatting::Links::LinkFormat>
 class MarkdownIndexList : public IndexList {
 private:
     /**
@@ -87,4 +90,7 @@ public:
     }
 };
 
+using OptionalMarkdownLinkList = MarkdownIndexList<JSONTree::Formatting::Links::OptionalMarkdownLink>;
+using MarkdownLinkList = MarkdownIndexList<JSONTree::Formatting::Links::MarkdownLink>;
+}
 #endif //JSONTREE_MARKDOWNINDEXLIST_HPP

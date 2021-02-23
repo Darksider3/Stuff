@@ -48,7 +48,7 @@ int main()
 
     // Step 2: Build Directory Layout
     for (auto& Index_File : Indexes) {
-        auto List = getFilesListForIndex<MarkdownIndexList<OptionalMarkdownLink>>(CurPath, Index_File, FileSuffixFilter);
+        auto List = getFilesListForIndex<JSONTree::Formatting::List::OptionalMarkdownLinkList>(CurPath, Index_File, FileSuffixFilter);
 
         std::ofstream writer { Index_File };
         writer << List.getAll();

@@ -4,8 +4,10 @@
 
 #ifndef JSONTREE_MARKDOWNLINK_HPP
 #define JSONTREE_MARKDOWNLINK_HPP
-#include "common.hpp"
 #include "LinkFormat.hpp"
+#include "common.hpp"
+
+namespace JSONTree::Formatting::Links {
 
 class MarkdownLink : public LinkFormat {
 public:
@@ -14,4 +16,5 @@ public:
         return fmt::format("[{}]({})", name, link);
     }
 };
+}
 #endif //JSONTREE_MARKDOWNLINK_HPP
