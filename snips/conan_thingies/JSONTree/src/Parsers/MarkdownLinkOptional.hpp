@@ -10,8 +10,14 @@
 #include <string>
 
 namespace JSONTree::Parsers {
+/*
+ * @TODO: Implement and allow escaping
+ * @TODO: Recognize being in a Code-Field(```)
+ */
 class MarkdownLinkOptionalParser {
-public:
+private:
+    static const int OPS = 9;
+
     enum MKLINKSyms {
         OP_START = 1,
         FOUND_OPEN_BRACKET = 2,
@@ -23,19 +29,15 @@ public:
         OP_NO_Link = 8
     };
 
-    enum Certainity {
-        NoIndications = 0,
-        NoIdea = 1,
-        Possible = 2,
-        Probably = 3,
-        Definitly = 4
-    } m_Certanity
-        = NoIndications;
-
     struct Symbol {
         MKLINKSyms Sym;
         char terminal;
     };
+
+    struct MKLink {
+        std::string TitlePortion {};
+        std::string LinkPortion {};
+    } tmp;
 
     Symbol start { .Sym = OP_START, .terminal = 0 };
     Symbol end { .Sym = OP_END, .terminal = 0 };
@@ -47,25 +49,17 @@ public:
     Symbol ERR { .Sym = OP_NO_Link, .terminal = 0 };
 
     std::stringstream m_stream {};
-    bool escaped { false };
-    Symbol* CurrentLookingSym;
     char cur = 0;
-
-    struct MKLink {
-        std::string TitlePortion {};
-        std::string LinkPortion {};
-    } tmp;
-
+    bool escaped { false };
+    Symbol* CurrentLookingSym = nullptr;
     std::vector<MKLink> Links {};
 
     void FindStart()
     {
         fmt::print("FindStart!\n");
-        const Symbol* OwningSym = &start;
         while (m_stream.good()) {
             cur = m_stream.get();
             if (cur == '[') {
-                m_Certanity = NoIdea;
                 m_stream.unget();
                 CurrentLookingSym = &open_bracket;
                 (*this.*functionarr[CurrentLookingSym->Sym])();
@@ -104,9 +98,9 @@ public:
                 CurrentLookingSym = &optional_char;
                 (*this.*functionarr[CurrentLookingSym->Sym])();
                 return;
-            } else {
-                tmp.TitlePortion += cur;
             }
+
+            tmp.TitlePortion += cur;
         }
     }
 
@@ -145,9 +139,8 @@ public:
                 Links.push_back(tmp);
                 CurrentLookingSym = &end;
                 break;
-            } else {
-                tmp.LinkPortion += cur;
             }
+            tmp.LinkPortion += cur;
         }
         // Anyway we're going to reset, cuz' we're either not on good() anymore or are done
         tmp = MKLink {};
@@ -163,7 +156,7 @@ public:
     void (MarkdownLinkOptionalParser::*LookingForCloseParenth)() = &MarkdownLinkOptionalParser::FindCloseParenth;
     void (MarkdownLinkOptionalParser::*ErrorOut)() = &MarkdownLinkOptionalParser::ErrMsg;
 
-    void (MarkdownLinkOptionalParser::*functionarr[10])() = {
+    void (MarkdownLinkOptionalParser::*functionarr[OPS])() = {
         nullptr,
         LookingForStarts, LookingForOpenBracket, LookingForCloseBracket,
         LookingForOptional, LookingForOpenParenth,
