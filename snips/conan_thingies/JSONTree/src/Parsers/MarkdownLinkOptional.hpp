@@ -69,7 +69,7 @@ private:
         }
     }
 
-    void findBySymAction(Symbol* lf, Symbol* advanceTo, std::function<void(void)> success_fn, std::function<void(void)> failure_fn, bool runArr = true)
+    void findBySymAction(Symbol* lf, Symbol* advanceTo, std::function<void(void)>&& success_fn, std::function<void(void)>&& failure_fn, bool runArr = true)
     {
         while (m_stream.good()) {
             cur = m_stream.get();
