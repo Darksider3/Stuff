@@ -2,6 +2,7 @@
 #include <Formatters/Links/OptionalMarkdownLink.hpp>
 #include <Formatters/List/MarkdownIndexList.hpp>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 std::vector<fs::path> GetFilesWithPrefix(std::string_view prefix, fs::path& from)
@@ -37,61 +38,107 @@ ListIndex getFilesListForIndex(fs::path& root, fs::path& Indexfile, std::string_
     return List;
 }
 
-/// \brief
-
-enum MKLINKSyms {
-    OP_START = 1,
-    FOUND_OPEN_BRACKET = 2,
-    FOUND_CLOSE_BRACKET = 3,
-    FOUND_OPTIONAL_CHAR = 4,
-    FOUND_OPEN_PARENTHESIS = 5,
-    FOUND_CLOSE_PARENTHESIS = 6,
-    OP_END = 7,
-    OP_NO_Link = 8
-};
-
-enum Certainity {
-    NoIdea = 1,
-    Possible = 2,
-    Probably = 3,
-    Definitly = 4
-};
-
-struct Symbol {
-    MKLINKSyms Sym;
-    char character;
-};
-
-Symbol start { .Sym = OP_START, .character = 0 };
-Symbol end { .Sym = OP_END, .character = 0 };
-Symbol open_bracket { .Sym = FOUND_OPEN_BRACKET, .character = '[' };
-Symbol close_bracket { .Sym = FOUND_CLOSE_BRACKET, .character = ']' };
-Symbol optional_char { .Sym = FOUND_OPTIONAL_CHAR, .character = 0 };
-Symbol open_parenth { .Sym = FOUND_OPEN_PARENTHESIS, .character = '(' };
-Symbol close_parenth { .Sym = FOUND_CLOSE_PARENTHESIS, .character = ')' };
-Symbol ERR { .Sym = OP_NO_Link, .character = 0 };
-
+//
 class Parser {
 private:
-    void (*LookingForStarts)();
-    void (*LookingForEnds)();
-    void (*LookingForOpenBracket)();
-    void (*LookingForCloseBracket)();
-    void (*LookingForOptional)();
-    void (*LookingForOpenParenth)();
-    void (*LookingForCloseParenth)();
-    void (*ErrorOut)();
+    enum MKLINKSyms {
+        OP_START = 1,
+        FOUND_OPEN_BRACKET = 2,
+        FOUND_CLOSE_BRACKET = 3,
+        FOUND_OPTIONAL_CHAR = 4,
+        FOUND_OPEN_PARENTHESIS = 5,
+        FOUND_CLOSE_PARENTHESIS = 6,
+        OP_END = 7,
+        OP_NO_Link = 8
+    };
 
-    void (*functionarr[10])() = {
-        0,
+    enum Certainity {
+        NoIndications = 0,
+        NoIdea = 1,
+        Possible = 2,
+        Probably = 3,
+        Definitly = 4
+    } m_Certanity;
+
+    struct Symbol {
+        MKLINKSyms Sym;
+        char terminal;
+    };
+
+    Symbol start { .Sym = OP_START, .terminal = 0 };
+    Symbol end { .Sym = OP_END, .terminal = 0 };
+    Symbol open_bracket { .Sym = FOUND_OPEN_BRACKET, .terminal = '[' };
+    Symbol close_bracket { .Sym = FOUND_CLOSE_BRACKET, .terminal = ']' };
+    Symbol optional_char { .Sym = FOUND_OPTIONAL_CHAR, .terminal = 0 };
+    Symbol open_parenth { .Sym = FOUND_OPEN_PARENTHESIS, .terminal = '(' };
+    Symbol close_parenth { .Sym = FOUND_CLOSE_PARENTHESIS, .terminal = ')' };
+    Symbol ERR { .Sym = OP_NO_Link, .terminal = 0 };
+
+    std::string MKTest = "[Hello World](./mat)";
+    std::stringstream m_stream { MKTest };
+    bool escaped { false };
+    Symbol* CurrentLookingSym;
+    char cur = 0;
+
+    struct MKLink {
+        std::string TitlePortion {};
+        std::string LinkPortion {};
+    };
+
+    void FindStart()
+    {
+        const Symbol* OwningSym = &start;
+        while (m_stream.good() && m_Certanity <= NoIndications) {
+            cur == m_stream.get();
+            if (cur == '[') {
+                m_Certanity = NoIdea;
+                m_stream.unget();
+                CurrentLookingSym = &open_bracket;
+            }
+        }
+        (*this.*functionarr[CurrentLookingSym->Sym])();
+    }
+
+    void FindEnd()
+    {
+    }
+
+    void FindOpenBracket()
+    {
+        cur = m_stream.get();
+        Symbol* OwningSym = &open_bracket;
+        if (cur == OwningSym->terminal) {
+            
+        } else {
+            OwningSym = &ERR;
+        }
+    }
+    void FindCloseBracket() { }
+    void FindOptionalChar() { }
+    void FindOpenParenth() { }
+    void FindCloseParenth() { }
+    void ErrMsg() { }
+
+    void (Parser::*LookingForStarts)() = &Parser::FindStart;
+    void (Parser::*LookingForEnds)() = &Parser::FindEnd;
+    void (Parser::*LookingForOpenBracket)() = &Parser::FindOpenBracket;
+    void (Parser::*LookingForCloseBracket)() = &Parser::FindCloseBracket;
+    void (Parser::*LookingForOptional)() = &Parser::FindOptionalChar;
+    void (Parser::*LookingForOpenParenth)() = &Parser::FindOpenParenth;
+    void (Parser::*LookingForCloseParenth)() = &Parser::FindCloseParenth;
+    void (Parser::*ErrorOut)() = &Parser::ErrMsg;
+
+    void (Parser::*functionarr[10])() = {
+        nullptr,
         LookingForStarts, LookingForOpenBracket, LookingForOpenBracket,
         LookingForCloseBracket, LookingForOptional, LookingForOpenParenth,
         LookingForCloseParenth, LookingForEnds,
 
         ErrorOut
     };
-};
 
+public:
+};
 /// \return
 
 int main()
