@@ -56,6 +56,7 @@ int main()
         writer.close();
     }
 
-    JSONTree::Parsers::MarkdownLinkOptionalParser Thing { "NOne" };
+    std::string Test { "World" };
+    JSONTree::Parsers::MarkdownLinkOptionalParser Thing { Test };
     Thing.DebugRun();
 }

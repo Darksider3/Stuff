@@ -6,6 +6,8 @@
 #define JSONTREE_MARKDOWNLINKOPTIONAL_HPP
 #include "common.hpp"
 #include "fmt/core.h"
+#include <algorithm>
+#include <fstream>
 #include <sstream>
 #include <string>
 
@@ -48,7 +50,7 @@ private:
     Symbol close_parenth { .Sym = FOUND_CLOSE_PARENTHESIS, .terminal = ')' };
     Symbol ERR { .Sym = OP_NO_Link, .terminal = 0 };
 
-    std::stringstream m_stream {};
+    std::istringstream m_stream;
     char cur = 0;
     bool escaped { false };
     Symbol* CurrentLookingSym = nullptr;
@@ -166,9 +168,9 @@ private:
     };
 
 public:
-    MarkdownLinkOptionalParser(const std::string& input)
+    MarkdownLinkOptionalParser(const std::string& inputstr)
     {
-        m_stream.str(input);
+        m_stream.str(inputstr);
     }
 
     void DebugRun()
@@ -176,6 +178,7 @@ public:
         std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier](Haha)";
 
         m_stream.str(MKTest);
+
         fmt::print("LF: {}\n--------------------\n", MKTest);
         this->FindStart();
         for (auto& Element : this->Links) {
