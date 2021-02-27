@@ -10,7 +10,7 @@ SET(SRCS main.cpp
         src/Formatters/Links/DokuwikiLink.hpp
         src/Formatters/Links/HTMLLink.hpp
 
-        src/Formatters/List/MarkdownIndexList.hpp src/Formatters/List/IndexList.hpp src/Formatters/Links/OptionalMarkdownLink.hpp)
+        src/Formatters/List/MarkdownIndexList.hpp src/Formatters/List/IndexList.hpp src/Formatters/Links/OptionalMarkdownLink.hpp src/Parsers/MarkdownLinkOptional.hpp)
 
 SET(SanitizerFlags "  -fsanitize=leak -fsanitize=integer-divide-by-zero -fsanitize=unreachable -fsanitize=return  -fsanitize-address-use-after-scope -fsanitize=signed-integer-overflow -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=pointer-overflow -fsanitize=builtin")
 
