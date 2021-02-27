@@ -40,7 +40,7 @@ ListIndex getFilesListForIndex(fs::path& root, fs::path& Indexfile, std::string_
 
 //
 class Parser {
-private:
+public:
     enum MKLINKSyms {
         OP_START = 1,
         FOUND_OPEN_BRACKET = 2,
@@ -58,7 +58,8 @@ private:
         Possible = 2,
         Probably = 3,
         Definitly = 4
-    } m_Certanity;
+    } m_Certanity
+        = NoIndications;
 
     struct Symbol {
         MKLINKSyms Sym;
@@ -74,7 +75,7 @@ private:
     Symbol close_parenth { .Sym = FOUND_CLOSE_PARENTHESIS, .terminal = ')' };
     Symbol ERR { .Sym = OP_NO_Link, .terminal = 0 };
 
-    std::string MKTest = "[Hello World](./mat)";
+    std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier](Haha)";
     std::stringstream m_stream { MKTest };
     bool escaped { false };
     Symbol* CurrentLookingSym;
@@ -83,40 +84,105 @@ private:
     struct MKLink {
         std::string TitlePortion {};
         std::string LinkPortion {};
-    };
+    } tmp;
+
+    std::vector<MKLink> Links {};
 
     void FindStart()
     {
+        fmt::print("FindStart!\n");
         const Symbol* OwningSym = &start;
-        while (m_stream.good() && m_Certanity <= NoIndications) {
-            cur == m_stream.get();
+        while (m_stream.good()) {
+            cur = m_stream.get();
             if (cur == '[') {
                 m_Certanity = NoIdea;
                 m_stream.unget();
                 CurrentLookingSym = &open_bracket;
+                (*this.*functionarr[CurrentLookingSym->Sym])();
+                if (CurrentLookingSym->Sym == end.Sym)
+                    FindEnd();
             }
         }
-        (*this.*functionarr[CurrentLookingSym->Sym])();
     }
 
     void FindEnd()
     {
+        fmt::print("Ended matching, returning to start!\n");
+        CurrentLookingSym = &start;
+        return;
     }
 
     void FindOpenBracket()
     {
-        cur = m_stream.get();
+        if (m_stream.good())
+            cur = m_stream.get();
+        else
+            return;
         Symbol* OwningSym = &open_bracket;
         if (cur == OwningSym->terminal) {
-            
-        } else {
-            OwningSym = &ERR;
+            CurrentLookingSym = &close_bracket;
+            (*this.*functionarr[CurrentLookingSym->Sym])();
+        }
+        return;
+    }
+
+    void FindCloseBracket()
+    {
+        Symbol* OwningSym = &close_bracket;
+        while (m_stream.good()) {
+            cur = m_stream.get();
+            if (cur == OwningSym->terminal) {
+                CurrentLookingSym = &optional_char;
+                (*this.*functionarr[CurrentLookingSym->Sym])();
+                return;
+            } else {
+                tmp.TitlePortion += cur;
+            }
         }
     }
-    void FindCloseBracket() { }
-    void FindOptionalChar() { }
-    void FindOpenParenth() { }
-    void FindCloseParenth() { }
+
+    // fmt::print("Cur = {}, ", cur);
+    void FindOptionalChar()
+    {
+        Symbol* OwningSym = &optional_char;
+        if (OwningSym->terminal != 0) {
+            //do something to find non-zero-terminals
+        } else {
+            CurrentLookingSym = &open_parenth;
+            (*this.*functionarr[CurrentLookingSym->Sym])();
+            return;
+        }
+
+        return;
+    }
+    void FindOpenParenth()
+    {
+        Symbol* OwningSym = &open_parenth;
+        while (m_stream.good()) {
+            cur = m_stream.get();
+            if (cur == OwningSym->terminal) {
+                CurrentLookingSym = &close_parenth;
+                (*this.*functionarr[CurrentLookingSym->Sym])();
+                return;
+            }
+        }
+    }
+    void FindCloseParenth()
+    {
+        Symbol* OwningSym = &close_parenth;
+        while (m_stream.good()) {
+            cur = m_stream.get();
+            if (cur == OwningSym->terminal) {
+                Links.push_back(tmp);
+                CurrentLookingSym = &end;
+                break;
+            } else {
+                tmp.LinkPortion += cur;
+            }
+        }
+        // Anyway we're going to reset, cuz' we're either not on good() anymore or are done
+        tmp = MKLink {};
+    }
     void ErrMsg() { }
 
     void (Parser::*LookingForStarts)() = &Parser::FindStart;
@@ -130,14 +196,19 @@ private:
 
     void (Parser::*functionarr[10])() = {
         nullptr,
-        LookingForStarts, LookingForOpenBracket, LookingForOpenBracket,
-        LookingForCloseBracket, LookingForOptional, LookingForOpenParenth,
+        LookingForStarts, LookingForOpenBracket, LookingForCloseBracket,
+        LookingForOptional, LookingForOpenParenth,
         LookingForCloseParenth, LookingForEnds,
 
         ErrorOut
     };
 
 public:
+    Parser()
+    {
+        m_stream.str(MKTest);
+        fmt::print("LF: {}\n--------------------\n", MKTest);
+    }
 };
 /// \return
 
@@ -157,5 +228,11 @@ int main()
         std::ofstream writer { Index_File };
         writer << List.getAll();
         writer.close();
+    }
+
+    Parser Thing {};
+    Thing.FindStart();
+    for (auto& Element : Thing.Links) {
+        fmt::print("\nCurrent MKLink Struct:\n\t * Titleportion: {}\n\t * Linportion: {}", Element.TitlePortion, Element.LinkPortion);
     }
 }
