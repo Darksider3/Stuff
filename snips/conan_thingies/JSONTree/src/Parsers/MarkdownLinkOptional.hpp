@@ -8,6 +8,7 @@
 #include "fmt/core.h"
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <sstream>
 #include <string>
 
@@ -56,18 +57,48 @@ private:
     Symbol* CurrentLookingSym = nullptr;
     std::vector<MKLink> Links {};
 
+    void findBySym(Symbol* lf, Symbol* advanceToSym)
+    {
+        while (m_stream.good()) {
+            cur = m_stream.get();
+            if (cur == lf->terminal) {
+                CurrentLookingSym = advanceToSym;
+                (*this.*functionarr[CurrentLookingSym->Sym])();
+                return;
+            }
+        }
+    }
+
+    void findBySymAction(Symbol* lf, Symbol* advanceTo, std::function<void(void)> success_fn, std::function<void(void)> failure_fn, bool runArr = true)
+    {
+        while (m_stream.good()) {
+            cur = m_stream.get();
+            if (cur == lf->terminal) {
+                success_fn();
+                CurrentLookingSym = advanceTo;
+                if (runArr)
+                    (*this.*functionarr[CurrentLookingSym->Sym])();
+                return;
+            }
+            failure_fn();
+        }
+    }
+    /*
+    void findBySimDisallowedChars(Symbol* lf, Symbol* advanceToSym, char* notAllowed)
+    {
+        if ()
+    }
+*/
     void FindStart()
     {
         fmt::print("FindStart!\n");
         while (m_stream.good()) {
             cur = m_stream.get();
-            if (cur == '[') {
-                m_stream.unget();
-                CurrentLookingSym = &open_bracket;
-                (*this.*functionarr[CurrentLookingSym->Sym])();
-                if (CurrentLookingSym->Sym == end.Sym)
-                    FindEnd();
-            }
+            m_stream.unget();
+            CurrentLookingSym = &open_bracket;
+            (*this.*functionarr[CurrentLookingSym->Sym])();
+            if (CurrentLookingSym->Sym == end.Sym)
+                FindEnd();
         }
     }
 
@@ -94,18 +125,11 @@ private:
     void FindCloseBracket()
     {
         Symbol* OwningSym = &close_bracket;
-        while (m_stream.good()) {
-            cur = m_stream.get();
-            if (cur == OwningSym->terminal) {
-                CurrentLookingSym = &optional_char;
-                (*this.*functionarr[CurrentLookingSym->Sym])();
-                return;
-            }
-
-            tmp.TitlePortion += cur;
-        }
+        findBySymAction(
+            OwningSym, &optional_char,
+            [this]() { /*nothing*/ },
+            [this]() { tmp.TitlePortion += cur; });
     }
-
     // fmt::print("Cur = {}, ", cur);
     void FindOptionalChar()
     {
@@ -123,29 +147,23 @@ private:
     void FindOpenParenth()
     {
         Symbol* OwningSym = &open_parenth;
-        while (m_stream.good()) {
-            cur = m_stream.get();
-            if (cur == OwningSym->terminal) {
-                CurrentLookingSym = &close_parenth;
-                (*this.*functionarr[CurrentLookingSym->Sym])();
-                return;
-            }
-        }
+        findBySym(OwningSym, &close_parenth);
     }
     void FindCloseParenth()
     {
         Symbol* OwningSym = &close_parenth;
-        while (m_stream.good()) {
-            cur = m_stream.get();
-            if (cur == OwningSym->terminal) {
+        findBySymAction(
+            OwningSym, &end,
+            [this]() {
                 Links.push_back(tmp);
-                CurrentLookingSym = &end;
-                break;
-            }
-            tmp.LinkPortion += cur;
-        }
+            },
+            [this]() {
+                tmp.LinkPortion += cur;
+            },
+            false);
         // Anyway we're going to reset, cuz' we're either not on good() anymore or are done
         tmp = MKLink {};
+        return;
     }
     void ErrMsg() { }
 
@@ -182,7 +200,7 @@ public:
         fmt::print("LF: {}\n--------------------\n", MKTest);
         this->FindStart();
         for (auto& Element : this->Links) {
-            fmt::print("\nCurrent MKLink Struct:\n\t * Titleportion: {}\n\t * Linportion: {}", Element.TitlePortion, Element.LinkPortion);
+            fmt::print("\nCurrent MKLink Struct:\n\t * Titleportion: {}\n\t * Linportion: {}\n", Element.TitlePortion, Element.LinkPortion);
         }
     }
 };
