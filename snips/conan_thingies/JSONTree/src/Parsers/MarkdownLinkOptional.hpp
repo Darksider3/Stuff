@@ -29,7 +29,8 @@ private:
         FOUND_OPEN_PARENTHESIS = 5,
         FOUND_CLOSE_PARENTHESIS = 6,
         OP_END = 7,
-        OP_NO_Link = 8
+        OP_NO_Link = 8,
+        OP_ESCAPE = 9
     };
 
     struct Symbol {
@@ -50,17 +51,33 @@ private:
     Symbol open_parenth { .Sym = FOUND_OPEN_PARENTHESIS, .terminal = '(' };
     Symbol close_parenth { .Sym = FOUND_CLOSE_PARENTHESIS, .terminal = ')' };
     Symbol ERR { .Sym = OP_NO_Link, .terminal = 0 };
+    Symbol ESCAPE { .Sym = OP_ESCAPE, .terminal = 0x5C };
 
     std::istringstream m_stream;
     char cur = 0;
-    bool escaped { false };
     Symbol* CurrentLookingSym = nullptr;
     std::vector<MKLink> Links {};
 
-    void findBySym(Symbol* lf, Symbol* advanceToSym)
+    void HandlePossibleEscape(std::string* apTo = nullptr)
+    {
+        Symbol* OwningSym = &ESCAPE;
+        if (cur == OwningSym->terminal) {
+            if (apTo != nullptr) {
+                cur = m_stream.get();
+                *apTo += cur;
+            } else {
+                m_stream.ignore();
+            }
+            cur = m_stream.get(); // After we ignored one char, the next will be again
+        }
+    }
+
+    void findBySym(Symbol* lf, Symbol* advanceToSym, std::string* appendTo = nullptr)
     {
         while (m_stream.good()) {
             cur = m_stream.get();
+            HandlePossibleEscape(appendTo);
+
             if (cur == lf->terminal) {
                 CurrentLookingSym = advanceToSym;
                 (*this.*functionarr[CurrentLookingSym->Sym])();
@@ -69,10 +86,12 @@ private:
         }
     }
 
-    void findBySymAction(Symbol* lf, Symbol* advanceTo, std::function<void(void)>&& success_fn, std::function<void(void)>&& failure_fn, bool runArr = true)
+    void findBySymAction(Symbol* lf, Symbol* advanceTo, std::function<void(void)>&& success_fn, std::function<void(void)>&& failure_fn, bool runArr = true, std::string* appendTo = nullptr)
     {
         while (m_stream.good()) {
             cur = m_stream.get();
+            HandlePossibleEscape(appendTo);
+
             if (cur == lf->terminal) {
                 success_fn();
                 CurrentLookingSym = advanceTo;
@@ -114,6 +133,9 @@ private:
             cur = m_stream.get();
         else
             return;
+
+        HandlePossibleEscape();
+
         Symbol* OwningSym = &open_bracket;
         if (cur == OwningSym->terminal) {
             CurrentLookingSym = &close_bracket;
@@ -128,9 +150,11 @@ private:
         findBySymAction(
             OwningSym, &optional_char,
             [this]() { /*nothing*/ },
-            [this]() { tmp.TitlePortion += cur; });
+            [this]() { tmp.TitlePortion += cur; },
+            true,
+            &tmp.TitlePortion);
     }
-    // fmt::print("Cur = {}, ", cur);
+
     void FindOptionalChar()
     {
         Symbol* OwningSym = &optional_char;
@@ -160,7 +184,8 @@ private:
             [this]() {
                 tmp.LinkPortion += cur;
             },
-            false);
+            false,
+            &tmp.LinkPortion);
         // Anyway we're going to reset, cuz' we're either not on good() anymore or are done
         tmp = MKLink {};
         return;
@@ -193,7 +218,7 @@ public:
 
     void DebugRun()
     {
-        std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier](Haha)";
+        std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier\\]](Haha)";
 
         m_stream.str(MKTest);
 
