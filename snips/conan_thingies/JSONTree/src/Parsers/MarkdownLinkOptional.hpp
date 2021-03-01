@@ -14,7 +14,6 @@
 
 namespace JSONTree::Parsers {
 /*
- * @TODO: Implement and allow escaping
  * @TODO: Recognize being in a Code-Field(```)
  */
 class MarkdownLinkOptionalParser {
