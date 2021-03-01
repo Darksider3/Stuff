@@ -48,6 +48,8 @@ private:
     struct MKLink {
         std::string TitlePortion {};
         std::string LinkPortion {};
+
+        bool isOptional { false };
     } tmp;
 
     Symbol start { .Sym = OP_START, .terminal = detail::NONE_CHAR };
@@ -133,6 +135,11 @@ private:
         return;
     }
 
+    void abortLink()
+    {
+        tmp = MKLink {};
+    }
+
     void LF_open_bracket()
     {
         if (m_stream.good())
@@ -165,13 +172,16 @@ private:
     {
         Symbol* OwningSym = &optional_char;
         if (OwningSym->terminal != 0) {
-            //do something to find non-zero-terminals
-        } else {
-            CurrentLookingSym = &open_parenth;
-            (*this.*functionarr[CurrentLookingSym->Sym])();
-            return;
+            cur = m_stream.get();
+            if (cur == OwningSym->terminal) {
+                tmp.isOptional = true;
+                fmt::print("Marked optional!\n");
+            } else if (cur == open_parenth.terminal) {
+                m_stream.unget();
+            }
         }
-
+        CurrentLookingSym = &open_parenth;
+        (*this.*functionarr[CurrentLookingSym->Sym])();
         return;
     }
 
@@ -221,16 +231,24 @@ public:
         m_stream.str(input);
     }
 
+    [[maybe_unused]] void setOptional(char Target)
+    {
+        optional_char.terminal = Target;
+    }
+
     void DebugRun()
     {
-        std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier\\]](Haha), da war was escaped! \\o";
+        std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier\\]](Haha), da war was escaped! \\o außerdem: [Optionaler]!(hier)";
 
         m_stream.str(MKTest);
 
+        setOptional('!');
         fmt::print("LF: {}\n--------------------\n", MKTest);
         this->Start();
         for (auto& Element : this->Links) {
             fmt::print("\nCurrent MKLink Struct:\n\t * Titleportion: {}\n\t * Linportion: {}\n", Element.TitlePortion, Element.LinkPortion);
+            if (Element.isOptional)
+                fmt::print("\t * --> Marked Optional!\n");
         }
     }
 };
