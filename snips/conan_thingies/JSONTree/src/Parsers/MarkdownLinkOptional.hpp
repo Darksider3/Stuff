@@ -13,6 +13,14 @@
 #include <string>
 
 namespace JSONTree::Parsers {
+namespace detail {
+constexpr unsigned char escape_char = '\\';
+constexpr unsigned char open_bracket = '[';
+constexpr unsigned char close_bracket = ']';
+constexpr unsigned char open_parenth = '(';
+constexpr unsigned char close_parenth = ')';
+constexpr unsigned char NONE_CHAR = 0;
+}
 /*
  * @TODO: Recognize being in a Code-Field(```)
  */
@@ -21,15 +29,15 @@ private:
     static const int OPS = 9;
 
     enum MKLINKSyms {
+        OP_ERR [[maybe_unused]] = 0,
         OP_START = 1,
-        FOUND_OPEN_BRACKET = 2,
-        FOUND_CLOSE_BRACKET = 3,
-        FOUND_OPTIONAL_CHAR = 4,
-        FOUND_OPEN_PARENTHESIS = 5,
-        FOUND_CLOSE_PARENTHESIS = 6,
+        LookingForOpenBracket = 2,
+        LookingForClosingBracket = 3,
+        LookingForOptionalChar = 4,
+        LookingForOpenParenth = 5,
+        LookingForCloseParenth = 6,
         OP_END = 7,
-        OP_NO_Link = 8,
-        OP_ESCAPE = 9
+        OP_ESCAPE = 8
     };
 
     struct Symbol {
@@ -42,15 +50,14 @@ private:
         std::string LinkPortion {};
     } tmp;
 
-    Symbol start { .Sym = OP_START, .terminal = 0 };
-    Symbol end { .Sym = OP_END, .terminal = 0 };
-    Symbol open_bracket { .Sym = FOUND_OPEN_BRACKET, .terminal = '[' };
-    Symbol close_bracket { .Sym = FOUND_CLOSE_BRACKET, .terminal = ']' };
-    Symbol optional_char { .Sym = FOUND_OPTIONAL_CHAR, .terminal = 0 };
-    Symbol open_parenth { .Sym = FOUND_OPEN_PARENTHESIS, .terminal = '(' };
-    Symbol close_parenth { .Sym = FOUND_CLOSE_PARENTHESIS, .terminal = ')' };
-    Symbol ERR { .Sym = OP_NO_Link, .terminal = 0 };
-    Symbol ESCAPE { .Sym = OP_ESCAPE, .terminal = 0x5C };
+    Symbol start { .Sym = OP_START, .terminal = detail::NONE_CHAR };
+    Symbol end { .Sym = OP_END, .terminal = detail::NONE_CHAR };
+    Symbol open_bracket { .Sym = LookingForOpenBracket, .terminal = detail::open_bracket };
+    Symbol close_bracket { .Sym = LookingForClosingBracket, .terminal = detail::close_bracket };
+    Symbol optional_char { .Sym = LookingForOptionalChar, .terminal = detail::NONE_CHAR };
+    Symbol open_parenth { .Sym = LookingForOpenParenth, .terminal = detail::open_parenth };
+    Symbol close_parenth { .Sym = LookingForCloseParenth, .terminal = detail::close_parenth };
+    Symbol ESCAPE { .Sym = OP_ESCAPE, .terminal = detail::escape_char };
 
     std::istringstream m_stream;
     char cur = 0;
@@ -107,26 +114,26 @@ private:
         if ()
     }
 */
-    void FindStart()
+    void Start()
     {
-        fmt::print("FindStart!\n");
+        fmt::print("Start!\n");
         while (m_stream.good()) {
             cur = m_stream.get();
             m_stream.unget();
             CurrentLookingSym = &open_bracket;
             (*this.*functionarr[CurrentLookingSym->Sym])();
             if (CurrentLookingSym->Sym == end.Sym)
-                FindEnd();
+                EndCurrentLink();
         }
     }
 
-    void FindEnd()
+    void EndCurrentLink()
     {
         CurrentLookingSym = &start;
         return;
     }
 
-    void FindOpenBracket()
+    void LF_open_bracket()
     {
         if (m_stream.good())
             cur = m_stream.get();
@@ -143,18 +150,18 @@ private:
         return;
     }
 
-    void FindCloseBracket()
+    void LF_close_bracket()
     {
         Symbol* OwningSym = &close_bracket;
         findBySymAction(
             OwningSym, &optional_char,
-            [this]() { /*nothing*/ },
+            []() { /*nothing*/ },
             [this]() { tmp.TitlePortion += cur; },
             true,
             &tmp.TitlePortion);
     }
 
-    void FindOptionalChar()
+    void LF_optional_char()
     {
         Symbol* OwningSym = &optional_char;
         if (OwningSym->terminal != 0) {
@@ -167,12 +174,13 @@ private:
 
         return;
     }
-    void FindOpenParenth()
+
+    void LF_open_parenthesis()
     {
         Symbol* OwningSym = &open_parenth;
         findBySym(OwningSym, &close_parenth);
     }
-    void FindCloseParenth()
+    void LF_close_parenthesis()
     {
         Symbol* OwningSym = &close_parenth;
         findBySymAction(
@@ -189,24 +197,17 @@ private:
         tmp = MKLink {};
         return;
     }
-    void ErrMsg() { }
-
-    void (MarkdownLinkOptionalParser::*LookingForStarts)() = &MarkdownLinkOptionalParser::FindStart;
-    void (MarkdownLinkOptionalParser::*LookingForEnds)() = &MarkdownLinkOptionalParser::FindEnd;
-    void (MarkdownLinkOptionalParser::*LookingForOpenBracket)() = &MarkdownLinkOptionalParser::FindOpenBracket;
-    void (MarkdownLinkOptionalParser::*LookingForCloseBracket)() = &MarkdownLinkOptionalParser::FindCloseBracket;
-    void (MarkdownLinkOptionalParser::*LookingForOptional)() = &MarkdownLinkOptionalParser::FindOptionalChar;
-    void (MarkdownLinkOptionalParser::*LookingForOpenParenth)() = &MarkdownLinkOptionalParser::FindOpenParenth;
-    void (MarkdownLinkOptionalParser::*LookingForCloseParenth)() = &MarkdownLinkOptionalParser::FindCloseParenth;
-    void (MarkdownLinkOptionalParser::*ErrorOut)() = &MarkdownLinkOptionalParser::ErrMsg;
+    void EncounteredError() { }
 
     void (MarkdownLinkOptionalParser::*functionarr[OPS])() = {
-        nullptr,
-        LookingForStarts, LookingForOpenBracket, LookingForCloseBracket,
-        LookingForOptional, LookingForOpenParenth,
-        LookingForCloseParenth, LookingForEnds,
-
-        ErrorOut
+        &MarkdownLinkOptionalParser::EncounteredError,
+        &MarkdownLinkOptionalParser::Start,
+        &MarkdownLinkOptionalParser::LF_open_bracket,
+        &MarkdownLinkOptionalParser::LF_close_bracket,
+        &MarkdownLinkOptionalParser::LF_optional_char,
+        &MarkdownLinkOptionalParser::LF_open_parenthesis,
+        &MarkdownLinkOptionalParser::LF_close_parenthesis,
+        &MarkdownLinkOptionalParser::EndCurrentLink,
     };
 
 public:
@@ -215,14 +216,19 @@ public:
         m_stream.str(inputstr);
     }
 
+    [[maybe_unused]] MarkdownLinkOptionalParser(std::string&& input)
+    {
+        m_stream.str(input);
+    }
+
     void DebugRun()
     {
-        std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier\\]](Haha)";
+        std::string MKTest = "[Hello World](www.hello.world.de/Sagte/Ich) Nichts hier, tut mir leid. [Aber hier\\]](Haha), da war was escaped! \\o";
 
         m_stream.str(MKTest);
 
         fmt::print("LF: {}\n--------------------\n", MKTest);
-        this->FindStart();
+        this->Start();
         for (auto& Element : this->Links) {
             fmt::print("\nCurrent MKLink Struct:\n\t * Titleportion: {}\n\t * Linportion: {}\n", Element.TitlePortion, Element.LinkPortion);
         }
