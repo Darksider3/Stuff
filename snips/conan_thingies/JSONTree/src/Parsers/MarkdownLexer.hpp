@@ -185,14 +185,6 @@ class MarkdownLexer {
         }
     };
 
-    struct SymbolObj {
-        std::unique_ptr<AbstractMarkSymbol> Symbol;
-        int start_line;
-        int stop_line;
-        int start_position;
-        int stop_position;
-    };
-
     void PerfectlyFineText()
     {
         SymbolObj Owning;
@@ -227,6 +219,11 @@ class MarkdownLexer {
     void Backtick() { }
     void Tilde() { }
 
+    void putCharBackIntoStream()
+    {
+        m_stream.unget();
+    }
+
     // NOLINTNEXTLINE
     void (MarkdownLexer::*HandleTable[128])() = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 0 - 15
@@ -257,15 +254,15 @@ class MarkdownLexer {
         while (m_stream.good()) {
             m_cur = m_stream.get();
             switch (m_cur) {
-            case 0x0a: // line feed, \n
+            case line_feed: // line feed, \n
                 ResetCharCounter();
                 AddNewLine();
                 return m_stream.good();
-            case 0x0d: // carriage return, \r
-            case 0x09: // tab  \ŧ
-            case 0x0b: // vertical \v
-            case 0x20: // space ' '
-            case 0x0c: // form feed \f
+            case carriage_return: // carriage return, \r
+            case tab:             // tab  \ŧ
+            case vertical_tab:    // vertical \v
+            case space:           // space ' '
+            case form_feed:       // form feed \f
             default:
                 AddToCharCounter(1);
                 return m_stream.good();
@@ -278,16 +275,20 @@ class MarkdownLexer {
 public:
     void PrintTestWhitespaceThing()
     {
-        std::string teststr { "Ich habe doch auch \n keine Ahnung!" };
+        std::string teststr { "Ich habe doch auch \n keine Ahnung! (oder so)" };
         m_stream.str(teststr);
         parse();
 
         for (auto& El : m_symvec) {
-            fmt::print("Symbol-Type: {0:s}\n", El.Symbol->SymName);
             if (El.Symbol->OP_SYM == SYM_JUST_NORMAL_TEXT) {
                 // @TODO
+                fmtPrintDebugTextSym(El);
+            } else {
+                fmtPrintDebugSym(El);
             }
         }
+
+        fmt::print("Sourcestr: {}\n\n", escapedNewline(teststr));
     }
 
     bool isTerminalChar(unsigned char x)
@@ -300,7 +301,6 @@ public:
         while (get_new_char()) {
             if (isTerminalChar(m_cur)) {
                 // its a terminal char!
-                fmt::print("WHOOPS!");
                 (*this.*HandleTable[m_cur])();
             } else {
                 // it's just text!
