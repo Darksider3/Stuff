@@ -83,15 +83,25 @@ class MarkdownLexer {
         std::string SymName { "ABSTRACT" };
         TerminalType Terminal { 0 };
 
-        std::unique_ptr<SymbolUserData> data {};
+        std::unique_ptr<SymbolUserData> data { std::make_unique<SymbolUserData>() };
     };
 
     struct SymbolObj {
-        std::unique_ptr<AbstractMarkSymbol> Symbol;
-        int start_line;
-        int stop_line;
-        int start_position;
-        int stop_position;
+    public:
+        SymbolObj() = default;
+        SymbolObj(SymbolObj&&) = default;
+        ~SymbolObj() = default;
+
+        // Delete Copy ops
+        SymbolObj(const SymbolObj&) = delete;
+        SymbolObj& operator=(const SymbolObj&) = delete;
+        SymbolObj& operator=(SymbolObj&&) = default;
+
+        std::unique_ptr<AbstractMarkSymbol> Symbol {}; //NOLINT
+        int start_line { 0 };                          //NOLINT
+        int stop_line { 0 };                           //NOLINT
+        int start_position { 0 };                      //NOLINT
+        int stop_position { 0 };                       //NOLINT
     };
 
     struct SymAsterisk : public AbstractMarkSymbol {
@@ -181,7 +191,6 @@ class MarkdownLexer {
             OP_SYM = MarkSyms::SYM_JUST_NORMAL_TEXT;
             SymName = "SYM_TEXT";
             Terminal = 0;
-            data = std::make_unique<SymbolUserData>();
         }
     };
 
@@ -205,7 +214,7 @@ class MarkdownLexer {
         OwningText.stop_line = CUR_LINE;
         OwningText.stop_position = CUR_COLOUM;
 
-        m_symvec.push_back(std::move(OwningText));
+        m_symvec.emplace_back(std::move(OwningText));
     }
 
     void fmtPrintDebugSym(SymbolObj& obj)
@@ -235,7 +244,7 @@ class MarkdownLexer {
         Owning.start_line = CUR_LINE;
         Owning.start_position = CUR_COLOUM;
 
-        m_symvec.push_back(std::move(Owning));
+        m_symvec.emplace_back(std::move(Owning));
     }
 
     void OpenParenthesis()
@@ -332,6 +341,10 @@ public:
         return (TerminalTable[static_cast<unsigned int>(x)] == 1);
     }
 
+    std::vector<SymbolObj> getVec()
+    {
+        return std::move(m_symvec);
+    }
     void parse()
     {
         while (get_new_char()) {
