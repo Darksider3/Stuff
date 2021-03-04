@@ -9,8 +9,10 @@
 #include <algorithm>
 #include <fstream>
 #include <functional>
+#include <memory>
 #include <sstream>
 #include <string>
+#include <variant>
 
 namespace JSONTree::Parsers {
 namespace detail {
@@ -21,6 +23,7 @@ constexpr unsigned char open_parenth = '(';
 constexpr unsigned char close_parenth = ')';
 constexpr unsigned char NONE_CHAR = 0;
 }
+
 /*
  * @TODO: Recognize being in a Code-Field(```)
  */
