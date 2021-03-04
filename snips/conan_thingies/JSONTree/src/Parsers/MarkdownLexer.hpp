@@ -345,6 +345,11 @@ public:
     {
         return std::move(m_symvec);
     }
+
+    void setVec(std::vector<SymbolObj>&& vec)
+    {
+        std::swap(vec, m_symvec);
+    }
     void parse()
     {
         while (get_new_char()) {
