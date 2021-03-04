@@ -187,29 +187,65 @@ class MarkdownLexer {
 
     void PerfectlyFineText()
     {
-        SymbolObj Owning;
-        Owning.Symbol = std::make_unique<SymJustText>();
-        Owning.start_line = CUR_LINE;
-        Owning.start_position = CUR_COLOUM;
-        Owning.Symbol->data->userdata += m_cur;
+        SymbolObj OwningText;
+        OwningText.Symbol = std::make_unique<SymJustText>();
+        OwningText.start_line = CUR_LINE;
+        OwningText.start_position = CUR_COLOUM;
+        OwningText.Symbol->data->userdata += m_cur;
 
         while (get_new_char()) {
             if (!isTerminalChar(m_cur)) {
-                Owning.Symbol->data->userdata += m_cur;
+                OwningText.Symbol->data->userdata += m_cur;
+            } else {
+                putCharBackIntoStream();
+                break;
             }
         }
 
-        Owning.stop_line = CUR_LINE;
-        Owning.stop_position = CUR_COLOUM;
+        OwningText.stop_line = CUR_LINE;
+        OwningText.stop_position = CUR_COLOUM;
 
-        fmt::print("\n\tType: {0}\n\tName: {1:s}\n\tdataLength: {2}\n\tstartpos: {3}\n\tstoppos: {4}\n\tlines: {5}\n",
-            Owning.Symbol->OP_SYM, Owning.Symbol->SymName, Owning.Symbol->data->userdata.length(), Owning.start_position, Owning.stop_position,
-            Owning.stop_line - (Owning.start_line - 1)); // TODO: -1 because of 1-1, but maybe it's just more wise to call it linebreaks instead of lines
-        m_symvec.emplace_back(std::move(Owning));
+        m_symvec.push_back(std::move(OwningText));
     }
 
-    void OpenParenthesis() { }
-    void CloseParenthesis() { }
+    void fmtPrintDebugSym(SymbolObj& obj)
+    {
+        fmt::print("\n\tType: {0}\n\tName: {1:s}\n\tstartpos: {2}\n\tline: {3}\n\tTerminalchar: {4:c}\n",
+            obj.Symbol->OP_SYM, obj.Symbol->SymName,
+            obj.start_position, obj.start_line,
+            obj.Symbol->Terminal);
+
+        fmtPrintFillChar();
+    }
+
+    void fmtPrintDebugTextSym(SymbolObj& obj)
+    {
+        fmt::print("\n\tType: {0}\n\tName: {1:s}\n\tdataLength: {2}\n\tstartpos: {3}\n\tstoppos: {4}\n\tlines: {5}\n\tdata: {6:s}\n",
+            obj.Symbol->OP_SYM, obj.Symbol->SymName, obj.Symbol->data->userdata.length(), obj.start_position, obj.stop_position,
+            obj.stop_line - (obj.start_line - 1), escapedNewline(obj.Symbol->data->userdata)); // TODO: -1 because of 1-1, but maybe it's just more wise to call it linebreaks instead of lines
+
+        fmtPrintFillChar();
+    }
+
+    template<typename T>
+    void PushSymbolOnCurrent()
+    {
+        SymbolObj Owning;
+        Owning.Symbol = std::make_unique<T>();
+        Owning.start_line = CUR_LINE;
+        Owning.start_position = CUR_COLOUM;
+
+        m_symvec.push_back(std::move(Owning));
+    }
+
+    void OpenParenthesis()
+    {
+        PushSymbolOnCurrent<SymParenthesisOpen>();
+    }
+    void CloseParenthesis()
+    {
+        PushSymbolOnCurrent<SymParenthesisClose>();
+    }
     void Asterisk() { }
     void OpenBracket() { }
     void Escape() { }
