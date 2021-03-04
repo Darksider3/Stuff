@@ -12,7 +12,6 @@
 
 namespace JSONTree::Parsers::detail {
 // clang-format off
-constexpr u_char BACKSLASH = '\\';
 constexpr uint8_t TerminalTable[128] =  {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0 - 15
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 16 - 31
@@ -23,6 +22,15 @@ constexpr uint8_t TerminalTable[128] =  {
     1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 96 - 111 96=`
     0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0  // 112- 128 126=~
 };
+
+
+constexpr unsigned char line_feed = 0x0a;
+constexpr unsigned char carriage_return = 0x0d;
+constexpr unsigned char tab = 0x09;
+constexpr unsigned char vertical_tab = 0x0b;
+constexpr unsigned char space = 0x20;
+constexpr unsigned char form_feed = 0x0c;
+constexpr uint8_t DebugDashes = 40;
 
 // clang-format on
 
@@ -48,12 +56,42 @@ class MarkdownLexer {
         std::string userdata;
     };
 
+#ifndef NDEBUG
+
+    void fmtPrintFillChar()
+    {
+        fmt::print("\t{:->{}}\n", "", DebugDashes);
+    }
+
+    std::string escapedNewline(std::string_view input)
+    {
+        std::string escaped { "\"" };
+        for (auto& c : input) {
+            if (c == 0x0a) // \n
+                escaped += "\\n";
+            else
+                escaped += c;
+        }
+
+        escaped += "\"";
+        return escaped;
+    }
+#endif
+
     struct AbstractMarkSymbol {
         MarkSyms OP_SYM { SYM_ABSTRACT };
         std::string SymName { "ABSTRACT" };
         TerminalType Terminal { 0 };
 
         std::unique_ptr<SymbolUserData> data {};
+    };
+
+    struct SymbolObj {
+        std::unique_ptr<AbstractMarkSymbol> Symbol;
+        int start_line;
+        int stop_line;
+        int start_position;
+        int stop_position;
     };
 
     struct SymAsterisk : public AbstractMarkSymbol {
@@ -88,7 +126,7 @@ class MarkdownLexer {
         {
             OP_SYM = MarkSyms::SYM_CLOSE_PARENTHESIS;
             SymName = "SYM_CLOSE_PARENTHESIS";
-            TerminalType Terminal = ')';
+            Terminal = ')';
         }
     };
 
