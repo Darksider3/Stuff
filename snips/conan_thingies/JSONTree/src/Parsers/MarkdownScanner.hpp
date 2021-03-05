@@ -84,12 +84,15 @@ class MarkdownScanner {
     }
 #endif
 
+    template<typename T>
+    using PointerT = std::shared_ptr<T>;
+
     struct AbstractMarkSymbol {
         MarkSyms OP_SYM { SYM_ABSTRACT };
         std::string SymName { "ABSTRACT" };
         TerminalType Terminal { 0 };
 
-        std::unique_ptr<SymbolUserData> data { std::make_unique<SymbolUserData>() };
+        PointerT<SymbolUserData> data { std::make_shared<SymbolUserData>() };
     };
 
     struct SymbolObj {
@@ -99,15 +102,15 @@ class MarkdownScanner {
         ~SymbolObj() = default;
 
         // Delete Copy ops
-        SymbolObj(const SymbolObj&) = delete;
-        SymbolObj& operator=(const SymbolObj&) = delete;
+        SymbolObj(const SymbolObj&) = default;
+        SymbolObj& operator=(const SymbolObj&) = default;
         SymbolObj& operator=(SymbolObj&&) = default;
 
-        std::unique_ptr<AbstractMarkSymbol> Symbol {}; //NOLINT
-        int start_line { 0 };                          //NOLINT
-        int stop_line { 0 };                           //NOLINT
-        int start_position { 0 };                      //NOLINT
-        int stop_position { 0 };                       //NOLINT
+        PointerT<AbstractMarkSymbol> Symbol {}; //NOLINT
+        int start_line { 0 };                   //NOLINT
+        int stop_line { 0 };                    //NOLINT
+        int start_position { 0 };               //NOLINT
+        int stop_position { 0 };                //NOLINT
     };
 
     struct SymAsterisk : public AbstractMarkSymbol {
@@ -212,7 +215,7 @@ class MarkdownScanner {
     void PerfectlyFineText()
     {
         SymbolObj OwningText;
-        OwningText.Symbol = std::make_unique<SymJustText>();
+        OwningText.Symbol = std::make_shared<SymJustText>();
         OwningText.start_line = CUR_LINE;
         OwningText.start_position = CUR_COLOUM;
         OwningText.Symbol->data->userdata += m_cur;
@@ -403,9 +406,9 @@ public:
         return (TerminalTable[static_cast<unsigned int>(x)] == 1);
     }
 
-    std::vector<SymbolObj>&& getVec()
+    std::vector<SymbolObj> getVec()
     {
-        return std::move(m_symvec); // stupid vector doesnt play well in C++20..
+        return m_symvec;
     }
 
     void setVec(std::vector<SymbolObj>&& vec)
@@ -424,6 +427,10 @@ public:
             }
         }
     }
+};
+
+class MarkdownParsing {
+    MarkdownScanner Scanner {};
 };
 }
 #endif //JSONTREE_MARKDOWNSCANNER_HPP
