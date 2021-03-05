@@ -26,7 +26,9 @@ enum MarkSyms {
     SYM_BACKTICK = 7,
     SYM_CIRCUMFLEX = 8,
     SYM_DASH = 9,
-    SYM_JUST_NORMAL_TEXT = 10
+    SYM_NEWLINE = 10,
+    SYM_TAB = 11,
+    SYM_JUST_NORMAL_TEXT = 12
 };
 
 using TerminalType = char;
@@ -56,16 +58,15 @@ public:
     SymbolObj& operator=(SymbolObj&&) = default;
 
     PointerT<AbstractMarkSymbol> Symbol {}; //NOLINT
-    int start_line { 0 };                   //NOLINT
-    int stop_line { 0 };                    //NOLINT
-    int start_position { 0 };               //NOLINT
-    int stop_position { 0 };                //NOLINT
+    int OnLineNum { 0 };                    //NOLINT
+    int StartColumn { 0 };                  //NOLINT
+    int StopColoumn { 0 };                  //NOLINT
     int absolut_position { 0 };             // NOLINT
 };
 
 // clang-format off
 constexpr uint8_t TerminalTable[128] =  {
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0 - 15
+    0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0, // 0 - 15 9=\t, 10=\n
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 16 - 31
     0,0,0,0,0,0,0,0,1,1,1,0,0,1,0,0, // 32 - 47, 40=(, 41=) 42=*, 45=-
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 48 - 63
@@ -182,6 +183,24 @@ class MarkdownScanner {
         }
     };
 
+    struct SymNewLine : public AbstractMarkSymbol {
+        SymNewLine()
+        {
+            OP_SYM = MarkSyms::SYM_NEWLINE;
+            SymName = "SYM_NEWLINE";
+            Terminal = '\n';
+        }
+    };
+
+    struct SymTab : public AbstractMarkSymbol {
+        SymTab()
+        {
+            OP_SYM = MarkSyms::SYM_TAB;
+            SymName = "SYM_TAB";
+            Terminal = '\t';
+        }
+    };
+
     struct SymJustText : public AbstractMarkSymbol {
         SymJustText()
         {
@@ -194,16 +213,21 @@ class MarkdownScanner {
     void PerfectlyFineText()
     {
         SymbolObj OwningText;
-        OwningText.Symbol = std::make_shared<SymJustText>();
-        OwningText.start_line = CUR_LINE;
-        OwningText.start_position = CUR_COLOUM;
-        OwningText.Symbol->data->userdata += m_cur;
-        OwningText.absolut_position = m_stream.tellg();
-
-        auto ConvertUTFNULLToReplacementCharacter = [&]() {
-            OwningText.Symbol->data->userdata += "\xEF\xBF\xBD"; // UTF8 Replacement character. Wanted by CommonMark Spec
+        auto SetupOwning = [&]() {
+            OwningText = SymbolObj();
+            OwningText.Symbol = std::make_shared<SymJustText>();
+            OwningText.OnLineNum = CUR_LINE;
+            OwningText.StartColumn = CUR_COLOUM;
+            OwningText.Symbol->data->userdata += m_cur;
+            OwningText.absolut_position = m_stream.tellg();
         };
 
+        auto ConvertUTFNULLToReplacementCharacter
+            = [&]() {
+                  OwningText.Symbol->data->userdata += "\xEF\xBF\xBD"; // UTF8 Replacement character. Wanted by CommonMark Spec
+              };
+
+        SetupOwning();
         while (get_new_char()) {
             if (m_cur == 0x000000) {
                 ConvertUTFNULLToReplacementCharacter();
@@ -216,9 +240,7 @@ class MarkdownScanner {
                 break;
             }
         }
-
-        OwningText.stop_line = CUR_LINE;
-        OwningText.stop_position = CUR_COLOUM;
+        OwningText.StopColoumn = CUR_COLOUM;
 
         m_symvec.emplace_back(std::move(OwningText));
     }
@@ -228,8 +250,8 @@ class MarkdownScanner {
     {
         SymbolObj Owning;
         Owning.Symbol = std::make_unique<T>();
-        Owning.start_line = CUR_LINE;
-        Owning.start_position = CUR_COLOUM;
+        Owning.OnLineNum = CUR_LINE;
+        Owning.StartColumn = CUR_COLOUM;
         Owning.absolut_position = m_stream.tellg();
 
         m_symvec.emplace_back(std::move(Owning));
@@ -291,6 +313,16 @@ class MarkdownScanner {
         PushSymbolOnCurrent<SymDash>();
     }
 
+    void NewLine()
+    {
+        PushSymbolOnCurrent<SymNewLine>();
+    }
+
+    void Tab()
+    {
+        PushSymbolOnCurrent<SymTab>();
+    }
+
     void putCharBackIntoStream()
     {
         m_stream.unget();
@@ -298,7 +330,7 @@ class MarkdownScanner {
 
     // NOLINTNEXTLINE
     void (MarkdownScanner::*HandleTable[128])() = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                                       // NOLINT 0 - 15
+        0, 0, 0, 0, 0, 0, 0, 0, 0, &MarkdownScanner::Tab, &MarkdownScanner::NewLine, 0, 0, 0, 0, 0,                                                                                           // NOLINT 0 - 15
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                                       // NOLINT 16 - 31
         0, 0, 0, 0, 0, 0, 0, 0, &MarkdownScanner::OpenParenthesis, &MarkdownScanner::CloseParenthesis, &MarkdownScanner::Asterisk, 0, 0, &MarkdownScanner::Dash, 0, 0,                        // NOLINT 32 - 47, 40=(, 41=) 42=*
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                                       // NOLINT 48 - 63
