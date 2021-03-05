@@ -1,5 +1,5 @@
-#include "Parsers/MarkdownLexer.hpp"
 #include "Parsers/MarkdownLinkOptional.hpp"
+#include "Parsers/MarkdownScanner.hpp"
 #include "common.hpp"
 #include <Formatters/Links/OptionalMarkdownLink.hpp>
 #include <Formatters/List/MarkdownIndexList.hpp>

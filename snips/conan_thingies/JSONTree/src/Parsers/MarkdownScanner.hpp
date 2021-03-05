@@ -2,8 +2,8 @@
 // Created by darksider3 on 03.03.21.
 //
 
-#ifndef JSONTREE_MARKDOWNLEXER_HPP
-#define JSONTREE_MARKDOWNLEXER_HPP
+#ifndef JSONTREE_MARKDOWNSCANNER_HPP
+#define JSONTREE_MARKDOWNSCANNER_HPP
 #include "common.hpp"
 #include <memory>
 #include <sstream>
@@ -39,7 +39,7 @@ constexpr uint8_t DebugDashes = 40;
  *
  * The proposed Markdownlexer would take the vector of the scanner, turn it into an actual AST that is iterateable
  */
-class MarkdownLexer {
+class MarkdownScanner {
     enum MarkSyms {
         SYM_ABSTRACT = -1,
         SYM_ASTERISK = 0,
@@ -332,15 +332,15 @@ class MarkdownLexer {
     }
 
     // NOLINTNEXTLINE
-    void (MarkdownLexer::*HandleTable[128])() = {
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 0 - 15
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 16 - 31
-        0, 0, 0, 0, 0, 0, 0, 0, &MarkdownLexer::OpenParenthesis, &MarkdownLexer::CloseParenthesis, &MarkdownLexer::Asterisk, 0, 0, &MarkdownLexer::Dash, 0, 0,                      // NOLINT 32 - 47, 40=(, 41=) 42=*
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 48 - 63
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 64 - 79
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &MarkdownLexer::OpenBracket, &MarkdownLexer::Escape, &MarkdownLexer::CloseBracket, &MarkdownLexer::Circumflex, &MarkdownLexer::Underscore, // NOLINT 80 - 95  91=[, 92=\, 93=], 94=^, 95=_
-        &MarkdownLexer::Backtick, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                      // NOLINT 96 - 111 96=`
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &MarkdownLexer::Tilde, 0, 0                                                                                                          // NOLINT 112- 128 126=~
+    void (MarkdownScanner::*HandleTable[128])() = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                                       // NOLINT 0 - 15
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                                       // NOLINT 16 - 31
+        0, 0, 0, 0, 0, 0, 0, 0, &MarkdownScanner::OpenParenthesis, &MarkdownScanner::CloseParenthesis, &MarkdownScanner::Asterisk, 0, 0, &MarkdownScanner::Dash, 0, 0,                        // NOLINT 32 - 47, 40=(, 41=) 42=*
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                                       // NOLINT 48 - 63
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                                       // NOLINT 64 - 79
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &MarkdownScanner::OpenBracket, &MarkdownScanner::Escape, &MarkdownScanner::CloseBracket, &MarkdownScanner::Circumflex, &MarkdownScanner::Underscore, // NOLINT 80 - 95  91=[, 92=\, 93=], 94=^, 95=_
+        &MarkdownScanner::Backtick, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                              // NOLINT 96 - 111 96=`
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &MarkdownScanner::Tilde, 0, 0                                                                                                                  // NOLINT 112- 128 126=~
     };
     // clang-tidy on
 
@@ -403,9 +403,9 @@ public:
         return (TerminalTable[static_cast<unsigned int>(x)] == 1);
     }
 
-    std::vector<SymbolObj> getVec()
+    std::vector<SymbolObj>&& getVec()
     {
-        return std::move(m_symvec);
+        return std::move(m_symvec); // stupid vector doesnt play well in C++20..
     }
 
     void setVec(std::vector<SymbolObj>&& vec)
@@ -426,4 +426,4 @@ public:
     }
 };
 }
-#endif //JSONTREE_MARKDOWNLEXER_HPP
+#endif //JSONTREE_MARKDOWNSCANNER_HPP
