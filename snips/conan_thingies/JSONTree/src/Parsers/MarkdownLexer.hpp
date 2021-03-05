@@ -154,7 +154,7 @@ class MarkdownLexer {
         {
             OP_SYM = MarkSyms::SYM_CLOSE_BRACKET;
             SymName = "SYM_CLOSE_BRACKET";
-            Terminal = ')';
+            Terminal = ']';
         }
     };
 
