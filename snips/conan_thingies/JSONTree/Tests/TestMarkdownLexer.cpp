@@ -14,7 +14,7 @@ std::string escapedNewline(std::string_view input)
 {
     std::string escaped { "\"" };
     for (auto& c : input) {
-        if (c == 0x0a) // \n
+        if (c == line_feed) // \n
             escaped += "\\n";
         else
             escaped += c;

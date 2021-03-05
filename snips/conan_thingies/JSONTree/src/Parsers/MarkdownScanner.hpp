@@ -60,7 +60,7 @@ public:
     int stop_line { 0 };                    //NOLINT
     int start_position { 0 };               //NOLINT
     int stop_position { 0 };                //NOLINT
-    int absolut_position { 0 };
+    int absolut_position { 0 };             // NOLINT
 };
 
 // clang-format off
@@ -198,6 +198,7 @@ class MarkdownScanner {
         OwningText.start_line = CUR_LINE;
         OwningText.start_position = CUR_COLOUM;
         OwningText.Symbol->data->userdata += m_cur;
+        OwningText.absolut_position = m_stream.tellg();
 
         auto ConvertUTFNULLToReplacementCharacter = [&]() {
             OwningText.Symbol->data->userdata += "\xEF\xBF\xBD"; // UTF8 Replacement character. Wanted by CommonMark Spec
@@ -229,6 +230,7 @@ class MarkdownScanner {
         Owning.Symbol = std::make_unique<T>();
         Owning.start_line = CUR_LINE;
         Owning.start_position = CUR_COLOUM;
+        Owning.absolut_position = m_stream.tellg();
 
         m_symvec.emplace_back(std::move(Owning));
     }
