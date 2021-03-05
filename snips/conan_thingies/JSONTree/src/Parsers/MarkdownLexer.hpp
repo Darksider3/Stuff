@@ -15,7 +15,7 @@ namespace JSONTree::Parsers::detail {
 constexpr uint8_t TerminalTable[128] =  {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0 - 15
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 16 - 31
-    0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0, // 32 - 47, 40=(, 41=) 42=*
+    0,0,0,0,0,0,0,0,1,1,1,0,0,1,0,0, // 32 - 47, 40=(, 41=) 42=*, 45=-
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 48 - 63
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 64 - 79
     0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1, // 80 - 95  91=[, 92=\, 93=], 94=^, 95=_
@@ -46,7 +46,8 @@ class MarkdownLexer {
         SYM_TILDE = 6,
         SYM_BACKTICK = 7,
         SYM_CIRCUMFLEX = 8,
-        SYM_JUST_NORMAL_TEXT = 9
+        SYM_DASH = 9,
+        SYM_JUST_NORMAL_TEXT = 10
     };
 
     using TerminalType = char;
@@ -164,6 +165,15 @@ class MarkdownLexer {
             OP_SYM = MarkSyms::SYM_TILDE;
             SymName = "SYM_TILDE";
             Terminal = '~';
+        }
+    };
+
+    struct SymDash : public AbstractMarkSymbol {
+        SymDash()
+        {
+            OP_SYM = MarkSyms ::SYM_DASH,
+            SymName = "SYM_DASH";
+            Terminal = '-';
         }
     };
 
@@ -298,6 +308,11 @@ class MarkdownLexer {
         PushSymbolOnCurrent<SymTilde>();
     }
 
+    void Dash()
+    {
+        PushSymbolOnCurrent<SymDash>();
+    }
+
     void putCharBackIntoStream()
     {
         m_stream.unget();
@@ -307,7 +322,7 @@ class MarkdownLexer {
     void (MarkdownLexer::*HandleTable[128])() = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 0 - 15
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 16 - 31
-        0, 0, 0, 0, 0, 0, 0, 0, &MarkdownLexer::OpenParenthesis, &MarkdownLexer::CloseParenthesis, &MarkdownLexer::Asterisk, 0, 0, 0, 0, 0,                                         // NOLINT 32 - 47, 40=(, 41=) 42=*
+        0, 0, 0, 0, 0, 0, 0, 0, &MarkdownLexer::OpenParenthesis, &MarkdownLexer::CloseParenthesis, &MarkdownLexer::Asterisk, 0, 0, &MarkdownLexer::Dash, 0, 0,                      // NOLINT 32 - 47, 40=(, 41=) 42=*
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 48 - 63
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                                                                                                             // NOLINT 64 - 79
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, &MarkdownLexer::OpenBracket, &MarkdownLexer::Escape, &MarkdownLexer::CloseBracket, &MarkdownLexer::Circumflex, &MarkdownLexer::Underscore, // NOLINT 80 - 95  91=[, 92=\, 93=], 94=^, 95=_
