@@ -10,12 +10,14 @@ void fmtPrintFillChar()
     fmt::print("\t{:->{}}\n", "", DebugDashes);
 }
 
-std::string escapedNewline(std::string_view input)
+std::string escapedControlChars(std::string_view input)
 {
     std::string escaped { "\"" };
     for (auto& c : input) {
         if (c == line_feed) // \n
             escaped += "\\n";
+        else if (c == tab)
+            escaped += "\\t";
         else
             escaped += c;
     }
@@ -24,28 +26,35 @@ std::string escapedNewline(std::string_view input)
     return escaped;
 }
 
+std::string escapedControlChars(char input)
+{
+    std::string in;
+    in += input;
+    return escapedControlChars(in);
+}
+
 void fmtPrintDebugSym(SymbolObj& obj)
 {
-    fmt::print("\n\tType: {0}\n\tName: {1:s}\n\tAbsolute Position: {2}\n\tline: {3}\n\tTerminalchar: {4:c}\n",
+    fmt::print("Type: {0}\n\tName: {1:s}\n\tAbsolute Position: {2}\n\tline: {3}\n\tTerminalchar: {4:s}\n",
         obj.Symbol->OP_SYM, obj.Symbol->SymName,
-        obj.absolut_position, obj.start_line,
-        obj.Symbol->Terminal);
+        obj.absolut_position, obj.OnLineNum,
+        escapedControlChars(obj.Symbol->Terminal));
 
     fmtPrintFillChar();
 }
 
 void fmtPrintDebugTextSym(SymbolObj& obj)
 {
-    fmt::print("\n\tType: {0}\n\tName: {1:s}\n\tdataLength: {2}\n\tstartpos: {3}\n\tstoppos: {4}\n\tlines: {5}\n\tdata: {6:s}\n",
-        obj.Symbol->OP_SYM, obj.Symbol->SymName, obj.Symbol->data->userdata.length(), obj.start_position, obj.stop_position,
-        obj.stop_line - (obj.start_line - 1), escapedNewline(obj.Symbol->data->userdata)); // TODO: -1 because of 1-1, but maybe it's just more wise to call it linebreaks instead of lines
+    fmt::print("Type: {0}\n\t-> Name: {1:s}\n\t-> dataLength: {2}\n\t-> startpos: {3}\n\t-> stoppos: {4}\n\t-> lines: {5}\n\t-> data: {6:s}\n",
+        obj.Symbol->OP_SYM, obj.Symbol->SymName, obj.Symbol->data->userdata.length(), obj.StartColumn, obj.StopColoumn,
+        obj.OnLineNum, escapedControlChars(obj.Symbol->data->userdata)); // TODO: -1 because of 1-1, but maybe it's just more wise to call it linebreaks instead of lines
 
     fmtPrintFillChar();
 }
 
 void PrintTestWhitespaceThing()
 {
-    std::string teststr { "Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)" };
+    std::string teststr { "Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)```c\nhier()\n```" };
     MarkdownScanner MDScanner { teststr };
     MDScanner.Scan();
     auto SymVec = MDScanner.getVec();
@@ -59,7 +68,7 @@ void PrintTestWhitespaceThing()
         }
     }
 
-    fmt::print("Sourcestr: {}\n\n", escapedNewline(teststr));
+    fmt::print("Sourcestr: {}\n\n", escapedControlChars(teststr));
 }
 int main(int, char**)
 {
