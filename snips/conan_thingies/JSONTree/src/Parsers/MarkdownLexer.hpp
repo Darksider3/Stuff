@@ -251,18 +251,52 @@ class MarkdownLexer {
     {
         PushSymbolOnCurrent<SymParenthesisOpen>();
     }
+
     void CloseParenthesis()
     {
         PushSymbolOnCurrent<SymParenthesisClose>();
     }
-    void Asterisk() { }
-    void OpenBracket() { }
-    void Escape() { }
-    void CloseBracket() { }
-    void Circumflex() { }
-    void Underscore() { }
-    void Backtick() { }
-    void Tilde() { }
+
+    void Asterisk()
+    {
+        PushSymbolOnCurrent<SymAsterisk>();
+    }
+
+    void OpenBracket()
+    {
+        PushSymbolOnCurrent<SymBracketOpen>();
+    }
+
+    void CloseBracket()
+    {
+        PushSymbolOnCurrent<SymBracketClose>();
+    }
+
+    void Escape()
+    {
+        if (m_stream.good())
+            m_cur = m_stream.get(); // ignore the following char
+    }
+
+    void Circumflex()
+    {
+        PushSymbolOnCurrent<SymCircumflex>();
+    }
+
+    void Underscore()
+    {
+        PushSymbolOnCurrent<SymUnderscore>();
+    }
+
+    void Backtick()
+    {
+        PushSymbolOnCurrent<SymBacktick>();
+    }
+
+    void Tilde()
+    {
+        PushSymbolOnCurrent<SymTilde>();
+    }
 
     void putCharBackIntoStream()
     {
