@@ -11,6 +11,58 @@
 #include <vector>
 
 namespace JSONTree::Parsers::detail {
+template<typename T>
+using PointerT = std::shared_ptr<T>;
+
+enum MarkSyms {
+    SYM_ABSTRACT = -1,
+    SYM_ASTERISK = 0,
+    SYM_UNDERSCORE = 1,
+    SYM_OPEN_PARENTHESIS = 2,
+    SYM_CLOSE_PARENTHESIS = 3,
+    SYM_OPEN_BRACKET = 4,
+    SYM_CLOSE_BRACKET = 5,
+    SYM_TILDE = 6,
+    SYM_BACKTICK = 7,
+    SYM_CIRCUMFLEX = 8,
+    SYM_DASH = 9,
+    SYM_JUST_NORMAL_TEXT = 10
+};
+
+using TerminalType = char;
+struct AbstractMarkSymbol;
+
+struct SymbolUserData {
+    std::string userdata;
+};
+
+struct AbstractMarkSymbol {
+    MarkSyms OP_SYM { SYM_ABSTRACT };
+    std::string SymName { "ABSTRACT" };
+    TerminalType Terminal { 0 };
+
+    PointerT<SymbolUserData> data { std::make_shared<SymbolUserData>() };
+};
+
+struct SymbolObj {
+public:
+    SymbolObj() = default;
+    SymbolObj(SymbolObj&&) = default;
+    ~SymbolObj() = default;
+
+    // Delete Copy ops
+    SymbolObj(const SymbolObj&) = default;
+    SymbolObj& operator=(const SymbolObj&) = default;
+    SymbolObj& operator=(SymbolObj&&) = default;
+
+    PointerT<AbstractMarkSymbol> Symbol {}; //NOLINT
+    int start_line { 0 };                   //NOLINT
+    int stop_line { 0 };                    //NOLINT
+    int start_position { 0 };               //NOLINT
+    int stop_position { 0 };                //NOLINT
+    int absolut_position { 0 };
+};
+
 // clang-format off
 constexpr uint8_t TerminalTable[128] =  {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0 - 15
@@ -40,79 +92,6 @@ constexpr uint8_t DebugDashes = 40;
  * The proposed Markdownlexer would take the vector of the scanner, turn it into an actual AST that is iterateable
  */
 class MarkdownScanner {
-    enum MarkSyms {
-        SYM_ABSTRACT = -1,
-        SYM_ASTERISK = 0,
-        SYM_UNDERSCORE = 1,
-        SYM_OPEN_PARENTHESIS = 2,
-        SYM_CLOSE_PARENTHESIS = 3,
-        SYM_OPEN_BRACKET = 4,
-        SYM_CLOSE_BRACKET = 5,
-        SYM_TILDE = 6,
-        SYM_BACKTICK = 7,
-        SYM_CIRCUMFLEX = 8,
-        SYM_DASH = 9,
-        SYM_JUST_NORMAL_TEXT = 10
-    };
-
-    using TerminalType = char;
-    struct AbstractMarkSymbol;
-
-    struct SymbolUserData {
-        std::string userdata;
-    };
-
-#ifndef NDEBUG
-
-    void fmtPrintFillChar()
-    {
-        fmt::print("\t{:->{}}\n", "", DebugDashes);
-    }
-
-    std::string escapedNewline(std::string_view input)
-    {
-        std::string escaped { "\"" };
-        for (auto& c : input) {
-            if (c == 0x0a) // \n
-                escaped += "\\n";
-            else
-                escaped += c;
-        }
-
-        escaped += "\"";
-        return escaped;
-    }
-#endif
-
-    template<typename T>
-    using PointerT = std::shared_ptr<T>;
-
-    struct AbstractMarkSymbol {
-        MarkSyms OP_SYM { SYM_ABSTRACT };
-        std::string SymName { "ABSTRACT" };
-        TerminalType Terminal { 0 };
-
-        PointerT<SymbolUserData> data { std::make_shared<SymbolUserData>() };
-    };
-
-    struct SymbolObj {
-    public:
-        SymbolObj() = default;
-        SymbolObj(SymbolObj&&) = default;
-        ~SymbolObj() = default;
-
-        // Delete Copy ops
-        SymbolObj(const SymbolObj&) = default;
-        SymbolObj& operator=(const SymbolObj&) = default;
-        SymbolObj& operator=(SymbolObj&&) = default;
-
-        PointerT<AbstractMarkSymbol> Symbol {}; //NOLINT
-        int start_line { 0 };                   //NOLINT
-        int stop_line { 0 };                    //NOLINT
-        int start_position { 0 };               //NOLINT
-        int stop_position { 0 };                //NOLINT
-    };
-
     struct SymAsterisk : public AbstractMarkSymbol {
         SymAsterisk()
         {
@@ -243,25 +222,6 @@ class MarkdownScanner {
         m_symvec.emplace_back(std::move(OwningText));
     }
 
-    void fmtPrintDebugSym(SymbolObj& obj)
-    {
-        fmt::print("\n\tType: {0}\n\tName: {1:s}\n\tstartpos: {2}\n\tline: {3}\n\tTerminalchar: {4:c}\n",
-            obj.Symbol->OP_SYM, obj.Symbol->SymName,
-            obj.start_position, obj.start_line,
-            obj.Symbol->Terminal);
-
-        fmtPrintFillChar();
-    }
-
-    void fmtPrintDebugTextSym(SymbolObj& obj)
-    {
-        fmt::print("\n\tType: {0}\n\tName: {1:s}\n\tdataLength: {2}\n\tstartpos: {3}\n\tstoppos: {4}\n\tlines: {5}\n\tdata: {6:s}\n",
-            obj.Symbol->OP_SYM, obj.Symbol->SymName, obj.Symbol->data->userdata.length(), obj.start_position, obj.stop_position,
-            obj.stop_line - (obj.start_line - 1), escapedNewline(obj.Symbol->data->userdata)); // TODO: -1 because of 1-1, but maybe it's just more wise to call it linebreaks instead of lines
-
-        fmtPrintFillChar();
-    }
-
     template<typename T>
     void PushSymbolOnCurrent()
     {
@@ -383,24 +343,6 @@ class MarkdownScanner {
     }
 
 public:
-    void PrintTestWhitespaceThing()
-    {
-        std::string teststr { "Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)" };
-        m_stream.str(teststr);
-        parse();
-
-        for (auto& El : m_symvec) {
-            if (El.Symbol->OP_SYM == SYM_JUST_NORMAL_TEXT) {
-                // @TODO
-                fmtPrintDebugTextSym(El);
-            } else {
-                fmtPrintDebugSym(El);
-            }
-        }
-
-        fmt::print("Sourcestr: {}\n\n", escapedNewline(teststr));
-    }
-
     bool isTerminalChar(unsigned char x)
     {
         return (TerminalTable[static_cast<unsigned int>(x)] == 1);
@@ -415,7 +357,18 @@ public:
     {
         std::swap(vec, m_symvec);
     }
-    void parse()
+
+    void setInput(const std::string& in)
+    {
+        m_stream.str(in);
+    }
+
+    MarkdownScanner(const std::string& in)
+    {
+        setInput(in);
+    }
+
+    void Scan()
     {
         while (get_new_char()) {
             if (isTerminalChar(m_cur)) {
@@ -429,8 +382,14 @@ public:
     }
 };
 
-class MarkdownParsing {
-    MarkdownScanner Scanner {};
+class MarkdownParser {
+    MarkdownScanner Scanner;
+
+public:
+    MarkdownParser(const std::string& toParse)
+        : Scanner { toParse }
+    {
+    }
 };
 }
 #endif //JSONTREE_MARKDOWNSCANNER_HPP
