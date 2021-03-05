@@ -382,7 +382,7 @@ class MarkdownLexer {
 public:
     void PrintTestWhitespaceThing()
     {
-        std::string teststr { "Ich habe doch auch \n keine Ahnung! (oder so)" };
+        std::string teststr { "Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)" };
         m_stream.str(teststr);
         parse();
 
