@@ -30,10 +30,15 @@ constexpr unsigned char tab = 0x09;
 constexpr unsigned char vertical_tab = 0x0b;
 constexpr unsigned char space = 0x20;
 constexpr unsigned char form_feed = 0x0c;
+constexpr unsigned char dash = '-';
 constexpr uint8_t DebugDashes = 40;
 
 // clang-format on
-
+/*
+ * @TODO: All Scanning/Tokenizing into MarkdownScanner, Logics for the language itself into MarkdownLexer, display and manipulation into MarkdownParser
+ *
+ * The proposed Markdownlexer would take the vector of the scanner, turn it into an actual AST that is iterateable
+ */
 class MarkdownLexer {
     enum MarkSyms {
         SYM_ABSTRACT = -1,
@@ -212,7 +217,15 @@ class MarkdownLexer {
         OwningText.start_position = CUR_COLOUM;
         OwningText.Symbol->data->userdata += m_cur;
 
+        auto ConvertUTFNULLToReplacementCharacter = [&]() {
+            OwningText.Symbol->data->userdata += "\xEF\xBF\xBD"; // UTF8 Replacement character. Wanted by CommonMark Spec
+        };
+
         while (get_new_char()) {
+            if (m_cur == 0x000000) {
+                ConvertUTFNULLToReplacementCharacter();
+            }
+
             if (!isTerminalChar(m_cur)) {
                 OwningText.Symbol->data->userdata += m_cur;
             } else {
