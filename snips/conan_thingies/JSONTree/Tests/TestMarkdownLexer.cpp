@@ -33,9 +33,11 @@ std::string escapedControlChars(char input)
     return escapedControlChars(in);
 }
 
-void fmtPrintDebugSym(SymbolObj& obj)
+void fmtPrintDebugSymVerbose(SymbolObj& obj)
 {
-    fmt::print("Type: {0}\n\tName: {1:s}\n\tAbsolute Position: {2}\n\tline: {3}\n\tTerminalchar: {4:s}\n",
+    fmt::print("Type: {0}\n\tName: {1:s}\n\t"
+               "Absolute Position: {2}\n\tline: {3}\n\t"
+               "Terminalchar: {4:s}\n",
         obj.Symbol->OP_SYM, obj.Symbol->SymName,
         obj.absolut_position, obj.OnLineNum,
         escapedControlChars(obj.Symbol->Terminal));
@@ -43,13 +45,33 @@ void fmtPrintDebugSym(SymbolObj& obj)
     fmtPrintFillChar();
 }
 
-void fmtPrintDebugTextSym(SymbolObj& obj)
+void fmtPrintDebugTextSymVerbose(SymbolObj& obj)
 {
-    fmt::print("Type: {0}\n\t-> Name: {1:s}\n\t-> dataLength: {2}\n\t-> startpos: {3}\n\t-> stoppos: {4}\n\t-> lines: {5}\n\t-> data: {6:s}\n",
-        obj.Symbol->OP_SYM, obj.Symbol->SymName, obj.Symbol->data->userdata.length(), obj.StartColumn, obj.StopColoumn,
-        obj.OnLineNum, escapedControlChars(obj.Symbol->data->userdata)); // TODO: -1 because of 1-1, but maybe it's just more wise to call it linebreaks instead of lines
+    fmt::print("Type: {0}\n\t-> Name: {1:s}\n"
+               "\t-> dataLength: {2}\n\t-> startpos: {3}\n"
+               "\t-> stoppos: {4}\n\t-> lines: {5}\n"
+               "\t-> data: {6:s}\n",
+        obj.Symbol->OP_SYM, obj.Symbol->SymName,
+        obj.Symbol->data->userdata.length(),
+        obj.StartColumn, obj.StopColoumn,
+        obj.OnLineNum, escapedControlChars(obj.Symbol->data->userdata));
 
     fmtPrintFillChar();
+}
+
+void fmtPrintDebugTextSym(SymbolObj& obj)
+{
+    fmt::print("Type{0}, Name: {1: <22s}, len: {2}, Pos: {3}, Data: {4:s}\n",
+        obj.Symbol->OP_SYM, obj.Symbol->SymName,
+        obj.Symbol->data->userdata.length(),
+        obj.absolut_position, escapedControlChars(obj.Symbol->data->userdata));
+}
+
+void fmtPrintDebugSym(SymbolObj& obj)
+{
+    fmt::print("Type{0: <2}, Name: {1: <22s}, Pos: {2}\n",
+        obj.Symbol->OP_SYM, obj.Symbol->SymName,
+        obj.absolut_position);
 }
 
 void PrintTestWhitespaceThing()
