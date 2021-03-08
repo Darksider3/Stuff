@@ -71,7 +71,7 @@ void fmtPrintDebugSym(SymbolObj& obj)
 {
     fmt::print("| Type{0: <2}| Name: {1: <22s}| Pos: {2}| Count: {3}|\n",
         obj.Symbol->OP_SYM, obj.Symbol->SymName,
-        obj.absolut_position);
+        obj.absolut_position, obj.successive_count);
 }
 
 void PrintTestWhitespaceThing()
@@ -79,6 +79,7 @@ void PrintTestWhitespaceThing()
     std::string teststr { "`SingleTick?` Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
     MarkdownLexer MDLexer { teststr };
     MDLexer.Stage1();
+    MDLexer.SumUpSymbols();
     auto SymVec = MDLexer.getVec();
 
     for (auto& El : SymVec) {

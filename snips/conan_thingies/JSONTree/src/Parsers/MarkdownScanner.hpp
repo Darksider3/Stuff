@@ -64,7 +64,11 @@ public:
     int OnLineNum { 0 };                    //NOLINT
     int StartColumn { 0 };                  //NOLINT
     int StopColoumn { 0 };                  //NOLINT
-    int absolut_position { 0 };             // NOLINT
+    int absolut_position { 0 };             //NOLINT
+
+    // automagically 1, because when we construct we expect it being actually present
+    // why shouldn't we construct otherwise?
+    int successive_count { 1 }; //NOLINT
 };
 
 // clang-format off
@@ -385,7 +389,7 @@ public:
         return (TerminalTable[static_cast<unsigned int>(x)] == 1);
     }
 
-    std::vector<SymbolObj> getVec()
+    std::vector<SymbolObj> getVec() noexcept
     {
         return m_symvec;
     }
@@ -423,20 +427,37 @@ class MarkdownLexer {
     ASTVec m_symvec {};
     const std::string& m_startstr;
 
-    /*
-     * Relevant consolidations:
-     * ----(dynamic length, minimum 3)
-     * ```(3 min, 3 max)
-     * ##### ( 1 min, up to 8
-     */
-    void consolidate();
-
 public:
     MarkdownLexer(const std::string& toParse)
         : m_startstr { toParse }
     {
     }
 
+    /*
+     * Relevant consolidations:
+     * ----(dynamic length, minimum 3)
+     * ```(3 min, 3 max)
+     * ##### ( 1 min, up to 8
+     */
+    void SumUpSymbols()
+    {
+        for (ASTVec::size_type i = 0; i != m_symvec.size(); ++i) {
+            if (m_symvec[i].Symbol->OP_SYM == m_symvec[i + 1].Symbol->OP_SYM) {
+                ASTVec::size_type j = 1;
+                while (i + j != m_symvec.size()
+                    && m_symvec.at(i).Symbol->OP_SYM == m_symvec.at(i + j).Symbol->OP_SYM) {
+
+                    m_symvec[i].successive_count += 1;
+                    m_symvec.erase(m_symvec.begin() + i + j); // start + current + 1(next)
+                    ++j;                                      // step forward
+                    --i;                                      // but rather dont(really)
+
+                    // Thats because on erause, lets say i=5, i must be i=4 when size()<6. Otherwise we will overrun!
+                }
+                //fmt::print("DBG: was here");
+            }
+        }
+    }
     void Stage1()
     {
         MarkdownScanner Scanner { m_startstr };
