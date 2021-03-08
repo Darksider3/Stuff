@@ -5,6 +5,7 @@
 #ifndef JSONTREE_MARKDOWNSCANNER_HPP
 #define JSONTREE_MARKDOWNSCANNER_HPP
 #include "common.hpp"
+#include <cassert>
 #include <memory>
 #include <sstream>
 #include <variant>
@@ -425,6 +426,13 @@ public:
 
 class MarkdownLexer {
 
+    struct Counterparts {
+        bool dec {};
+        size_t firstpos {};
+        size_t secondpos {};
+    };
+    std::unique_ptr<Counterparts[]> had_counterpart {};
+
     enum MDObjectT {
         MD_NONE,
         MD_LINK,
@@ -497,6 +505,45 @@ class MarkdownLexer {
         }
     }
 
+    struct CounterpartDecision {
+        bool found { false };
+        long VecDistance { 0 };
+    };
+
+    CounterpartDecision SymHasCounterpart(const SymbolObj& obj, ASTVec::size_type FromIndex)
+    {
+        auto ItHasObj = std::find_if(m_symvec.begin() + FromIndex, m_symvec.end(),
+            [obj](const SymbolObj& other) -> bool {
+                if (obj.Symbol->OP_SYM == other.Symbol->OP_SYM) {
+                    if (obj.successive_count == other.successive_count) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+
+        CounterpartDecision FinalDecision = {
+            .found = std::end(m_symvec) != ItHasObj,
+            .VecDistance = std::distance(m_symvec.begin(), ItHasObj),
+        };
+
+        return FinalDecision;
+    }
+
+    void SetCounterpartDecision(bool dec, size_t first, size_t second)
+    {
+        assert(!m_symvec.empty());
+        assert(had_counterpart);
+
+        had_counterpart[first].firstpos = first;
+        had_counterpart[first].secondpos = second;
+        had_counterpart[first].dec = dec;
+        had_counterpart[second].firstpos = first;
+        had_counterpart[second].secondpos = second;
+        had_counterpart[second].dec = dec;
+    }
+
 public:
     MarkdownLexer(const std::string& toParse)
         : m_startstr { toParse }
@@ -508,6 +555,7 @@ public:
         MarkdownScanner Scanner { m_startstr };
         Scanner.Scan();
         m_symvec = Scanner.getVec();
+        had_counterpart = std::make_unique<Counterparts[]>(m_symvec.size());
     }
 
     void Stage2()
@@ -518,8 +566,25 @@ public:
     // Links, inline blocks, inline bold and such
     void Stage3()
     {
-        for (auto& CurrentNode : m_symvec) {
+        for (ASTVec::size_type i = 0; i != m_symvec.size(); ++i) {
+            auto& CurrentNode = m_symvec.at(i);
+
             switch (CurrentNode.Symbol->OP_SYM) {
+            case MarkSyms::SYM_BACKTICK: {
+                if (!had_counterpart[i].dec) {
+                    auto Decision = SymHasCounterpart(CurrentNode, i + 1);
+                    if (Decision.found) {
+                        fmt::print("Found counterpart, source: {0}, counterpart: {1}\n", CurrentNode.absolut_position, m_symvec[Decision.VecDistance].absolut_position);
+                        SetCounterpartDecision(true, i, Decision.VecDistance);
+
+                    } else {
+                        fmt::print("Didnt find needed counterparts! :(\n");
+                        SetCounterpartDecision(false, i, Decision.VecDistance);
+                    }
+                } else {
+                    fmt::print("Ignoring counterpartsearch because we already had that, lol\n");
+                }
+            }
             default:
                 break;
             }

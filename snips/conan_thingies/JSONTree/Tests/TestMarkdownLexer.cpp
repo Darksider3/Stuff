@@ -80,6 +80,7 @@ void PrintTestWhitespaceThing()
     MarkdownLexer MDLexer { teststr };
     MDLexer.Stage1();
     MDLexer.Stage2();
+    MDLexer.Stage3();
     auto SymVec = MDLexer.getVec();
 
     for (auto& El : SymVec) {
