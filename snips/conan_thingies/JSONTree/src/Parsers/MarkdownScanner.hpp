@@ -424,21 +424,51 @@ public:
 };
 
 class MarkdownLexer {
+
+    enum MDObjectT {
+        MD_NONE,
+        MD_LINK,
+        MD_INLINE_CODE,
+        MD_BOLD,
+        MD_ITALIC,
+        MD_STRIKED,
+        MD_QUOTE,
+        MD_CODEBLOCK,
+        MD_HEADING,
+    };
+
+    struct TextData {
+        std::string Text {};
+    };
+
+    struct LinkData {
+        std::string Link;
+        std::string Title;
+    };
+
+    struct InlineCodeData : public TextData {
+    };
+
+    struct BoldTextData : public TextData {
+    };
+
+    struct ItalicTextData : public TextData {
+    };
+
+    struct StrikedTextData : public TextData {
+    };
+
+    struct QuotedTextData : public TextData {
+    };
+
+    struct MarkdownObject {
+        MDObjectT ObjT { MD_NONE };
+        std::variant<>
+    };
+
     ASTVec m_symvec {};
     const std::string& m_startstr;
 
-public:
-    MarkdownLexer(const std::string& toParse)
-        : m_startstr { toParse }
-    {
-    }
-
-    /*
-     * Relevant consolidations:
-     * ----(dynamic length, minimum 3)
-     * ```(3 min, 3 max)
-     * ##### ( 1 min, up to 8
-     */
     void SumUpSymbols()
     {
         for (ASTVec::size_type i = 0; i != m_symvec.size(); ++i) {
@@ -458,11 +488,28 @@ public:
             }
         }
     }
+
+public:
+    MarkdownLexer(const std::string& toParse)
+        : m_startstr { toParse }
+    {
+    }
+
     void Stage1()
     {
         MarkdownScanner Scanner { m_startstr };
         Scanner.Scan();
         m_symvec = Scanner.getVec();
+    }
+
+    void Stage2()
+    {
+        SumUpSymbols();
+    }
+
+    // Links, inline blocks, inline bold and such
+    void Stage3()
+    {
     }
 
     ASTVec getVec() { return m_symvec; }
