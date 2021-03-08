@@ -461,12 +461,20 @@ class MarkdownLexer {
     struct QuotedTextData : public TextData {
     };
 
+    using TxtDataPtr = std::shared_ptr<TextData>;
+    using InlineCodeDataPtr = std::shared_ptr<InlineCodeData>;
+    using ItalicDataPtr = std::shared_ptr<ItalicTextData>;
+    using BoldDataPtr = std::shared_ptr<BoldTextData>;
+    using StrikedDataPtr = std::shared_ptr<StrikedTextData>;
+    using QuotedDataPtr = std::shared_ptr<QuotedTextData>;
+
     struct MarkdownObject {
         MDObjectT ObjT { MD_NONE };
-        std::variant<>
+        std::variant<TxtDataPtr, InlineCodeDataPtr, ItalicDataPtr, BoldDataPtr, StrikedDataPtr, QuotedDataPtr> data;
     };
 
     ASTVec m_symvec {};
+    std::vector<MarkdownObject> MDObjects {};
     const std::string& m_startstr;
 
     void SumUpSymbols()
@@ -510,6 +518,12 @@ public:
     // Links, inline blocks, inline bold and such
     void Stage3()
     {
+        for (auto& CurrentNode : m_symvec) {
+            switch (CurrentNode.Symbol->OP_SYM) {
+            default:
+                break;
+            }
+        }
     }
 
     ASTVec getVec() { return m_symvec; }
