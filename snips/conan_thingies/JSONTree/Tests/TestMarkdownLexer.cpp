@@ -76,10 +76,10 @@ void fmtPrintDebugSym(SymbolObj& obj)
 
 void PrintTestWhitespaceThing()
 {
-    std::string teststr { "Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)```c\nhier()\n```" };
-    MarkdownScanner MDScanner { teststr };
-    MDScanner.Scan();
-    auto SymVec = MDScanner.getVec();
+    std::string teststr { "Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
+    MarkdownLexer MDLexer { teststr };
+    MDLexer.Stage1();
+    auto SymVec = MDLexer.getVec();
 
     for (auto& El : SymVec) {
         if (El.Symbol->OP_SYM == SYM_JUST_NORMAL_TEXT) {

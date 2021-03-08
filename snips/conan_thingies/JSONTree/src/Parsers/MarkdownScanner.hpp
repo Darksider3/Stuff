@@ -46,6 +46,9 @@ struct AbstractMarkSymbol {
     PointerT<SymbolUserData> data { std::make_shared<SymbolUserData>() };
 };
 
+struct SymbolObj;
+using ASTVec = std::vector<SymbolObj>;
+
 struct SymbolObj {
 public:
     SymbolObj() = default;
@@ -342,7 +345,7 @@ class MarkdownScanner {
     // clang-tidy on
 
     std::stringstream m_stream;
-    std::vector<SymbolObj> m_symvec {};
+    ASTVec m_symvec {};
 
     uint32_t CUR_LINE = 1;
     uint32_t CUR_COLOUM = 1;
@@ -416,14 +419,32 @@ public:
     }
 };
 
-class MarkdownParser {
-    MarkdownScanner Scanner;
+class MarkdownLexer {
+    ASTVec m_symvec {};
+    const std::string& m_startstr;
+
+    /*
+     * Relevant consolidations:
+     * ----(dynamic length, minimum 3)
+     * ```(3 min, 3 max)
+     * ##### ( 1 min, up to 8
+     */
+    void consolidate();
 
 public:
-    MarkdownParser(const std::string& toParse)
-        : Scanner { toParse }
+    MarkdownLexer(const std::string& toParse)
+        : m_startstr { toParse }
     {
     }
+
+    void Stage1()
+    {
+        MarkdownScanner Scanner { m_startstr };
+        Scanner.Scan();
+        m_symvec = Scanner.getVec();
+    }
+
+    ASTVec getVec() { return m_symvec; }
 };
 }
 #endif //JSONTREE_MARKDOWNSCANNER_HPP
