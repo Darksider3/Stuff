@@ -61,7 +61,7 @@ void fmtPrintDebugTextSymVerbose(SymbolObj& obj)
 
 void fmtPrintDebugTextSym(SymbolObj& obj)
 {
-    fmt::print("Type{0}, Name: {1: <22s}, len: {2}, Pos: {3}, Data: {4:s}\n",
+    fmt::print("| Type{0}| Name: {1: <22s}| len: {2}| Pos: {3}| Data: {4:s}|\n",
         obj.Symbol->OP_SYM, obj.Symbol->SymName,
         obj.Symbol->data->userdata.length(),
         obj.absolut_position, escapedControlChars(obj.Symbol->data->userdata));
@@ -69,14 +69,14 @@ void fmtPrintDebugTextSym(SymbolObj& obj)
 
 void fmtPrintDebugSym(SymbolObj& obj)
 {
-    fmt::print("Type{0: <2}, Name: {1: <22s}, Pos: {2}\n",
+    fmt::print("| Type{0: <2}| Name: {1: <22s}| Pos: {2}| Count: {3}|\n",
         obj.Symbol->OP_SYM, obj.Symbol->SymName,
         obj.absolut_position);
 }
 
 void PrintTestWhitespaceThing()
 {
-    std::string teststr { "Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
+    std::string teststr { "`SingleTick?` Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
     MarkdownLexer MDLexer { teststr };
     MDLexer.Stage1();
     auto SymVec = MDLexer.getVec();
