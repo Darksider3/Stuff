@@ -36,7 +36,7 @@ using TerminalType = char;
 struct AbstractMarkSymbol;
 
 struct SymbolUserData {
-    std::string userdata;
+    size_t length { 0 };
 };
 
 struct AbstractMarkSymbol {
@@ -65,7 +65,7 @@ public:
     int OnLineNum { 0 };                    //NOLINT
     int StartColumn { 0 };                  //NOLINT
     int StopColoumn { 0 };                  //NOLINT
-    int absolut_position { 0 };             //NOLINT
+    int absolutePosition { 0 };             //NOLINT
 
     // automagically 1, because when we construct we expect it being actually present
     // why shouldn't we construct otherwise?
@@ -226,23 +226,16 @@ class MarkdownScanner {
             OwningText.Symbol = std::make_shared<SymJustText>();
             OwningText.OnLineNum = CUR_LINE;
             OwningText.StartColumn = CUR_COLOUM;
-            OwningText.Symbol->data->userdata += m_cur;
-            OwningText.absolut_position = m_stream.tellg();
-        };
+            OwningText.absolutePosition = (m_stream.tellg());
+            OwningText.Symbol->data->length = 0;
 
-        auto ConvertUTFNULLToReplacementCharacter
-            = [&]() {
-                  OwningText.Symbol->data->userdata += "\xEF\xBF\xBD"; // UTF8 Replacement character. Wanted by CommonMark Spec
-              };
+            --OwningText.absolutePosition; // Remember: we're already 1 char in!
+        };
 
         SetupOwning();
         while (get_new_char()) {
-            if (m_cur == 0x000000) {
-                ConvertUTFNULLToReplacementCharacter();
-            }
-
             if (!isTerminalChar(m_cur)) {
-                OwningText.Symbol->data->userdata += m_cur;
+                OwningText.Symbol->data->length += 1;
             } else {
                 putCharBackIntoStream();
                 break;
@@ -260,7 +253,7 @@ class MarkdownScanner {
         Owning.Symbol = std::make_unique<T>();
         Owning.OnLineNum = CUR_LINE;
         Owning.StartColumn = CUR_COLOUM;
-        Owning.absolut_position = m_stream.tellg();
+        Owning.absolutePosition = m_stream.tellg();
 
         m_symvec.emplace_back(std::move(Owning));
     }
@@ -421,6 +414,20 @@ public:
                 this->PerfectlyFineText();
             }
         }
+    }
+
+    std::string getStrFromSym(SymbolObj& sym)
+    {
+        m_stream.clear(); // clearing the eofbits
+        std::string Composite { "" };
+        auto OldPos = m_stream.tellg();
+        m_stream.seekg(sym.absolutePosition);
+        for (size_t i = 0; i < sym.Symbol->data->length; ++i) {
+            char cur = m_stream.get();
+            Composite += cur;
+        }
+        m_stream.seekg(OldPos);
+        return Composite;
     }
 };
 }

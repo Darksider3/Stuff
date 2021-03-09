@@ -148,17 +148,18 @@ class MarkdownLexer {
     }
 
 public:
+    MarkdownScanner m_Scanner;
     ASTVec getVec() { return m_symvec; }
     MarkdownLexer(const std::string& toParse)
         : m_startstr { toParse }
+        , m_Scanner { toParse }
     {
     }
 
     void Stage1()
     {
-        MarkdownScanner Scanner { m_startstr };
-        Scanner.Scan();
-        m_symvec = Scanner.getVec();
+        m_Scanner.Scan();
+        m_symvec = m_Scanner.getVec();
         m_counterparts = std::make_unique<PositionalCounterparts[]>(m_symvec.size());
     }
 
@@ -189,7 +190,7 @@ public:
                 // Setting the right Symbols
                 if (CurrentNode.successive_count == 1) {
                     MarkdownObject Obj { .ObjT = MD_INLINE_CODE, .data = std::make_shared<InlineCodeData>() };
-                    std::get<InlineCodeDataPtr>(Obj.data)->Text = m_symvec[i + 1].Symbol->data->userdata;
+                    std::get<InlineCodeDataPtr>(Obj.data)->Text = m_Scanner.getStrFromSym(m_symvec[i + 1]);
                     MDObjects.push_back(Obj);
                 } else if (CurrentNode.successive_count == 3) {
                     MarkdownObject Obj { .ObjT = MD_CODEBLOCK, .data = std::make_shared<BlockCodeData>() };
