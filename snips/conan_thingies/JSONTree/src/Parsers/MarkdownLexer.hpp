@@ -76,6 +76,7 @@ class MarkdownLexer {
     struct MarkdownObject {
         MDObjectT ObjT { MD_NONE };
         ObjectVariants data;
+        std::vector<MarkdownObject> childs {}; // :thinking:
     };
 
     ASTVec m_symvec {};
@@ -201,6 +202,8 @@ public:
             }
         }
     }
+
+    // void handleSyms(MarkdownObject& root);
 };
 }
 #endif //JSONTREE_MARKDOWNLEXER_HPP
