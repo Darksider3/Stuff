@@ -426,12 +426,11 @@ public:
 
 class MarkdownLexer {
 
-    struct Counterparts {
+    struct PositionalCounterparts {
         bool dec {};
-        size_t firstpos {};
-        size_t secondpos {};
+        size_t counterpart {};
     };
-    std::unique_ptr<Counterparts[]> had_counterpart {};
+    std::unique_ptr<PositionalCounterparts[]> m_counterparts {};
 
     enum MDObjectT {
         MD_NONE,
@@ -534,14 +533,20 @@ class MarkdownLexer {
     void SetCounterpartDecision(bool dec, size_t first, size_t second)
     {
         assert(!m_symvec.empty());
-        assert(had_counterpart);
+        assert(m_counterparts);
 
-        had_counterpart[first].firstpos = first;
-        had_counterpart[first].secondpos = second;
-        had_counterpart[first].dec = dec;
-        had_counterpart[second].firstpos = first;
-        had_counterpart[second].secondpos = second;
-        had_counterpart[second].dec = dec;
+        m_counterparts[first].counterpart = second;
+        m_counterparts[first].dec = dec;
+        m_counterparts[second].counterpart = first;
+        m_counterparts[second].dec = dec;
+    }
+
+    void SetCounterpartDecision(size_t first, const CounterpartDecision& Decision)
+    {
+        m_counterparts[first].dec = Decision.found;
+        m_counterparts[first].counterpart = Decision.VecDistance;
+        m_counterparts[Decision.VecDistance].dec = Decision.found;
+        m_counterparts[Decision.VecDistance].counterpart = Decision.VecDistance;
     }
 
 public:
@@ -555,7 +560,7 @@ public:
         MarkdownScanner Scanner { m_startstr };
         Scanner.Scan();
         m_symvec = Scanner.getVec();
-        had_counterpart = std::make_unique<Counterparts[]>(m_symvec.size());
+        m_counterparts = std::make_unique<PositionalCounterparts[]>(m_symvec.size());
     }
 
     void Stage2()
@@ -571,15 +576,14 @@ public:
 
             switch (CurrentNode.Symbol->OP_SYM) {
             case MarkSyms::SYM_BACKTICK: {
-                if (!had_counterpart[i].dec) {
+                if (!m_counterparts[i].dec) {
                     auto Decision = SymHasCounterpart(CurrentNode, i + 1);
                     if (Decision.found) {
                         fmt::print("Found counterpart, source: {0}, counterpart: {1}\n", CurrentNode.absolut_position, m_symvec[Decision.VecDistance].absolut_position);
-                        SetCounterpartDecision(true, i, Decision.VecDistance);
-
+                        SetCounterpartDecision(i, Decision);
                     } else {
                         fmt::print("Didnt find needed counterparts! :(\n");
-                        SetCounterpartDecision(false, i, Decision.VecDistance);
+                        SetCounterpartDecision(i, Decision);
                     }
                 } else {
                     fmt::print("Ignoring counterpartsearch because we already had that, lol\n");
