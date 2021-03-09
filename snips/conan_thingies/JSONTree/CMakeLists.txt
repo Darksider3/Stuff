@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(JSONTree)
 
-# set(CMAKE_GENERATOR "Ninja")
+set(CMAKE_GENERATOR "Ninja")
 # DEBUG: set(CMAKE_VERBOSE_MAKEFILE on)
 
 SET(SRCS

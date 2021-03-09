@@ -530,7 +530,7 @@ class MarkdownLexer {
         return FinalDecision;
     }
 
-    void SetCounterpartDecision(bool dec, size_t first, size_t second)
+    [[maybe_unused]] void SetCounterpartDecision(bool dec, size_t first, size_t second)
     {
         assert(!m_symvec.empty());
         assert(m_counterparts);
