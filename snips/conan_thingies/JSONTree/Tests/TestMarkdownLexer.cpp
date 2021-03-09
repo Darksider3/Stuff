@@ -77,7 +77,7 @@ void fmtPrintDebugSym(SymbolObj& obj)
 
 void PrintTestWhitespaceThing()
 {
-    std::string teststr { "`SingleTick?` Ich habe doch auch -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
+    std::string teststr { "`SingleTick?` Ich habe doch auch nix -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
     MarkdownLexer MDLexer { teststr };
     MDLexer.Stage1();
     MDLexer.Stage2();
