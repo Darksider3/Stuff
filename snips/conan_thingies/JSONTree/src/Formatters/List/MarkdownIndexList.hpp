@@ -49,8 +49,9 @@ public:
     MarkdownIndexList(fs::path& r)
         : m_fs_root(r)
     {
-        if (!starts_with(fs::relative(fs::current_path(), fs::current_path().parent_path()), "./"))
+        if (fs::relative(fs::current_path(), fs::current_path().parent_path()).string().starts_with('/')) {
             m_SlashDotBehaivour = "./";
+        }
     }
 
     /**
