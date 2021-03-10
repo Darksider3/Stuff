@@ -1,4 +1,4 @@
-#include "controllers/TestCtrl.h"
+#include "controllers/TestCookieSetCtrl.h"
 
 void TestCtrl::asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback)
 {
