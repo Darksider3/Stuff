@@ -48,7 +48,7 @@ void fmtPrintDebugSymVerbose(SymbolObj& obj)
 
 void fmtPrintDebugTextSymVerbose(SymbolObj& obj, MarkdownScanner& scanner)
 {
-    std::string data = scanner.getStrFromSym(obj);
+    std::string data = scanner.getStrFromSym(obj, scanner);
     fmt::print("Type: {0}\n\t-> Name: {1:s}\n"
                "\t-> dataLength: {2}\n\t-> startpos: {3}\n"
                "\t-> stoppos: {4}\n\t-> lines: {5}\n"
@@ -63,7 +63,7 @@ void fmtPrintDebugTextSymVerbose(SymbolObj& obj, MarkdownScanner& scanner)
 
 void fmtPrintDebugTextSym(SymbolObj& obj, MarkdownScanner& scanner)
 {
-    std::string data = scanner.getStrFromSym(obj);
+    std::string data = scanner.getStrFromSym(obj, scanner);
     fmt::print("| Type{0}| Name: {1: <22s}| len: {2}| Pos: {3}| Data: {4:s}|\n",
         obj.Symbol->OP_SYM, obj.Symbol->SymName,
         data.length(),

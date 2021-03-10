@@ -416,17 +416,23 @@ public:
         }
     }
 
-    std::string getStrFromSym(SymbolObj& sym)
+    std::stringstream& getStream() { return m_stream; }
+
+    static std::string getStrFromSym(SymbolObj& sym, MarkdownScanner& scanner)
     {
-        m_stream.clear(); // clearing the eofbits
+        auto& OperatingStream = scanner.getStream();
+        OperatingStream.clear(); // clearing the eofbits
         std::string Composite { "" };
-        auto OldPos = m_stream.tellg();
-        m_stream.seekg(sym.absolutePosition);
-        for (size_t i = 0; i < sym.Symbol->data->length; ++i) {
-            char cur = m_stream.get();
+        auto OldPos = OperatingStream.tellg();
+        auto OldFlags = OperatingStream.rdstate();
+
+        OperatingStream.seekg(sym.absolutePosition);
+        for (size_t i = 0; i <= sym.Symbol->data->length; ++i) {
+            char cur = OperatingStream.get();
             Composite += cur;
         }
-        m_stream.seekg(OldPos);
+        OperatingStream.seekg(OldPos);
+        OperatingStream.clear(OldFlags); // Despite the fact this is called clear, it actually sets state flags. What a mess.
         return Composite;
     }
 };
