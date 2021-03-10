@@ -21,16 +21,25 @@ class MarkdownLexer {
     std::unique_ptr<PositionalCounterparts[]> m_counterparts {};
 
     enum MDObjectT {
+        MD_ROOT,
         MD_NONE,
         MD_LINK,
         MD_INLINE_CODE,
         MD_BOLD,
         MD_ITALIC,
         MD_STRIKED,
+        MD_HORIZONTAL_LINE,
         MD_QUOTE,
         MD_CODEBLOCK,
         MD_HEADING,
     };
+
+    struct NoneData {
+    };
+    struct RootData : NoneData {
+    };
+    using RootDataPtr = std::shared_ptr<RootData>;
+    using NoneDataPtr = std::shared_ptr<NoneData>;
 
     struct TextData {
         std::string_view Text {};
@@ -59,6 +68,10 @@ class MarkdownLexer {
     };
     using StrikedDataPtr = std::shared_ptr<StrikedTextData>;
 
+    struct HorizontalLineData : public NoneData {
+    };
+    using HorizontalLineDataPtr = std::shared_ptr<HorizontalLineData>;
+
     struct QuotedTextData : public TextData {
     };
     using QuotedDataPtr = std::shared_ptr<QuotedTextData>;
@@ -66,7 +79,11 @@ class MarkdownLexer {
     struct LinkData;
     using LinkDataPtr = std::shared_ptr<LinkData>;
 
-    using ObjectVariants = std::variant<TxtDataPtr, InlineCodeDataPtr, BlockCodeDataPtr, ItalicDataPtr, BoldDataPtr, StrikedDataPtr, QuotedDataPtr, LinkDataPtr>;
+    using ObjectVariants = std::variant<
+        RootDataPtr, NoneDataPtr,
+        TxtDataPtr, InlineCodeDataPtr, BlockCodeDataPtr, ItalicDataPtr, BoldDataPtr, StrikedDataPtr,
+        HorizontalLineDataPtr,
+        QuotedDataPtr, LinkDataPtr>;
 
     struct LinkData {
         ObjectVariants Link;
@@ -80,7 +97,7 @@ class MarkdownLexer {
     };
 
     ASTVec m_symvec {};
-    std::vector<MarkdownObject> MDObjects {};
+    MarkdownObject m_root { .ObjT = MD_ROOT };
     const std::string& m_startstr;
 
     void SumUpSymbols()
@@ -170,37 +187,8 @@ public:
     }
 
     // Links, inline blocks, inline bold and such
-    void Stage3(size_t start = 0)
+    void Stage3()
     {
-        for (ASTVec::size_type i = start; i != m_symvec.size(); ++i) {
-            auto& CurrentNode = m_symvec.at(i);
-
-            switch (CurrentNode.Symbol->OP_SYM) {
-            case MarkSyms::SYM_BACKTICK: {
-
-                // Counterpart search
-                if (!m_counterparts[i].dec) {
-                    auto Decision = SymHasCounterpart(CurrentNode, i + 1);
-                    if (Decision.found) {
-                        SetCounterpartDecision(i, Decision);
-                    } else {
-                        SetCounterpartDecision(i, Decision);
-                    }
-                }
-
-                // Setting the right Symbols
-                if (CurrentNode.successive_count == 1) {
-                    MarkdownObject Obj { .ObjT = MD_INLINE_CODE, .data = std::make_shared<InlineCodeData>() };
-                    std::get<InlineCodeDataPtr>(Obj.data)->Text = m_Scanner.getStrFromSym(m_symvec[i + 1]);
-                    MDObjects.push_back(Obj);
-                } else if (CurrentNode.successive_count == 3) {
-                    MarkdownObject Obj { .ObjT = MD_CODEBLOCK, .data = std::make_shared<BlockCodeData>() };
-                }
-            }
-            default:
-                break;
-            }
-        }
     }
 
     // void handleSyms(MarkdownObject& root);
