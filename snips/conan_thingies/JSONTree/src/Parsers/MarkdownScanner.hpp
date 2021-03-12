@@ -228,8 +228,6 @@ class MarkdownScanner {
             OwningText.StartColumn = CUR_COLOUM;
             OwningText.absolutePosition = (m_stream.tellg());
             OwningText.Symbol->data->length = 0;
-
-            --OwningText.absolutePosition; // Remember: we're already 1 char in!
         };
 
         SetupOwning();
@@ -242,7 +240,7 @@ class MarkdownScanner {
             }
         }
         OwningText.StopColoumn = CUR_COLOUM;
-
+        //--OwningText.absolutePosition; // Remember: we where already 2 char in!
         m_symvec.emplace_back(std::move(OwningText));
     }
 
@@ -438,7 +436,7 @@ public:
         auto OldPos = OperatingStream.tellg();
         auto OldFlags = OperatingStream.rdstate();
 
-        OperatingStream.seekg(sym.absolutePosition);
+        OperatingStream.seekg(sym.absolutePosition - 1);
         for (size_t i = 0; i <= sym.Symbol->data->length; ++i) {
             char cur = OperatingStream.get();
             Composite += cur;
