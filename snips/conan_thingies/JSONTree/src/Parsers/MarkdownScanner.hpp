@@ -377,13 +377,20 @@ class MarkdownScanner {
         return m_stream.good();
     }
 
+    bool m_done { false };
+
 public:
     bool isTerminalChar(unsigned char x)
     {
         return (TerminalTable[static_cast<unsigned int>(x)] == 1);
     }
 
-    std::vector<SymbolObj> getVec() noexcept
+    std::vector<SymbolObj> getVec() const noexcept
+    {
+        return m_symvec;
+    }
+
+    std::vector<SymbolObj>& getVec() noexcept
     {
         return m_symvec;
     }
@@ -405,6 +412,9 @@ public:
 
     void Scan()
     {
+        if (hasScanned())
+            return;
+
         while (get_new_char()) {
             if (isTerminalChar(m_cur)) {
                 // its a terminal char!
@@ -414,6 +424,8 @@ public:
                 this->PerfectlyFineText();
             }
         }
+
+        m_done = true;
     }
 
     std::stringstream& getStream() { return m_stream; }
@@ -435,6 +447,9 @@ public:
         OperatingStream.clear(OldFlags); // Despite the fact this is called clear, it actually sets state flags. What a mess.
         return Composite;
     }
+
+    inline bool hasScanned() const { return m_done; }
+    inline void clearDoneFlag() { m_done = false; }
 };
 }
 #endif //JSONTREE_MARKDOWNSCANNER_HPP
