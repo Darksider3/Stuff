@@ -1,8 +1,8 @@
 //
 // Created by darksider3 on 04.03.21.
 //
-#include "Parsers/MarkdownLexer.hpp"
 #include "Parsers/MarkdownScanner.hpp"
+#include "Parsers/StackingMarkdownLexer.hpp"
 
 using namespace JSONTree::Parsers::detail;
 
@@ -79,16 +79,14 @@ void fmtPrintDebugSym(SymbolObj& obj)
 
 void PrintTestWhitespaceThing()
 {
-    std::string teststr { "`SingleTick?` Ich habe doch auch nix -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
-    MarkdownLexer MDLexer { teststr };
-    MDLexer.Stage1();
-    MDLexer.Stage2();
+    std::string teststr { "`SingleTick?` Ich habe ___doch___ auch *nix* -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
+    StackingMarkdownLexer MDLexer { teststr };
     auto SymVec = MDLexer.getVec();
 
     for (auto& El : SymVec) {
         if (El.Symbol->OP_SYM == SYM_JUST_NORMAL_TEXT) {
             // @TODO
-            fmtPrintDebugTextSym(El, MDLexer.m_Scanner);
+            fmtPrintDebugTextSym(El, MDLexer.getScanner());
         } else {
             fmtPrintDebugSym(El);
         }
