@@ -69,7 +69,7 @@ public:
 
     // automagically 1, because when we construct we expect it being actually present
     // why shouldn't we construct otherwise?
-    int successive_count { 1 }; //NOLINT
+    int successiveCount { 1 }; //NOLINT
 };
 
 // clang-format off

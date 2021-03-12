@@ -74,7 +74,7 @@ void fmtPrintDebugSym(SymbolObj& obj)
 {
     fmt::print("| Type{0: <2}| Name: {1: <22s}| Pos: {2}| Count: {3}|\n",
         obj.Symbol->OP_SYM, obj.Symbol->SymName,
-        obj.absolutePosition, obj.successive_count);
+        obj.absolutePosition, obj.successiveCount);
 }
 
 void PrintTestWhitespaceThing()

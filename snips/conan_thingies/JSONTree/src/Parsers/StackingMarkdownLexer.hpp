@@ -84,7 +84,7 @@ private:
                 while (m_scannervec.size() > i + 1 && LF_Sym == m_scannervec[i + 1].Symbol->OP_SYM) {
                     m_scannervec.erase(m_scannervec.begin() + i + 1);
                     i -= 1;
-                    m_scannervec[i].successive_count += 1;
+                    m_scannervec[i].successiveCount += 1;
                 }
             }
         }
