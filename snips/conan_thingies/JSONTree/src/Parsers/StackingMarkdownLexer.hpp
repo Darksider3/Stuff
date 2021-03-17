@@ -14,18 +14,29 @@
 
 namespace JSONTree::Parsers::detail {
 enum MDType {
-    MD_ROOT,
-    MD_NONE,
-    MD_LINK,
-    MD_INLINE_CODE,
-    MD_BOLD,
-    MD_ITALIC,
-    MD_STRIKED,
-    MD_HORIZONTAL_LINE,
-    MD_QUOTE,
-    MD_CODEBLOCK,
-    MD_HEADING,
+    MD_ROOT = 1,
+    MD_NONE = 2,
+    MD_LINK = 4,
+    MD_CLOSE_LINK = 8,
+    MD_INLINE_CODE = 16,
+    MD_CLOSE_INLINE_CODE = 32,
+    MD_BOLD = 64,
+    MD_END_BOLD = 128,
+    MD_ITALIC = 256,
+    MD_END_ITALIC = 512,
+    MD_STRIKED = 1024,
+    MD_END_STRIKED = 2048,
+    MD_HORIZONTAL_LINE = 4096,
+    MD_QUOTE = 8192,
+    MD_END_QUOTE = 16384,
+    MD_CODEBLOCK = 32768,
+    MD_END_CODEBLOCK = 65536,
+    MD_HEADING = 131072,
 };
+
+inline MDType operator|(MDType a, MDType b) {
+    return static_cast<MDType>(static_cast<int>(a) | static_cast<int>(b));
+}
 
 struct NoneData {
 };
@@ -91,6 +102,14 @@ private:
     }
 
 public:
+
+    bool hasOpen(const MDType &t) const {
+        auto it = std::find_if(m_open_tags.begin(), m_open_tags.end(), [t](const MDType cur) -> bool{
+            return (t == cur);
+        });
+        return it != m_open_tags.end();
+    }
+
     StackingMarkdownLexer(std::string Input)
         : m_Scanner { Input }
         , m_scannervec { m_Scanner.getVec() }
@@ -100,7 +119,66 @@ public:
             m_scannervec = m_Scanner.getVec();
         }
 
+        m_root.ObjT = MD_ROOT;
         SumUpSymbols();
+    }
+
+    void Parse()
+    {
+        auto &CurrentTypeObj = m_root;
+        for(size_t i = 0; i < m_scannervec.size(); ++i)
+        {
+            auto& cur = m_scannervec[i];
+            switch(cur.Symbol->OP_SYM) {
+            case SYM_ASTERISK:
+            case SYM_UNDERSCORE: {
+                MDType operatingSym;
+                if(cur.successiveCount % 3 == 0)
+                    operatingSym = MD_ITALIC | MD_BOLD;
+                else if(cur.successiveCount == 2)
+                    operatingSym = MD_BOLD;
+                else if(cur.successiveCount == 1)
+                    operatingSym = MD_ITALIC;
+
+                if(!hasOpen(operatingSym)) // not open
+                {
+                    MarkdownObject insertable;
+
+                    insertable.ObjT = operatingSym;
+                    CurrentTypeObj.childs.emplace_back(insertable);
+                } else {
+
+                }
+            }
+                break;
+            case SYM_OPEN_PARENTHESIS:
+                break;
+            case SYM_CLOSE_PARENTHESIS:
+                break;
+            case SYM_OPEN_BRACKET:
+                break;
+            case SYM_CLOSE_BRACKET:
+                break;
+            case SYM_TILDE:
+                break;
+            case SYM_BACKTICK:
+                break;
+            case SYM_CIRCUMFLEX:
+                break;
+            case SYM_DASH:
+                break;
+            case SYM_NEWLINE:
+                break;
+            case SYM_TAB:
+                break;
+            case SYM_JUST_NORMAL_TEXT:
+                // data here
+                break;
+            case SYM_ABSTRACT:
+            default:
+                break;
+            }
+        }
     }
 
     ASTVec getVec() { return m_scannervec; }
