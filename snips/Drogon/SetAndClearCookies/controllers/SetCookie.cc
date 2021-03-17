@@ -15,5 +15,6 @@ void SetCookie::asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<
     data.insert("title", "Set cookies!");
     data.insert("gotSet", found);
     auto resp = HttpResponse::newHttpViewResponse("setcookie.csp", data);
+    resp->removeCookie(CookieName);
     callback(resp);
 }
