@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<%c++
+auto setCookie=@@.get<bool>("gotSet");
+
+%>
+<html>
+<head>
+<title>[[ title ]]</title>
+</head>
+<body>
+<%c++
+if( setCookie == true)
+{
+%>
+Your cookie got set! Congratulations!
+<%c++
+} else {
+%>
+Somehow we couldnt set your cookie! :(
+<%c++
+}
+%>
+</body>
+</html>
