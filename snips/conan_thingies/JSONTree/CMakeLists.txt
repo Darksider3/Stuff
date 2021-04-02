@@ -35,7 +35,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 add_executable(jsontree main.cpp "${SRCS}")
-add_executable(TestLex Tests/TestMarkdownLexer.cpp "${SRCS}")
+add_executable(TestLex Tests/main.cpp "${SRCS}")
 #target_link_libraries(fileHash ${CONAN_LIBS})
 #target_precompile_headers(jsontree PUBLIC ${SRCS})
 #target_precompile_headers(TestLex REUSE_FROM jsontree)

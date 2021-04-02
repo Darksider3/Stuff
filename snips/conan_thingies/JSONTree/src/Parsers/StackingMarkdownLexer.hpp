@@ -34,7 +34,8 @@ enum MDType {
     MD_HEADING = 131072,
 };
 
-inline MDType operator|(MDType a, MDType b) {
+inline MDType operator|(MDType a, MDType b)
+{
     return static_cast<MDType>(static_cast<int>(a) | static_cast<int>(b));
 }
 
@@ -93,18 +94,17 @@ private:
             MarkSyms& LF_Sym = m_scannervec[i].Symbol->OP_SYM;
             if (m_scannervec.size() > i + 1 && LF_Sym == m_scannervec[i + 1].Symbol->OP_SYM) {
                 while (m_scannervec.size() > i + 1 && LF_Sym == m_scannervec[i + 1].Symbol->OP_SYM) {
-                    m_scannervec.erase(m_scannervec.begin() + i + 1);
-                    i -= 1;
                     m_scannervec[i].successiveCount += 1;
+                    m_scannervec.erase(m_scannervec.begin() + i + 1);
                 }
             }
         }
     }
 
 public:
-
-    bool hasOpen(const MDType &t) const {
-        auto it = std::find_if(m_open_tags.begin(), m_open_tags.end(), [t](const MDType cur) -> bool{
+    bool hasOpen(const MDType& t) const
+    {
+        auto it = std::find_if(m_open_tags.begin(), m_open_tags.end(), [t](const MDType cur) -> bool {
             return (t == cur);
         });
         return it != m_open_tags.end();
@@ -125,32 +125,29 @@ public:
 
     void Parse()
     {
-        auto &CurrentTypeObj = m_root;
-        for(size_t i = 0; i < m_scannervec.size(); ++i)
-        {
+        auto& CurrentTypeObj = m_root;
+        for (size_t i = 0; i < m_scannervec.size(); ++i) {
             auto& cur = m_scannervec[i];
-            switch(cur.Symbol->OP_SYM) {
+            switch (cur.Symbol->OP_SYM) {
             case SYM_ASTERISK:
             case SYM_UNDERSCORE: {
                 MDType operatingSym;
-                if(cur.successiveCount % 3 == 0)
+                if (cur.successiveCount % 3 == 0)
                     operatingSym = MD_ITALIC | MD_BOLD;
-                else if(cur.successiveCount == 2)
+                else if (cur.successiveCount == 2)
                     operatingSym = MD_BOLD;
-                else if(cur.successiveCount == 1)
+                else if (cur.successiveCount == 1)
                     operatingSym = MD_ITALIC;
 
-                if(!hasOpen(operatingSym)) // not open
+                if (!hasOpen(operatingSym)) // not open
                 {
                     MarkdownObject insertable;
 
                     insertable.ObjT = operatingSym;
                     CurrentTypeObj.childs.emplace_back(insertable);
                 } else {
-
                 }
-            }
-                break;
+            } break;
             case SYM_OPEN_PARENTHESIS:
                 break;
             case SYM_CLOSE_PARENTHESIS:

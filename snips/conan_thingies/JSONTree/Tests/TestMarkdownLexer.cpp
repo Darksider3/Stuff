@@ -1,11 +1,13 @@
 //
 // Created by darksider3 on 04.03.21.
 //
+#include <doctest/doctest.h>
+
 #include "Parsers/MarkdownScanner.hpp"
 #include "Parsers/StackingMarkdownLexer.hpp"
 
 using namespace JSONTree::Parsers::detail;
-
+namespace Test::Tooling {
 void fmtPrintFillChar()
 {
     fmt::print("\t{:->{}}\n", "", DebugDashes);
@@ -77,25 +79,74 @@ void fmtPrintDebugSym(SymbolObj& obj)
         obj.absolutePosition, obj.successiveCount);
 }
 
-void PrintTestWhitespaceThing()
+}
+
+TEST_SUITE("Basics")
 {
+    size_t char_counter(const std::string& in, char ch)
+    {
+        size_t c { 0 };
+        for (const auto& el : in) {
+            if (el == ch)
+                ++c;
+        }
+
+        return c;
+    }
+
+    size_t successiveSymCount(const std::vector<SymbolObj>& SymVec, MarkSyms Sym)
+    {
+        size_t counter { 0 };
+        for (const auto& el : SymVec) {
+            if (el.Symbol->OP_SYM == Sym) {
+                counter += el.successiveCount;
+            }
+        }
+
+        return counter;
+    }
+
     std::string teststr { "`SingleTick?` Ich habe ___doch___ auch *nix* -  \n keine Ahnung! [Brackets](oder so)\n\t hi \n```c\nhier()\n```" };
+
+    size_t known_backticks { char_counter(teststr, '`') };
+    size_t known_underscores { char_counter(teststr, '_') };
+
     StackingMarkdownLexer MDLexer { teststr };
     auto SymVec = MDLexer.getVec();
 
-    for (auto& El : SymVec) {
-        if (El.Symbol->OP_SYM == SYM_JUST_NORMAL_TEXT) {
-            // @TODO
-            fmtPrintDebugTextSym(El, MDLexer.getScanner());
-        } else {
-            fmtPrintDebugSym(El);
+    TEST_CASE("Just Run-Through while printing")
+    {
+        for (auto& El : SymVec) {
+            if (El.Symbol->OP_SYM == SYM_JUST_NORMAL_TEXT) {
+                Test::Tooling::fmtPrintDebugTextSym(El, MDLexer.getScanner());
+            } else {
+                Test::Tooling::fmtPrintDebugSym(El);
+            }
         }
+
+        fmt::print("Sourcestr: {}\n\n", Test::Tooling::escapedControlChars(teststr));
     }
 
-    fmt::print("Sourcestr: {}\n\n", escapedControlChars(teststr));
-}
-int main(int, char**)
-{
-    //JSONTree::Parsers::detail::MarkdownScanner MDScanner { "sometest" };
-    PrintTestWhitespaceThing();
+    TEST_CASE("Only one(!) abstract symbol")
+    {
+        CHECK_LE(
+            std::count_if(SymVec.begin(), SymVec.end(), [](SymbolObj& sym) -> bool {
+                return (sym.Symbol->OP_SYM == SYM_ABSTRACT);
+            }),
+            2);
+    }
+
+    TEST_CASE("Backtick Counter")
+    {
+        size_t counter = successiveSymCount(SymVec, SYM_BACKTICK);
+
+        CHECK_EQ(counter, known_backticks);
+    }
+
+    TEST_CASE("Underscore Counter")
+    {
+        size_t counter = successiveSymCount(SymVec, SYM_UNDERSCORE);
+
+        CHECK_EQ(counter, known_underscores);
+    }
 }
