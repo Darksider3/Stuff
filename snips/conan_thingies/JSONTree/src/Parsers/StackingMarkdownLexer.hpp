@@ -41,8 +41,10 @@ inline MDType operator|(MDType a, MDType b)
 
 struct NoneData {
 };
+
 struct RootData : NoneData {
 };
+
 using RootDataPtr = std::shared_ptr<RootData>;
 using NoneDataPtr = std::shared_ptr<NoneData>;
 
@@ -54,6 +56,7 @@ struct BlockCodeData {
     std::string_view language { "" };
     std::string_view contents { "" };
 };
+
 struct HorizontalLineData : public NoneData {
 };
 
@@ -78,14 +81,16 @@ struct LinkData {
 struct MarkdownObject {
     MDType ObjT { MD_NONE };
     ObjectVariants data;
-    std::vector<MarkdownObject> childs {}; // :thinking:
+};
+struct MarkdownRootObject {
+    std::vector<MarkdownObject> Objects {}; // :thinking:
 };
 
 class StackingMarkdownLexer {
 private:
     MarkdownScanner m_Scanner;
     ASTVec& m_scannervec;
-    MarkdownObject m_root {};
+    MarkdownRootObject m_root {};
     std::vector<MDType> m_open_tags;
 
     void SumUpSymbols()
@@ -119,13 +124,11 @@ public:
             m_scannervec = m_Scanner.getVec();
         }
 
-        m_root.ObjT = MD_ROOT;
         SumUpSymbols();
     }
 
     void Parse()
     {
-        auto& CurrentTypeObj = m_root;
         for (size_t i = 0; i < m_scannervec.size(); ++i) {
             auto& cur = m_scannervec[i];
             switch (cur.Symbol->OP_SYM) {
@@ -141,11 +144,10 @@ public:
 
                 if (!hasOpen(operatingSym)) // not open
                 {
-                    MarkdownObject insertable;
-
-                    insertable.ObjT = operatingSym;
-                    CurrentTypeObj.childs.emplace_back(insertable);
-                } else {
+                    m_root.Objects.emplace_back(MarkdownObject {
+                        .ObjT = operatingSym,
+                        .data = TxtDataPtr() });
+                } else { // yes it was open!
                 }
             } break;
             case SYM_OPEN_PARENTHESIS:

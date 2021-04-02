@@ -15,7 +15,7 @@ SET(SRCS
         src/Formatters/List/MarkdownIndexList.hpp
         src/Formatters/List/IndexList.hpp
         src/Formatters/Links/OptionalMarkdownLink.hpp
-        src/Parsers/MarkdownScanner.hpp src/Parsers/StackingMarkdownLexer.cpp src/Parsers/StackingMarkdownLexer.hpp)
+        src/Parsers/MarkdownScanner.hpp )
 
 SET(SanitizerFlags "  -fsanitize=leak -fsanitize=integer-divide-by-zero -fsanitize=unreachable -fsanitize=return  -fsanitize-address-use-after-scope -fsanitize=signed-integer-overflow -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=pointer-overflow -fsanitize=builtin")
 
@@ -35,7 +35,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 add_executable(jsontree main.cpp "${SRCS}")
-add_executable(TestLex Tests/main.cpp "${SRCS}")
+add_executable(TestLex Tests/main.cpp src/Parsers/StackingMarkdownLexer.cpp src/Parsers/StackingMarkdownLexer.hpp)
 #target_link_libraries(fileHash ${CONAN_LIBS})
 #target_precompile_headers(jsontree PUBLIC ${SRCS})
 #target_precompile_headers(TestLex REUSE_FROM jsontree)

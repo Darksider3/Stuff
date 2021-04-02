@@ -149,4 +149,9 @@ TEST_SUITE("Basics")
 
         CHECK_EQ(counter, known_underscores);
     }
+
+    TEST_CASE("Parser!")
+    {
+        MDLexer.Parse();
+    }
 }
