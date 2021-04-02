@@ -8,7 +8,7 @@
 // main logic
 #include "Poco/File.h"
 #include "Poco/RecursiveDirectoryIterator.h"
-#include "Print/Adapters/FileHashPrinter.hpp"
+#include "Print/Adapters/FileHashOut.hpp"
 #include "common.hpp"
 
 // Application interface
@@ -485,13 +485,13 @@ protected:
 
         auto digestSelect = [&](DigestVariant& dig, const std::string& path) {
             if (auto* detectedMD5 = std::get_if<_md5>(&dig); detectedMD5 != nullptr) {
-                printFileHashAdapter(path, detectedMD5->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
+                OutputFileHashAdapter(path, detectedMD5->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             } else if (auto* detectedSHA1 = std::get_if<_sha1>(&dig); detectedSHA1 != nullptr) {
-                printFileHashAdapter(path, detectedSHA1->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
+                OutputFileHashAdapter(path, detectedSHA1->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             } else if (auto* detectedSHA256 = std::get_if<_sha256>(&dig); detectedSHA256 != nullptr) {
-                printFileHashAdapter(path, detectedSHA256->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
+                OutputFileHashAdapter(path, detectedSHA256->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             } else if (auto* detectOwnMethod = std::get_if<_ownName>(&dig); detectOwnMethod != nullptr) {
-                printFileHashAdapter(path, detectOwnMethod->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
+                OutputFileHashAdapter(path, detectOwnMethod->getMethod(), Formatter, m_Flags._printAlgoUsed, output);
             }
         };
 

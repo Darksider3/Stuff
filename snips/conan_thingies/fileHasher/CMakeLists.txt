@@ -6,7 +6,7 @@ project(POCO_File_Hasher)
 SET(SRCS main.cpp
         main.cpp
         src/common.hpp
-        src/Print/Adapters/FileHashPrinter.hpp
+        src/Print/Adapters/FileHashOut.hpp
         src/Print/Format/StringFormat.hpp
         src/Print/Format/AbstractOutputFormatter.hpp
         src/Print/FileIO/ReadIntoEngine.hpp src/DigestEncryptApp.hpp

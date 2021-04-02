@@ -2,8 +2,8 @@
 // Created by darksider3 on 22.01.21.
 //
 
-#ifndef POCO_FILE_HASHER_FILEHASHPRINTER_HPP
-#define POCO_FILE_HASHER_FILEHASHPRINTER_HPP
+#ifndef POCO_FILE_HASHER_FILEHASHOUT_HPP
+#define POCO_FILE_HASHER_FILEHASHOUT_HPP
 
 #include "Poco/Crypto/DigestEngine.h"
 #include "Poco/DigestStream.h"
@@ -26,7 +26,7 @@
  */
 
 template<typename T = Formatting::PrintFormat>
-__attribute__((flatten)) std::ostream& printFileHashAdapter(const std::string& Path, const std::string& Method, Formatting::AbstractOutputFormatter<T>& fmt, bool used_algorithm = false, std::ostream& output = std::cout)
+__attribute__((flatten)) std::ostream& OutputFileHashAdapter(const std::string& Path, const std::string& Method, Formatting::AbstractOutputFormatter<T>& fmt, bool used_algorithm = false, std::ostream& output = std::cout)
 {
     assert(!Path.empty() && "Path shall be never empty.");
     assert(!Method.empty() && "Method cant be empty.");
