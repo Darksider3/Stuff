@@ -32,6 +32,7 @@ enum MDType {
     MD_CODEBLOCK = 32768,
     MD_END_CODEBLOCK = 65536,
     MD_HEADING = 131072,
+    MD_TEXT = 262144
 };
 
 inline MDType operator|(MDType a, MDType b)
@@ -49,7 +50,10 @@ using RootDataPtr = std::shared_ptr<RootData>;
 using NoneDataPtr = std::shared_ptr<NoneData>;
 
 struct TextualPropertyData {
-    std::string_view TextWithProperty {};
+};
+
+struct TextData {
+    std::string data {};
 };
 
 struct BlockCodeData {
@@ -60,7 +64,8 @@ struct BlockCodeData {
 struct HorizontalLineData : public NoneData {
 };
 
-using TxtDataPtr = std::shared_ptr<TextualPropertyData>;
+using TxtDataPtr = std::shared_ptr<TextData>;
+using TxtPropertyPtr = std::shared_ptr<TextualPropertyData>;
 using BlockCodeDataPtr = std::shared_ptr<BlockCodeData>;
 using HorizontalLineDataPtr = std::shared_ptr<HorizontalLineData>;
 
@@ -68,8 +73,8 @@ struct LinkData;
 using LinkDataPtr = std::shared_ptr<LinkData>;
 
 using ObjectVariants = std::variant<
-    RootDataPtr, NoneDataPtr,
-    TxtDataPtr, BlockCodeDataPtr,
+    RootDataPtr, NoneDataPtr, TxtDataPtr,
+    TxtPropertyPtr, BlockCodeDataPtr,
     HorizontalLineDataPtr,
     LinkDataPtr>;
 
@@ -129,6 +134,12 @@ public:
 
     void Parse()
     {
+        auto isTextBlockBehind = [this]() -> bool {
+            return m_root.Objects.back().ObjT == MD_TEXT;
+        };
+        auto appendToPrevious = [this](const std::string&& in) {
+            std::get<TxtDataPtr>(m_root.Objects.back().data)->data.append(in);
+        };
         for (size_t i = 0; i < m_scannervec.size(); ++i) {
             auto& cur = m_scannervec[i];
             switch (cur.Symbol->OP_SYM) {
@@ -146,8 +157,12 @@ public:
                 {
                     m_root.Objects.emplace_back(MarkdownObject {
                         .ObjT = operatingSym,
-                        .data = TxtDataPtr() });
+                        .data = TxtPropertyPtr() });
+                    m_open_tags.emplace_back(operatingSym);
                 } else { // yes it was open!
+                    std::erase_if(m_open_tags, [&operatingSym](const MDType& obj) -> bool {
+                        return (obj == operatingSym);
+                    }); // Pop it
                 }
             } break;
             case SYM_OPEN_PARENTHESIS:
@@ -159,6 +174,18 @@ public:
             case SYM_CLOSE_BRACKET:
                 break;
             case SYM_TILDE:
+                if (!cur.successiveCount % 2 == 0) {
+                } else {
+                    if (!isTextBlockBehind()) {
+                        auto txt = std::make_shared<TextData>();
+                        txt->data = '~';
+                        m_root.Objects.emplace_back(MarkdownObject {
+                            .ObjT = MD_TEXT,
+                            .data = std::move(txt) });
+                    } else /* There is a text block behind */ {
+                        appendToPrevious("~");
+                    }
+                }
                 break;
             case SYM_BACKTICK:
                 break;
@@ -182,6 +209,8 @@ public:
 
     ASTVec getVec() { return m_scannervec; }
     MarkdownScanner& getScanner() { return m_Scanner; }
+
+    std::vector<MDType> getOpenTags() { return m_open_tags; }
 };
 }
 #endif //JSONTREE_STACKINGMARKDOWNLEXER_HPP

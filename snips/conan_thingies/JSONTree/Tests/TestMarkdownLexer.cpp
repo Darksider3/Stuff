@@ -154,4 +154,11 @@ TEST_SUITE("Basics")
     {
         MDLexer.Parse();
     }
+
+    TEST_CASE("Pending open tests")
+    {
+        MDLexer.Parse();
+        auto openTags = MDLexer.getOpenTags();
+        CHECK(openTags.empty());
+    }
 }
