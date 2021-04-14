@@ -10,7 +10,9 @@ enum OperatorsIdentifiers {
     Division,
     Addition,
     Subtraction,
-    Function
+    Function,
+    LeftParenthesis,
+    RightParenthesis
 };
 
 constexpr int PrecedenceTable[17] = {
@@ -18,7 +20,8 @@ constexpr int PrecedenceTable[17] = {
     8, 8,
     6, 6,
     4, 4,
-    2
+    2,
+    100, 100
 };
 
 enum Associative {
@@ -46,6 +49,14 @@ struct Tokens {
     long double Number { 0 };
     int Precedence { 0 };
 };
+
+std::shared_ptr<Tokens> LeftParenthSentinel = std::make_shared<Tokens>(
+    Tokens {
+        .op = LeftParenthesis, .associative = Right, .str = "(", .Number = 0, .Precedence = 100 });
+
+std::shared_ptr<Tokens> RightParenthSentinel = std::make_shared<Tokens>(
+    Tokens {
+        .op = RightParenthesis, .associative = Left, .str = ")", .Number = 0, .Precedence = 100 });
 
 std::shared_ptr<Tokens> ExponentialSentinel = std::make_shared<Tokens>(
     Tokens {
@@ -78,6 +89,11 @@ std::shared_ptr<Tokens> SentinelMap[] = {
 bool isValidOperator(const unsigned char c)
 {
     return (OperatorTable[c] > 0);
+}
+
+std::shared_ptr<Tokens> getOperatorSentinel(unsigned char c)
+{
+    return SentinelMap[OperatorTable[c]];
 }
 
 int8_t getPrecedense(const unsigned char c)
@@ -143,15 +159,40 @@ public:
             {
                 long double parsedNum = parseNum();
                 fmt::print("Parsed digit {}\n", parsedNum);
+
+                m_output.emplace_back(std::to_string(parsedNum));
                 continue;
+            }
+
+            if (std::isalpha(cur)) // function path
+            {
             }
 
             if (isValidOperator(cur)) // operator path
             {
                 fmt::print("Found valid Operator {:c}\n", cur);
+
+                auto Operator = getOperatorSentinel(cur);
+
+                while (!m_operators.empty()
+                    && ((m_operators.back()->Precedence > Operator->Precedence)
+                        || (m_operators.back()->Precedence == Operator->Precedence
+                            && m_operators.back()->associative == Left))
+                    && m_operators.back()->op != LeftParenthesis) {
+                    m_output.emplace_back(m_operators.back()->str);
+                    m_operators.pop_back();
+                    fmt::print("Popped back!\n");
+                }
+                m_operators.push_back(Operator);
                 advance();
                 continue;
             }
+
+            if (cur == '(') // left parenth
+            { }
+
+            if (cur == ')') // right parenth
+            { }
 
             fmt::print("Reached End with {:c}\n", cur);
             advance();
@@ -171,7 +212,7 @@ public:
 
 int main()
 {
-    ShuntingYard Thin { "1.1 + 1 + a" };
+    ShuntingYard Thin { "1.1 + 1 + 1" };
     Thin.Parse();
 
     fmt::print("{}\n", Thin.toStr());
