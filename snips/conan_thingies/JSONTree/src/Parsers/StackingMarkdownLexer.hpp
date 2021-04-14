@@ -93,6 +93,7 @@ struct MarkdownRootObject {
 
 class StackingMarkdownLexer {
 private:
+    std::shared_ptr<TextualPropertyData> m_propertySentinel = std::make_shared<TextualPropertyData>();
     MarkdownScanner m_Scanner;
     ASTVec& m_scannervec;
     MarkdownRootObject m_root {};
@@ -140,6 +141,13 @@ public:
         auto appendToPrevious = [this](const std::string&& in) {
             std::get<TxtDataPtr>(m_root.Objects.back().data)->data.append(in);
         };
+
+        auto eraseOldOpen = [this](const MDType sym) {
+            std::erase_if(m_open_tags, [&sym](const MDType& obj) -> bool {
+                return (obj == sym);
+            }); // Pop it
+        };
+
         for (size_t i = 0; i < m_scannervec.size(); ++i) {
             auto& cur = m_scannervec[i];
             switch (cur.Symbol->OP_SYM) {
@@ -157,12 +165,16 @@ public:
                 {
                     m_root.Objects.emplace_back(MarkdownObject {
                         .ObjT = operatingSym,
-                        .data = TxtPropertyPtr() });
+                        .data = m_propertySentinel });
                     m_open_tags.emplace_back(operatingSym);
                 } else { // yes it was open!
                     std::erase_if(m_open_tags, [&operatingSym](const MDType& obj) -> bool {
                         return (obj == operatingSym);
                     }); // Pop it
+
+                    m_root.Objects.emplace_back(MarkdownObject {
+                        .ObjT = operatingSym,
+                        .data = m_propertySentinel });
                 }
             } break;
             case SYM_OPEN_PARENTHESIS:
@@ -186,6 +198,16 @@ public:
                         appendToPrevious("~");
                     }
                 }
+                if (!hasOpen(MD_STRIKED)) {
+                    m_root.Objects.emplace_back(MarkdownObject {
+                        .ObjT = MD_STRIKED,
+                        .data = m_propertySentinel });
+                } else {
+                    eraseOldOpen(MD_STRIKED);
+                    m_root.Objects.emplace_back(MarkdownObject {
+                        .ObjT = MD_END_STRIKED,
+                        .data = m_propertySentinel });
+                }
                 break;
             case SYM_BACKTICK:
                 break;
@@ -207,7 +229,11 @@ public:
         }
     }
 
-    ASTVec getVec() { return m_scannervec; }
+    ASTVec
+    getVec()
+    {
+        return m_scannervec;
+    }
     MarkdownScanner& getScanner() { return m_Scanner; }
 
     std::vector<MDType> getOpenTags() { return m_open_tags; }
