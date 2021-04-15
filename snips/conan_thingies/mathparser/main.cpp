@@ -141,6 +141,8 @@ public:
 
     void Parse()
     {
+
+        auto VecTop = [&]() { return m_operators.back(); };
         while (m_stream.good()) {
             unsigned char cur = get();
             if (std::isspace(cur) || cur > 128) // ignoring any whitespace & irrelevant notation
@@ -178,27 +180,53 @@ public:
                     m_operators.pop_back();
                     fmt::print("Popped back!\n");
                 }
-                m_operators.push_back(Operator);
+                m_operators.emplace_back(Operator);
                 advance();
                 continue;
             }
 
             if (cur == '(') // left parenth
-            { }
+            {
+                m_operators.emplace_back(LeftParenthSentinel);
+                continue;
+            }
 
             if (cur == ')') // right parenth
-            { }
+            {
+                bool foundParen { false };
+                while (m_operators.back()->op != LeftParenthesis) {
+                    m_output.emplace_back(m_operators.back()->str);
+                    m_operators.pop_back();
+                    if (m_operators.empty())
+                        break;
+                    if (VecTop()->op == LeftParenthesis) {
+                        foundParen = true;
+                        break;
+                    }
+                }
+            }
 
             fmt::print("Reached End with {:c}\n", cur);
             advance();
         }
+
+        while (!m_operators.empty()) {
+            m_output.emplace_back(m_operators.back()->str);
+            m_operators.pop_back();
+        }
     }
 
-    std::string toStr()
+    std::string
+    toStr()
     {
         std::string str {};
+        str.append("Output Queue: ");
         for (const auto& el : m_output) {
             str += el + " ";
+        }
+        str.append("\nOperator Stack: ");
+        for (const auto& el : m_operators) {
+            str += el->str + " ";
         }
 
         return str;
