@@ -12,7 +12,8 @@ enum OperatorsIdentifiers {
     Subtraction,
     Function,
     LeftParenthesis,
-    RightParenthesis
+    RightParenthesis,
+    Number
 };
 
 constexpr int PrecedenceTable[17] = {
@@ -43,40 +44,61 @@ constexpr int8_t OperatorTable[128] = {
 };
 
 struct Tokens {
-    OperatorsIdentifiers op;
+    OperatorsIdentifiers id;
     Associative associative { None };
     std::string str {};
     long double Number { 0 };
     int Precedence { 0 };
+    std::function<long double(long double, long double)> F {};
 };
+
+long double AdditionFunc(long double l, long double r)
+{
+    return l + r;
+}
+
+long double SubtractionFunc(long double l, long double r)
+{
+    return l - r;
+}
+
+long double MultiplicationFunc(long double l, long double r)
+{
+    return l * r;
+}
+
+long double DivisonFunc(long double l, long double r)
+{
+    return l / r;
+}
 
 std::shared_ptr<Tokens> LeftParenthSentinel = std::make_shared<Tokens>(
     Tokens {
-        .op = LeftParenthesis, .associative = Right, .str = "(", .Number = 0, .Precedence = 100 });
+        .id = LeftParenthesis, .associative = Right, .str = "(", .Number = 0, .Precedence = 100 });
 
 std::shared_ptr<Tokens> RightParenthSentinel = std::make_shared<Tokens>(
     Tokens {
-        .op = RightParenthesis, .associative = Left, .str = ")", .Number = 0, .Precedence = 100 });
+        .id = RightParenthesis, .associative = Left, .str = ")", .Number = 0, .Precedence = 100 });
 
 std::shared_ptr<Tokens> ExponentialSentinel = std::make_shared<Tokens>(
     Tokens {
-        .op = Exponential, .associative = Right, .str = "^", .Number = 0, .Precedence = 5 });
+        .id = Exponential, .associative = Right, .str = "^", .Number = 0, .Precedence = 5 });
 
 std::shared_ptr<Tokens> MultiplicationSentinel = std::make_shared<Tokens>(
     Tokens {
-        .op = Multiplication, .associative = Left, .str = "*", .Number = 0, .Precedence = 4 });
+        .id = Multiplication, .associative = Left, .str = "*", .Number = 0, .Precedence = 4, .F = MultiplicationFunc });
 
 std::shared_ptr<Tokens> DivisonSentinel = std::make_shared<Tokens>(
     Tokens {
-        .op = Division, .associative = Left, .str = "/", .Number = 0, .Precedence = 4 });
+        .id = Division, .associative = Left, .str = "/", .Number = 0, .Precedence = 4, .F = DivisonFunc });
 
 std::shared_ptr<Tokens> SubtractionSentinel = std::make_shared<Tokens>(
     Tokens {
-        .op = Subtraction, .associative = Left, .str = "-", .Number = 0, .Precedence = 2 });
+        .id = Subtraction, .associative = Left, .str = "-", .Number = 0, .Precedence = 2, .F = SubtractionFunc });
 
 std::shared_ptr<Tokens> AdditionSentinel = std::make_shared<Tokens>(
     Tokens {
-        .op = Addition, .associative = Left, .str = "+", .Number = 0, .Precedence = 2 });
+        .id = Addition, .associative = Left, .str = "+", .Number = 0, .Precedence = 2, .F = AdditionFunc });
 
 std::shared_ptr<Tokens> SentinelMap[] = {
     ExponentialSentinel,
@@ -100,7 +122,7 @@ class ShuntingYard {
 private:
     std::stringstream m_stream;
     std::vector<std::shared_ptr<Tokens>> m_operators {};
-    std::vector<std::string> m_output {};
+    std::vector<std::shared_ptr<Tokens>> m_output {};
 
     long double parseNum()
     {
@@ -157,7 +179,13 @@ public:
                 long double parsedNum = parseNum();
                 fmt::print("Parsed digit {}\n", parsedNum);
 
-                m_output.emplace_back(std::to_string(parsedNum));
+                m_output.emplace_back(std::make_shared<Tokens>(
+                    Tokens {
+                        .id = Number,
+                        .str = std::to_string(parsedNum),
+                        .Number = parsedNum,
+                        .Precedence = 0,
+                    }));
                 continue;
             }
 
@@ -175,8 +203,8 @@ public:
                     && ((m_operators.back()->Precedence > Operator->Precedence)
                         || (m_operators.back()->Precedence == Operator->Precedence
                             && m_operators.back()->associative == Left))
-                    && m_operators.back()->op != LeftParenthesis) {
-                    m_output.emplace_back(m_operators.back()->str);
+                    && m_operators.back()->id != LeftParenthesis) {
+                    m_output.emplace_back(m_operators.back());
                     m_operators.pop_back();
                     fmt::print("Popped back!\n");
                 }
@@ -194,12 +222,12 @@ public:
             if (cur == ')') // right parenth
             {
                 bool foundParen { false };
-                while (m_operators.back()->op != LeftParenthesis) {
-                    m_output.emplace_back(m_operators.back()->str);
+                while (m_operators.back()->id != LeftParenthesis) {
+                    m_output.emplace_back(m_operators.back());
                     m_operators.pop_back();
                     if (m_operators.empty())
                         break;
-                    if (VecTop()->op == LeftParenthesis) {
+                    if (VecTop()->id == LeftParenthesis) {
                         foundParen = true;
                         break;
                     }
@@ -211,7 +239,7 @@ public:
         }
 
         while (!m_operators.empty()) {
-            m_output.emplace_back(m_operators.back()->str);
+            m_output.emplace_back(m_operators.back());
             m_operators.pop_back();
         }
     }
@@ -222,7 +250,7 @@ public:
         std::string str {};
         str.append("Output Queue: ");
         for (const auto& el : m_output) {
-            str += el + " ";
+            str += el->str + " ";
         }
         str.append("\nOperator Stack: ");
         for (const auto& el : m_operators) {
@@ -231,12 +259,27 @@ public:
 
         return str;
     }
+
+    long double Calc()
+    {
+        long double Result { m_output.at(0)->Number };
+        size_t i = 1;
+        while (m_output.size() > i) {
+            long double LeftExp = Result;
+            long double RightExp = m_output.at(i++)->Number;
+            Result = m_output.at(i++)->F(LeftExp, RightExp);
+        }
+
+        return Result;
+    }
 };
 
 int main()
 {
-    ShuntingYard Thin { "1.1 + 1 + 1 - 3 " };
+    std::string In = "1.1 + 1 + 1 - 3 ";
+    ShuntingYard Thin { In };
     Thin.Parse();
 
-    fmt::print("{}\n", Thin.toStr());
+    fmt::print("Input: '{}'\n{}\n", In, Thin.toStr());
+    fmt::print("Calc(): {}\n", Thin.Calc());
 }
