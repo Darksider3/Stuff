@@ -5,15 +5,15 @@
 #include <vector>
 
 enum OperatorsIdentifiers {
-    Exponential,
-    Multiplication,
-    Division,
-    Addition,
-    Subtraction,
-    Function,
-    LeftParenthesis,
-    RightParenthesis,
-    Number
+    Exponential = 1,
+    Multiplication = 2,
+    Division = 3,
+    Addition = 4,
+    Subtraction = 5,
+    Function = 6,
+    LeftParenthesis = 7,
+    RightParenthesis = 8,
+    Number = 9
 };
 
 enum Associative {
@@ -97,11 +97,12 @@ std::shared_ptr<Tokens> SentinelAddition = std::make_shared<Tokens>(
         .id = Addition, .associative = LeftAssociative, .str = "+", .Number = 0, .Precedence = 2, .F = AdditionFunc });
 
 std::shared_ptr<Tokens> SentinelMap[] = {
-    SentinelExponential,
-    SentinelMultiplication,
-    SentinelDivison,
-    SentinelAddition,
-    SentinelSubstraction
+    nullptr,
+    SentinelExponential,    // 1
+    SentinelMultiplication, // 2
+    SentinelDivison,        // 3
+    SentinelAddition,       // 4
+    SentinelSubstraction    // 5
 };
 
 bool isValidOperator(const unsigned char c)
