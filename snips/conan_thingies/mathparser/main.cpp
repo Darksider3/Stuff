@@ -1,7 +1,9 @@
+#include <cmath>
 #include <fmt/core.h>
 #include <fstream>
 #include <sstream>
 #include <vector>
+
 enum OperatorsIdentifiers {
     Exponential,
     Multiplication,
@@ -15,9 +17,9 @@ enum OperatorsIdentifiers {
 };
 
 enum Associative {
-    Left,
-    Right,
-    None
+    LeftAssociative,
+    RightAssociative,
+    NotAssociative
 };
 
 constexpr int8_t OperatorTable[128] = {
@@ -34,7 +36,7 @@ constexpr int8_t OperatorTable[128] = {
 
 struct Tokens {
     OperatorsIdentifiers id;
-    Associative associative { None };
+    Associative associative { NotAssociative };
     std::string str {};
     long double Number { 0 };
     int Precedence { 0 };
@@ -61,40 +63,45 @@ long double DivisonFunc(long double l, long double r)
     return l / r;
 }
 
-std::shared_ptr<Tokens> LeftParenthSentinel = std::make_shared<Tokens>(
-    Tokens {
-        .id = LeftParenthesis, .associative = Right, .str = "(", .Number = 0, .Precedence = 100 });
+long double ExponentionalFunc(long double l, long double r)
+{
+    return powl(l, r);
+}
 
-std::shared_ptr<Tokens> RightParenthSentinel = std::make_shared<Tokens>(
+std::shared_ptr<Tokens> SentinelLeftParenthesis = std::make_shared<Tokens>(
     Tokens {
-        .id = RightParenthesis, .associative = Left, .str = ")", .Number = 0, .Precedence = 100 });
+        .id = LeftParenthesis, .associative = RightAssociative, .str = "(", .Number = 0, .Precedence = 100 });
 
-std::shared_ptr<Tokens> ExponentialSentinel = std::make_shared<Tokens>(
+std::shared_ptr<Tokens> SentinelRightParenthesis = std::make_shared<Tokens>(
     Tokens {
-        .id = Exponential, .associative = Right, .str = "^", .Number = 0, .Precedence = 5 });
+        .id = RightParenthesis, .associative = LeftAssociative, .str = ")", .Number = 0, .Precedence = 100 });
 
-std::shared_ptr<Tokens> MultiplicationSentinel = std::make_shared<Tokens>(
+std::shared_ptr<Tokens> SentinelExponential = std::make_shared<Tokens>(
     Tokens {
-        .id = Multiplication, .associative = Left, .str = "*", .Number = 0, .Precedence = 4, .F = MultiplicationFunc });
+        .id = Exponential, .associative = RightAssociative, .str = "^", .Number = 0, .Precedence = 5, .F = ExponentionalFunc });
 
-std::shared_ptr<Tokens> DivisonSentinel = std::make_shared<Tokens>(
+std::shared_ptr<Tokens> SentinelMultiplication = std::make_shared<Tokens>(
     Tokens {
-        .id = Division, .associative = Left, .str = "/", .Number = 0, .Precedence = 4, .F = DivisonFunc });
+        .id = Multiplication, .associative = LeftAssociative, .str = "*", .Number = 0, .Precedence = 4, .F = MultiplicationFunc });
 
-std::shared_ptr<Tokens> SubtractionSentinel = std::make_shared<Tokens>(
+std::shared_ptr<Tokens> SentinelDivison = std::make_shared<Tokens>(
     Tokens {
-        .id = Subtraction, .associative = Left, .str = "-", .Number = 0, .Precedence = 2, .F = SubtractionFunc });
+        .id = Division, .associative = LeftAssociative, .str = "/", .Number = 0, .Precedence = 4, .F = DivisonFunc });
 
-std::shared_ptr<Tokens> AdditionSentinel = std::make_shared<Tokens>(
+std::shared_ptr<Tokens> SentinelSubstraction = std::make_shared<Tokens>(
     Tokens {
-        .id = Addition, .associative = Left, .str = "+", .Number = 0, .Precedence = 2, .F = AdditionFunc });
+        .id = Subtraction, .associative = LeftAssociative, .str = "-", .Number = 0, .Precedence = 2, .F = SubtractionFunc });
+
+std::shared_ptr<Tokens> SentinelAddition = std::make_shared<Tokens>(
+    Tokens {
+        .id = Addition, .associative = LeftAssociative, .str = "+", .Number = 0, .Precedence = 2, .F = AdditionFunc });
 
 std::shared_ptr<Tokens> SentinelMap[] = {
-    ExponentialSentinel,
-    MultiplicationSentinel,
-    DivisonSentinel,
-    AdditionSentinel,
-    SubtractionSentinel
+    SentinelExponential,
+    SentinelMultiplication,
+    SentinelDivison,
+    SentinelAddition,
+    SentinelSubstraction
 };
 
 bool isValidOperator(const unsigned char c)
@@ -191,7 +198,7 @@ public:
                 while (!m_operators.empty()
                     && ((m_operators.back()->Precedence > Operator->Precedence)
                         || (m_operators.back()->Precedence == Operator->Precedence
-                            && m_operators.back()->associative == Left))
+                            && m_operators.back()->associative == LeftAssociative))
                     && m_operators.back()->id != LeftParenthesis) {
                     m_output.emplace_back(m_operators.back());
                     m_operators.pop_back();
@@ -204,7 +211,7 @@ public:
 
             if (cur == '(') // left parenth
             {
-                m_operators.emplace_back(LeftParenthSentinel);
+                m_operators.emplace_back(SentinelLeftParenthesis);
                 advance();
                 continue;
             }
