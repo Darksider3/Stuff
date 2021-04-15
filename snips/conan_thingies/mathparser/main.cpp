@@ -1,8 +1,6 @@
-#include <cassert>
 #include <fmt/core.h>
 #include <fstream>
 #include <sstream>
-#include <stack>
 #include <vector>
 enum OperatorsIdentifiers {
     Exponential,
@@ -14,15 +12,6 @@ enum OperatorsIdentifiers {
     LeftParenthesis,
     RightParenthesis,
     Number
-};
-
-constexpr int PrecedenceTable[17] = {
-    10, 10,
-    8, 8,
-    6, 6,
-    4, 4,
-    2,
-    100, 100
 };
 
 enum Associative {
@@ -267,6 +256,7 @@ public:
         while (m_output.size() > i) {
             long double LeftExp = Result;
             long double RightExp = m_output.at(i++)->Number;
+
             Result = m_output.at(i++)->F(LeftExp, RightExp);
         }
 
@@ -276,7 +266,7 @@ public:
 
 int main()
 {
-    std::string In = "1.1 + 1 + 1 - 3 ";
+    std::string In = "1.1 * 3 - 2 ";
     ShuntingYard Thin { In };
     Thin.Parse();
 
