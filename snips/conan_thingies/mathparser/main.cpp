@@ -205,22 +205,32 @@ public:
             if (cur == '(') // left parenth
             {
                 m_operators.emplace_back(LeftParenthSentinel);
+                advance();
                 continue;
             }
 
             if (cur == ')') // right parenth
             {
-                bool foundParen { false };
                 while (m_operators.back()->id != LeftParenthesis) {
                     m_output.emplace_back(m_operators.back());
                     m_operators.pop_back();
                     if (m_operators.empty())
                         break;
                     if (VecTop()->id == LeftParenthesis) {
-                        foundParen = true;
                         break;
                     }
                 }
+
+                if (m_operators.back()->id == LeftParenthesis) {
+                    m_operators.pop_back(); // discard
+                } else {
+                    throw std::exception();
+                }
+                if (m_operators.back()->id == Function) {
+                    m_operators.pop_back();
+                }
+                advance();
+                continue;
             }
 
             fmt::print("Reached End with {:c}\n", cur);
