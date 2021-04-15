@@ -96,11 +96,6 @@ std::shared_ptr<Tokens> getOperatorSentinel(unsigned char c)
     return SentinelMap[OperatorTable[c]];
 }
 
-int8_t getPrecedense(const unsigned char c)
-{
-    return SentinelMap[OperatorTable[c]]->Precedence;
-}
-
 class ShuntingYard {
 private:
     std::stringstream m_stream;
@@ -170,9 +165,9 @@ public:
 
             if (isValidOperator(cur)) // operator path
             {
-                fmt::print("Found valid Operator {:c}\n", cur);
 
                 auto Operator = getOperatorSentinel(cur);
+                fmt::print("Found valid Operator {}\n", Operator->str);
 
                 while (!m_operators.empty()
                     && ((m_operators.back()->Precedence > Operator->Precedence)
@@ -212,7 +207,7 @@ public:
 
 int main()
 {
-    ShuntingYard Thin { "1.1 + 1 + 1" };
+    ShuntingYard Thin { "1.1 + 1 + 1 - 3 " };
     Thin.Parse();
 
     fmt::print("{}\n", Thin.toStr());
