@@ -143,19 +143,29 @@ private:
         return std::stof(Number);
     }
 
-public:
-    ShuntingYard(const std::string& Str)
-        : m_stream { Str }
-    {
-    }
-
     inline unsigned char get()
     {
         return m_stream.peek();
     }
+
     inline void advance()
     {
         m_stream.ignore();
+    }
+
+    inline std::shared_ptr<Tokens> MakeNumberToken(long double Num)
+    {
+        return std::make_shared<Tokens>(
+            Tokens { .id = Number,
+                .str = std::to_string(Num),
+                .Number = Num,
+                .Precedence = 0 });
+    }
+
+public:
+    ShuntingYard(const std::string& Str)
+        : m_stream { Str }
+    {
     }
 
     void Parse()
@@ -176,13 +186,7 @@ public:
                 long double parsedNum = parseNum();
                 fmt::print("Parsed digit {}\n", parsedNum);
 
-                m_output.emplace_back(std::make_shared<Tokens>(
-                    Tokens {
-                        .id = Number,
-                        .str = std::to_string(parsedNum),
-                        .Number = parsedNum,
-                        .Precedence = 0,
-                    }));
+                m_output.emplace_back(MakeNumberToken(parsedNum));
                 continue;
             }
 
@@ -196,14 +200,13 @@ public:
                 auto Operator = getOperatorSentinel(cur);
                 fmt::print("Found valid Operator {}\n", Operator->str);
 
-                while (!m_operators.empty()
-                    && ((m_operators.back()->Precedence > Operator->Precedence)
-                        || (m_operators.back()->Precedence == Operator->Precedence
-                            && m_operators.back()->associative == LeftAssociative))
-                    && m_operators.back()->id != LeftParenthesis) {
+                while (!m_operators.empty()                                         // as long as we got tokens
+                    && ((m_operators.back()->Precedence > Operator->Precedence)     //((the operator at the top of the operator stack has greater precedence)
+                        || (m_operators.back()->Precedence == Operator->Precedence  // (OR equal
+                            && m_operators.back()->associative == LeftAssociative)) // AND Left Associative)
+                    && m_operators.back()->id != LeftParenthesis /* and NOT a  Left-Parenthesis */) {
                     m_output.emplace_back(m_operators.back());
-                    m_operators.pop_back();
-                    fmt::print("Popped back!\n");
+                    m_operators.pop_back(); // pop the operators onto the output queue
                 }
                 m_operators.emplace_back(Operator);
                 advance();
@@ -251,8 +254,7 @@ public:
         }
     }
 
-    std::string
-    toStr()
+    std::string toStr()
     {
         std::string str {};
         str.append("Output Queue: ");
@@ -284,7 +286,7 @@ public:
 
 int main()
 {
-    std::string In = "1.1 * 3 - 2 ";
+    std::string In = "2^2";
     ShuntingYard Thin { In };
     Thin.Parse();
 
