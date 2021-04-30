@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
 project(mathparser)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_BUILD_TYPE debug)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 
 # DEBUG: set(CMAKE_VERBOSE_MAKEFILE on)
 
-include_directories("JSONTree/src")
-SET(SRCS )
+include_directories(SYSTEM src/)
+SET(SRCS
+        src/ShuntingYard.cpp
+        src/Token.cpp
+        src/RPNEvaluate.cpp)
 
 SET(SanitizerFlags "  -fsanitize=leak -fsanitize=integer-divide-by-zero -fsanitize=unreachable -fsanitize=return  -fsanitize-address-use-after-scope -fsanitize=signed-integer-overflow -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=pointer-overflow -fsanitize=builtin")
 
