@@ -15,7 +15,6 @@ using NumberType = long double;
 struct Token {
     OperatorsIdentifiers id;
     Associative associative { NotAssociative };
-    std::string str {};
     NumberType Number { 0 };
     int Precedence { 0 };
     std::function<long double(long double, long double)> F {};

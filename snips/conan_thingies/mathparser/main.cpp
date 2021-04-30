@@ -2,7 +2,6 @@
 #include "ShuntingYard.hpp"
 #include <fmt/core.h>
 #include <iostream>
-#include <sstream>
 
 int main()
 {

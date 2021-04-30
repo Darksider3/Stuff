@@ -16,7 +16,6 @@ std::string MathParser::Evaluate::RPNEvaluate::eval()
             m_stack.pop();
             EvaluationResult = El->F(left->Number, right->Number);
             right->Number = EvaluationResult;
-            right->str = std::to_string(EvaluationResult);
             m_stack.push(right);
         } else if (El->id == Number) {
             m_stack.emplace(El);

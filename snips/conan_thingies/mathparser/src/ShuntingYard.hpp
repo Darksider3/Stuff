@@ -68,7 +68,6 @@ private:
     {
         return std::make_shared<Token>(
             Token { .id = Number,
-                .str = std::to_string(Num),
                 .Number = Num,
                 .Precedence = 0 });
     }
