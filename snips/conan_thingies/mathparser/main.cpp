@@ -6,18 +6,24 @@
 int main()
 {
     bool exit = false;
+    MathParser::ShuntingYard Thin {};
+    MathParser::Evaluate::RPNEvaluate Evaluator {};
+    std::string In { "" };
+    In.reserve(100);
     while (!exit) {
-        std::string In { "" };
-        In.reserve(100);
         fmt::print("> ");
         std::getline(std::cin, In);
         if (In == "e") {
             exit = true;
             continue;
         }
-        MathParser::ShuntingYard Thin { In };
+
+        Thin.setParsingTarget(In);
         Thin.Parse();
-        MathParser::Evaluate::RPNEvaluate Evaluator { Thin.getRPNVec() };
+
+        Evaluator.setRPN(Thin.getRPNVec());
         fmt::print("{}\n", Evaluator.eval());
     }
+
+    In.clear();
 }
