@@ -82,6 +82,8 @@ public:
     void setParsingTarget(const std::string& Str)
     {
         m_stream = std::stringstream { Str };
+        m_output.clear();
+        m_operators = std::stack<SharedTokenPtr> {};
     }
 
     void Parse();
