@@ -78,8 +78,15 @@ public:
     {
     }
 
+    ShuntingYard() = default;
+    void setParsingTarget(const std::string& Str)
+    {
+        m_stream = std::stringstream { Str };
+    }
+
     void Parse();
 
     RPNVec getRPNVec() const { return m_output; }
+    RPNVec& getRPNVec() { return m_output; }
 };
 }

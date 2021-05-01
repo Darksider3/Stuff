@@ -6,7 +6,7 @@
 std::string MathParser::Evaluate::RPNEvaluate::eval()
 {
     NumberType EvaluationResult { 0 };
-    for (const auto& El : m_rpn) {
+    for (const auto& El : *m_rpn) {
         if (El->id < Number) {
             SharedTokenPtr right = m_stack.top();
             assert(right->id == Number);

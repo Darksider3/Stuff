@@ -12,20 +12,24 @@ namespace MathParser::Evaluate {
 using namespace Tokens;
 class RPNEvaluate {
 private:
-    RPNVec m_rpn;
+    RPNVec* m_rpn;
     std::stack<SharedTokenPtr> m_stack {};
 
 public:
-    RPNEvaluate(RPNVec Vec)
-        : m_rpn(std::move(Vec))
+    RPNEvaluate(RPNVec& Vec)
+        : m_rpn(&Vec)
     {
     }
 
-    std::string eval();
-    std::string eval(RPNVec&& vec)
+    RPNEvaluate()
     {
-        m_rpn = std::move(vec);
-        return eval();
+        m_rpn = nullptr;
     }
+
+    void setRPN(RPNVec& vec)
+    {
+        m_rpn = &vec;
+    }
+    std::string eval();
 };
 }
